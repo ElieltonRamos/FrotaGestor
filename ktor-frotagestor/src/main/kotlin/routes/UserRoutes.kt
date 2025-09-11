@@ -15,7 +15,7 @@ fun Route.userRoutes() {
         println("Login endpoint chamado")
         try {
             val request = call.receive<LoginRequest>()
-//            println("Request recebido: $request")
+            println("Request recebido: $request")
 
             // Login de teste
             if (request.username == "admin" && request.password == "1234") {
