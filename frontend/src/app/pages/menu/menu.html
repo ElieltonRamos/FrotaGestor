@@ -1,0 +1,15 @@
+<section>
+  <h2 class="text-xl font-semibold m-4 text-gray-700">Módulos</h2>
+
+  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+    @for (item of menus; track $index) {
+      <a
+        [routerLink]="item.route"
+        class="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 transition text-gray-800 no-underline"
+      >
+        <span class="material-icons text-gray-600">{{ item.icon }}</span>
+        <span>{{ item.name }}</span>
+      </a>
+    }
+  </div>
+</section>

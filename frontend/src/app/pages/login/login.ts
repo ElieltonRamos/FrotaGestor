@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -9,10 +10,11 @@ import { FormsModule } from '@angular/forms';
 export class Login {
   username = '';
   password = '';
+  private router = inject(Router);
 
   login() {
     console.log('Usuário:', this.username);
     console.log('Senha:', this.password);
-    // aqui você implementa a lógica real de autenticação
+    this.router.navigate(['/menu']);
   }
 }
