@@ -1,0 +1,29 @@
+<div>
+  <h2 class="text-xl font-semibold mb-4">Lista de Motoristas</h2>
+  <table class="min-w-full border border-gray-200 rounded-lg">
+    <thead class="bg-gray-100">
+      <tr>
+        <th class="px-4 py-2 text-left">Nome</th>
+        <th class="px-4 py-2 text-left">CPF</th>
+        <th class="px-4 py-2 text-left">CNH</th>
+        <th class="px-4 py-2 text-left">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of motoristas; track m.cpf) {
+      <tr class="border-t">
+        <td class="px-4 py-2">{{ m.nome }}</td>
+        <td class="px-4 py-2">{{ m.cpf }}</td>
+        <td class="px-4 py-2">{{ m.cnh }}</td>
+        <td class="px-4 py-2">{{ m.status }}</td>
+      </tr>
+      } @empty {
+      <tr>
+        <td colspan="4" class="px-4 py-4 text-center text-gray-500">
+          Nenhum motorista cadastrado
+        </td>
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>

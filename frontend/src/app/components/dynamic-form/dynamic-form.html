@@ -1,0 +1,47 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+  @for (field of fields; track field.name) {
+
+    <!-- Input Texto -->
+    @if (field.type === 'text' || field.type === 'email' || field.type === 'number') {
+      <div>
+        <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
+        <input
+          [type]="field.type"
+          [formControlName]="field.name"
+          [placeholder]="field.placeholder"
+          class="input" />
+      </div>
+    }
+
+    <!-- Input Data -->
+    @if (field.type === 'date') {
+      <div>
+        <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
+        <input
+          type="date"
+          [formControlName]="field.name"
+          class="input" />
+      </div>
+    }
+
+    <!-- Select -->
+    @if (field.type === 'select') {
+      <div>
+        <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
+        <select [formControlName]="field.name" class="input">
+          @for (opt of field.options; track opt) {
+            <option [value]="opt">{{ opt }}</option>
+          }
+        </select>
+      </div>
+    }
+
+  }
+
+  <!-- Botão -->
+  <div class="col-span-2 flex justify-end gap-4 mt-6">
+    <button type="reset" class="px-4 py-2 bg-gray-300 rounded-lg">Cancelar</button>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Salvar</button>
+  </div>
+</form>
