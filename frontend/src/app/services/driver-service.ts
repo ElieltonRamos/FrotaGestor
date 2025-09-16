@@ -11,19 +11,36 @@ import { PaginatedResponse } from '../interfaces/paginator';
 export class DriverService {
   constructor(private http: HttpClient) {}
 
-  // Criar motorista
   create(driver: Omit<Driver, 'id'>): Observable<Driver> {
     return this.http.post<Driver>(API_URL, driver);
   }
 
-  // Listar motoristas com paginação
-  getAll(page: number = 1, limit: number = 10): Observable<PaginatedResponse<Driver>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
+  getAll(
+  page: number = 1,
+  limit: number = 10,
+  filters: any = {},
+  sortKey: string = 'nome',
+  sortAsc: boolean = true
+): Observable<PaginatedResponse<Driver>> {
+  let params = new HttpParams()
+    .set('page', page.toString())
+    .set('limit', limit.toString())
+    .set('sort', sortKey)
+    .set('order', sortAsc ? 'asc' : 'desc');
 
-    return this.http.get<PaginatedResponse<Driver>>(API_URL, { params });
+  if (filters.nome) {
+    params = params.set('nome', filters.nome);
   }
+  if (filters.cpf) {
+    params = params.set('cpf', filters.cpf);
+  }
+  if (filters.status) {
+    params = params.set('status', filters.status);
+  }
+
+  return this.http.get<PaginatedResponse<Driver>>(API_URL, { params });
+}
+
 
   // Buscar motorista por ID
   getById(id: number | string): Observable<Driver> {

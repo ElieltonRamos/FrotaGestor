@@ -1,42 +1,133 @@
-<div>
-  <!-- Cabeçalho com título e paginação -->
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-xl font-semibold">Lista de Motoristas</h2>
+<div class="overflow-x-auto overflow-y-auto">
+  <!-- Filtros e Paginador -->
+  <div class="flex flex-wrap justify-between mb-4 gap-4">
+    <!-- Filtros -->
+    <div class="flex flex-wrap gap-4 items-end">
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Nome</label>
+        <input
+          type="text"
+          placeholder="Nome..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.nome"
+          (ngModelChange)="applyFilters()"
+        />
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">CPF</label>
+        <input
+          type="text"
+          placeholder="CPF..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.cpf"
+          (ngModelChange)="applyFilters()"
+        />
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Status</label>
+        <select
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.status"
+          (change)="applyFilters()"
+        >
+          <option value="">Todos</option>
+          <option value="Ativo">Ativo</option>
+          <option value="Inativo">Inativo</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col">
+        <label class="text-sm mb-1 invisible">.</label>
+        <button
+          class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm"
+          (click)="clearFilters()"
+        >
+          Limpar Filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- Paginador -->
     <app-paginator
-      [page]="page"
       [totalItems]="total"
       [itemsPerPage]="limit"
       [totalPages]="totalPages"
-      (pageChanged)="onPageChange($event)">
-    </app-paginator>
+      [page]="page"
+      (pageChanged)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+
+  <div class="text-gray-500 text-xs italic mb-2 select-none">
+    Clique no cabeçalho das colunas para ordenar (▲ ascendente, ▼ descendente).
   </div>
 
   <!-- Tabela -->
-  <table class="min-w-full border border-gray-200 rounded-lg">
-    <thead class="bg-gray-100">
-      <tr>
-        <th class="px-4 py-2 text-left">Nome</th>
-        <th class="px-4 py-2 text-left">CPF</th>
-        <th class="px-4 py-2 text-left">CNH</th>
-        <th class="px-4 py-2 text-left">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      @for (m of drivers; track m.cpf) {
-        <tr class="border-t">
-          <td class="px-4 py-2">{{ m.nome }}</td>
-          <td class="px-4 py-2">{{ m.cpf }}</td>
-          <td class="px-4 py-2">{{ m.cnh }}</td>
-          <td class="px-4 py-2">{{ m.status }}</td>
-        </tr>
-      }
-      @empty {
+  <div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-200 text-gray-700 uppercase text-xs font-semibold">
         <tr>
-          <td colspan="4" class="px-4 py-4 text-center text-gray-500">
-            Nenhum motorista cadastrado
-          </td>
+          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('nome')">
+            Nome
+            @if(sortKey === 'nome') { {{ sortAsc ? '▲' : '▼' }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('cpf')">
+            CPF
+            @if(sortKey === 'cpf') { {{ sortAsc ? '▲' : '▼' }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('cnh')">
+            CNH
+            @if(sortKey === 'cnh') { {{ sortAsc ? '▲' : '▼' }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('status')">
+            Status
+            @if(sortKey === 'status') { {{ sortAsc ? '▲' : '▼' }} }
+          </th>
+          <th class="px-4 py-3 text-center">Ações</th>
         </tr>
-      }
-    </tbody>
-  </table>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        @for (m of drivers; track m.cpf) {
+          <tr class="hover:bg-gray-50 odd:bg-white even:bg-gray-50">
+            <td class="px-4 py-3">{{ m.nome }}</td>
+            <td class="px-4 py-3">{{ m.cpf }}</td>
+            <td class="px-4 py-3">{{ m.cnh }}</td>
+            <td class="px-4 py-3">
+              <span
+                class="px-2 py-1 text-xs rounded-full"
+                [class.bg-green-100]="m.status === 'Ativo'"
+                [class.text-green-700]="m.status === 'Ativo'"
+                [class.bg-red-100]="m.status === 'Inativo'"
+                [class.text-red-700]="m.status === 'Inativo'"
+              >
+                {{ m.status }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-center space-x-2">
+              <button
+                class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                (click)="onEdit(m)"
+              >
+                Editar
+              </button>
+              <button
+                class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded hover:bg-gray-800"
+                (click)="toggleStatus(m)"
+              >
+                {{ m.status === 'Ativo' ? 'Inativar' : 'Ativar' }}
+              </button>
+            </td>
+          </tr>
+        }
+        @empty {
+          <tr>
+            <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+              Nenhum motorista cadastrado
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 </div>
