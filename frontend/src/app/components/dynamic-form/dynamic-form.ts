@@ -5,7 +5,7 @@ export interface FormField {
   name: string;         // nome do campo (para o formControlName)
   label: string;        // texto que aparece no formulário
   type: string;         // text, email, number, date, select, etc
-  placeholder: string; // placeholder
+  placeholder?: string; // placeholder
   options?: string[];   // se for select/radio
   required?: boolean;   // validação
 }

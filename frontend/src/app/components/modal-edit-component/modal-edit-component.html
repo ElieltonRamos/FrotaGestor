@@ -1,0 +1,65 @@
+@if (show) {
+<div
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+>
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg">
+    <!-- Cabeçalho -->
+    <div class="flex justify-between items-center border-b p-4">
+      <h2 class="text-lg font-semibold">{{ title }}</h2>
+      <button class="text-gray-500 hover:text-gray-700" (click)="onClose()">
+        ✖
+      </button>
+    </div>
+
+    <!-- Formulário dinâmico -->
+    <div class="p-4 flex flex-col gap-3">
+      @for (field of fields; track field.name) {
+      <div>
+        <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
+
+        @if (field.type === 'text' || field.type === 'email' || field.type ===
+        'number') {
+        <input
+          [type]="field.type"
+          [(ngModel)]="entity[field.name]"
+          [placeholder]="field.placeholder"
+          class="border rounded px-3 py-2 w-full text-sm"
+        />
+        } @if (field.type === 'date') {
+        <input
+          type="date"
+          [(ngModel)]="entity[field.name]"
+          class="border rounded px-3 py-2 w-full text-sm"
+        />
+        } @if (field.type === 'select') {
+        <select
+          [(ngModel)]="entity[field.name]"
+          class="border rounded px-3 py-2 w-full text-sm"
+        >
+          @for (opt of field.options; track opt) {
+          <option [value]="opt">{{ opt }}</option>
+          }
+        </select>
+        }
+      </div>
+      }
+    </div>
+
+    <!-- Rodapé -->
+    <div class="flex justify-end gap-2 border-t p-4">
+      <button
+        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+        (click)="onClose()"
+      >
+        Cancelar
+      </button>
+      <button
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        (click)="onSave()"
+      >
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+}

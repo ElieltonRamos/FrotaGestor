@@ -68,66 +68,81 @@
     <table class="min-w-full text-sm">
       <thead class="bg-gray-200 text-gray-700 uppercase text-xs font-semibold">
         <tr>
-          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('nome')">
-            Nome
-            @if(sortKey === 'nome') { {{ sortAsc ? '▲' : '▼' }} }
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('nome')"
+          >
+            Nome @if(sortKey === 'nome') { {{ sortAsc ? "▲" : "▼" }} }
           </th>
-          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('cpf')">
-            CPF
-            @if(sortKey === 'cpf') { {{ sortAsc ? '▲' : '▼' }} }
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('cpf')"
+          >
+            CPF @if(sortKey === 'cpf') { {{ sortAsc ? "▲" : "▼" }} }
           </th>
-          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('cnh')">
-            CNH
-            @if(sortKey === 'cnh') { {{ sortAsc ? '▲' : '▼' }} }
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('cnh')"
+          >
+            CNH @if(sortKey === 'cnh') { {{ sortAsc ? "▲" : "▼" }} }
           </th>
-          <th class="px-4 py-3 cursor-pointer select-none" (click)="sortBy('status')">
-            Status
-            @if(sortKey === 'status') { {{ sortAsc ? '▲' : '▼' }} }
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('status')"
+          >
+            Status @if(sortKey === 'status') { {{ sortAsc ? "▲" : "▼" }} }
           </th>
           <th class="px-4 py-3 text-center">Ações</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
         @for (m of drivers; track m.cpf) {
-          <tr class="hover:bg-gray-50 odd:bg-white even:bg-gray-50">
-            <td class="px-4 py-3">{{ m.nome }}</td>
-            <td class="px-4 py-3">{{ m.cpf }}</td>
-            <td class="px-4 py-3">{{ m.cnh }}</td>
-            <td class="px-4 py-3">
-              <span
-                class="px-2 py-1 text-xs rounded-full"
-                [class.bg-green-100]="m.status === 'Ativo'"
-                [class.text-green-700]="m.status === 'Ativo'"
-                [class.bg-red-100]="m.status === 'Inativo'"
-                [class.text-red-700]="m.status === 'Inativo'"
-              >
-                {{ m.status }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-center space-x-2">
-              <button
-                class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
-                (click)="onEdit(m)"
-              >
-                Editar
-              </button>
-              <button
-                class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded hover:bg-gray-800"
-                (click)="toggleStatus(m)"
-              >
-                {{ m.status === 'Ativo' ? 'Inativar' : 'Ativar' }}
-              </button>
-            </td>
-          </tr>
-        }
-        @empty {
-          <tr>
-            <td colspan="5" class="px-4 py-6 text-center text-gray-500">
-              Nenhum motorista cadastrado
-            </td>
-          </tr>
+        <tr class="hover:bg-gray-50 odd:bg-white even:bg-gray-50">
+          <td class="px-4 py-3">{{ m.nome }}</td>
+          <td class="px-4 py-3">{{ m.cpf }}</td>
+          <td class="px-4 py-3">{{ m.cnh }}</td>
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 text-xs rounded-full"
+              [class.bg-green-100]="m.status === 'Ativo'"
+              [class.text-green-700]="m.status === 'Ativo'"
+              [class.bg-red-100]="m.status === 'Inativo'"
+              [class.text-red-700]="m.status === 'Inativo'"
+            >
+              {{ m.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button
+              class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+              (click)="onEdit(m)"
+            >
+              Editar
+            </button>
+            <button
+              class="px-3 py-1 text-xs font-medium text-white bg-gray-700 rounded hover:bg-gray-800"
+              (click)="toggleStatus(m)"
+            >
+              {{ m.status === "Ativo" ? "Inativar" : "Ativar" }}
+            </button>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="5" class="px-4 py-6 text-center text-gray-500">
+            Nenhum motorista cadastrado
+          </td>
+        </tr>
         }
       </tbody>
     </table>
+    <app-modal-edit-component
+      [title]="'Editar Motorista'"
+      [show]="showModal"
+      [entity]="selectedDriver"
+      [fields]="driverFields"
+      (close)="onCloseModal()"
+      (save)="onSaveModal($event)"
+    ></app-modal-edit-component>
   </div>
 </div>
