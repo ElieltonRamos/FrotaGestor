@@ -14,4 +14,11 @@ export class App {
   isLoginRoute(): boolean {
     return this.router.url === '/';
   }
+
+  isNotFoundRoute(): boolean {
+    return (
+      this.router.routerState.snapshot.root.firstChild?.component?.name ===
+      'NotFound'
+    );
+  }
 }

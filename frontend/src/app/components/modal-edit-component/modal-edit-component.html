@@ -1,65 +1,75 @@
 @if (show) {
-<div
-  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
->
-  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg">
-    <!-- Cabeçalho -->
-    <div class="flex justify-between items-center border-b p-4">
-      <h2 class="text-lg font-semibold">{{ title }}</h2>
-      <button class="text-gray-500 hover:text-gray-700" (click)="onClose()">
-        ✖
-      </button>
-    </div>
+  <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transition-all">
 
-    <!-- Formulário dinâmico -->
-    <div class="p-4 flex flex-col gap-3">
-      @for (field of fields; track field.name) {
-      <div>
-        <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
-
-        @if (field.type === 'text' || field.type === 'email' || field.type ===
-        'number') {
-        <input
-          [type]="field.type"
-          [(ngModel)]="entity[field.name]"
-          [placeholder]="field.placeholder"
-          class="border rounded px-3 py-2 w-full text-sm"
-        />
-        } @if (field.type === 'date') {
-        <input
-          type="date"
-          [(ngModel)]="entity[field.name]"
-          class="border rounded px-3 py-2 w-full text-sm"
-        />
-        } @if (field.type === 'select') {
-        <select
-          [(ngModel)]="entity[field.name]"
-          class="border rounded px-3 py-2 w-full text-sm"
+      <!-- Cabeçalho -->
+      <div class="flex justify-between items-center border-b border-gray-200 px-6 py-4 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-800">{{ title }}</h2>
+        <button
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+          (click)="onClose()"
         >
-          @for (opt of field.options; track opt) {
-          <option [value]="opt">{{ opt }}</option>
-          }
-        </select>
+          ✖
+        </button>
+      </div>
+
+      <!-- Formulário dinâmico -->
+      <div class="p-6 flex flex-col gap-4">
+        @for (field of fields; track field.name) {
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">
+              {{ field.label }}
+            </label>
+
+            @if (field.type === 'text' || field.type === 'email' || field.type === 'number') {
+              <input
+                [type]="field.type"
+                [(ngModel)]="entity[field.name]"
+                [placeholder]="field.placeholder"
+                class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            }
+
+            @if (field.type === 'date') {
+              <input
+                type="date"
+                [(ngModel)]="entity[field.name]"
+                class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              />
+            }
+
+            @if (field.type === 'select') {
+              <select
+                [(ngModel)]="entity[field.name]"
+                class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm
+                       focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+              >
+                @for (opt of field.options; track opt) {
+                  <option [value]="opt">{{ opt }}</option>
+                }
+              </select>
+            }
+          </div>
         }
       </div>
-      }
-    </div>
 
-    <!-- Rodapé -->
-    <div class="flex justify-end gap-2 border-t p-4">
-      <button
-        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        (click)="onClose()"
-      >
-        Cancelar
-      </button>
-      <button
-        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        (click)="onSave()"
-      >
-        Salvar
-      </button>
+      <!-- Rodapé -->
+      <div class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-gray-50">
+        <button
+          class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          (click)="onClose()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
+          (click)="onSave()"
+        >
+          Salvar
+        </button>
+      </div>
     </div>
   </div>
-</div>
 }
