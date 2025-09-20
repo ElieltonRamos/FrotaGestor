@@ -1,7 +1,7 @@
 package com.redenorte
 
 import com.redenorte.database.DatabaseFactory
-import com.redenorte.routes.configureRouting
+import com.redenorte.plugins.configureRouting
 import io.ktor.server.application.*
 import com.redenorte.plugins.*
 

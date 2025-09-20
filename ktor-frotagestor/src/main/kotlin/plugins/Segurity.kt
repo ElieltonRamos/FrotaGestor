@@ -9,16 +9,17 @@ import io.ktor.server.auth.jwt.*
 fun Application.configureSecurity() {
     authentication {
         jwt("auth-jwt") {
-            realm = "ktor sample app"
+            realm = "Access to 'api'"
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256("secret")) // chave secreta
-                    .withIssuer("myapp")
+                    .require(Algorithm.HMAC256("super-secret-key")) // chave secreta
+                    .withIssuer("com.redenorte")
                     .build()
             )
             validate { credential ->
-                if (credential.payload.getClaim("username").asString() != "") JWTPrincipal(credential.payload)
-                else null
+                if (credential.payload.getClaim("userId").asString().isNotEmpty()) {
+                    JWTPrincipal(credential.payload)
+                } else null
             }
         }
     }

@@ -1,54 +1,55 @@
 package com.redenorte.services
 
 import at.favre.lib.crypto.bcrypt.BCrypt
+import com.redenorte.database.DatabaseFactory
 import com.redenorte.database.models.UsersTable
-import com.redenorte.interfaces.ServiceResponse
 import com.redenorte.interfaces.LoginResponse
+import com.redenorte.interfaces.ServiceResponse
 import com.redenorte.interfaces.User
+import com.redenorte.plugins.JwtConfig
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserService {
-    fun login(username: String, password: String): ServiceResponse<LoginResponse> {
-        // busca usuário no banco
-        val userRow = transaction {
+    suspend fun login(username: String, password: String): ServiceResponse<LoginResponse> {
+        val result = DatabaseFactory.dbQuery {
             UsersTable
                 .selectAll().where { UsersTable.username eq username }
                 .singleOrNull()
+                ?.let {
+                    val user = User(
+                        id = it[UsersTable.id],
+                        username = it[UsersTable.username],
+                        role = it[UsersTable.role]
+                    )
+                    val storedHash = it[UsersTable.password]
+                    user to storedHash
+                }
         }
 
-        if (userRow == null) {
+        if (result == null) {
             return ServiceResponse(
                 status = HttpStatusCode.NotFound,
                 data = LoginResponse.Error("Usuário não encontrado")
             )
         }
 
-        val storedHash = userRow[UsersTable.password]
-        val role = userRow[UsersTable.role]
-        val user = User(
-            id = userRow[UsersTable.id],
-            username = userRow[UsersTable.username],
-            role = role,
-            password = storedHash
-        )
+        val (user, storedHash) = result
+        val verified = BCrypt.verifyer().verify(password.toCharArray(), storedHash)
 
-        // valida senha
-        val result = BCrypt.verifyer().verify(password.toCharArray(), storedHash)
-        if (!result.verified) {
+        if (!verified.verified) {
             return ServiceResponse(
                 status = HttpStatusCode.Unauthorized,
                 data = LoginResponse.Error("Senha inválida")
             )
         }
 
-        // gera token JWT (aqui seria JwtConfig.generateToken)
-        val token = "fake-jwt-token-${user.username}"
+        val token = JwtConfig.generateToken(user.id.toString(), user.role)
 
         return ServiceResponse(
             status = HttpStatusCode.OK,
-            data = LoginResponse.Success(token, user)
+            data = LoginResponse.Success(token)
         )
     }
 }
+
