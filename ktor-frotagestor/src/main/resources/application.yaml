@@ -6,4 +6,4 @@ ktor:
       - build/classes/kotlin/main
   application:
     modules:
-      - com.redenorte.ApplicationKt.module
+      - com.frotagestor.ApplicationKt.module

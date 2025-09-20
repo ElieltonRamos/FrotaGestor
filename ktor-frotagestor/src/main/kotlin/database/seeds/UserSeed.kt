@@ -1,6 +1,6 @@
-package com.redenorte.database.seeds
+package com.frotagestor.database.seeds
 
-import com.redenorte.database.models.UsersTable
+import com.frotagestor.database.models.UsersTable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction

@@ -1,6 +1,6 @@
-package com.redenorte.database.migrations
+package com.frotagestor.database.migrations
 
-import com.redenorte.database.seeds.DatabaseSeeder
+import com.frotagestor.database.seeds.DatabaseSeeder
 
 fun main() {
     MigrationManager.createDatabaseIfNotExists()

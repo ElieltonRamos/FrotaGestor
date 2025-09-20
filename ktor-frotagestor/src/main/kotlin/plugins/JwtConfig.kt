@@ -1,12 +1,11 @@
-package com.redenorte.plugins
+package com.frotagestor.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import java.util.*
 
 object JwtConfig {
-    private const val secret = "super-secret-key"   // 👉 coloque isso em env/config
-    private const val issuer = "com.redenorte"
+    private val secret: String = System.getenv("JWT_SECRET") ?: "dev-secret"
+    private val issuer: String = System.getenv("JWT_ISSUER") ?: "com.frotagestor.app"
 
     private val algorithm = Algorithm.HMAC256(secret)
 

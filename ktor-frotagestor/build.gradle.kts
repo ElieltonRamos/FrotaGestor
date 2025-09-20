@@ -4,7 +4,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.0"
 }
 
-group = "com.redenorte"
+group = "com.frotagestor"
 version = "0.0.1"
 
 application {
@@ -40,7 +40,7 @@ tasks.register<Jar>("fatJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {
-        attributes["Main-Class"] = "com.redenorte.ApplicationKt"
+        attributes["Main-Class"] = "com.frotagestor.ApplicationKt"
     }
 
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })

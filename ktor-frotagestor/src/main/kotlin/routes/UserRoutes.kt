@@ -1,11 +1,8 @@
-package com.redenorte.routes
+package com.frotagestor.routes
 
-import com.redenorte.controllers.UserController
-import com.redenorte.services.UserService
-import io.ktor.server.response.*
-import io.ktor.server.request.*
+import com.frotagestor.controllers.UserController
+import com.frotagestor.services.UserService
 import io.ktor.server.routing.*
-import java.util.*
 
 fun Route.userRoutes() {
     val controller = UserController(UserService())

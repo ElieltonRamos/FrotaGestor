@@ -1,4 +1,4 @@
-package com.redenorte.database
+package com.frotagestor.database
 
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database

@@ -1,7 +1,7 @@
-package com.redenorte.controllers
+package com.frotagestor.controllers
 
-import com.redenorte.interfaces.LoginRequest
-import com.redenorte.services.UserService
+import com.frotagestor.interfaces.LoginRequest
+import com.frotagestor.services.UserService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.request.receive

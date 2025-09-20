@@ -1,6 +1,6 @@
-package com.redenorte.database.seeds
+package com.frotagestor.database.seeds
 
-import com.redenorte.database.migrations.MigrationManager
+import com.frotagestor.database.migrations.MigrationManager
 
 object DatabaseSeeder {
     fun run() {

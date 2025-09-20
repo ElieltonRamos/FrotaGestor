@@ -1,12 +1,12 @@
-package com.redenorte.services
+package com.frotagestor.services
 
 import at.favre.lib.crypto.bcrypt.BCrypt
-import com.redenorte.database.DatabaseFactory
-import com.redenorte.database.models.UsersTable
-import com.redenorte.interfaces.LoginResponse
-import com.redenorte.interfaces.ServiceResponse
-import com.redenorte.interfaces.User
-import com.redenorte.plugins.JwtConfig
+import com.frotagestor.database.DatabaseFactory
+import com.frotagestor.database.models.UsersTable
+import com.frotagestor.interfaces.LoginResponse
+import com.frotagestor.plugins.JwtConfig
+import com.frotagestor.interfaces.ServiceResponse
+import com.frotagestor.interfaces.User
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.selectAll
 

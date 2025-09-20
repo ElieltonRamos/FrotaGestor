@@ -1,4 +1,4 @@
-package com.redenorte.database.migrations
+package com.frotagestor.database.migrations
 
 import org.flywaydb.core.Flyway
 import java.sql.DriverManager

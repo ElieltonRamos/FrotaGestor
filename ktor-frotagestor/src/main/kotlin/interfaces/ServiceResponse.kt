@@ -1,4 +1,4 @@
-package com.redenorte.interfaces
+package com.frotagestor.interfaces
 
 import io.ktor.http.HttpStatusCode
 

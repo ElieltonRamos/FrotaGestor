@@ -1,4 +1,4 @@
-package com.redenorte.database.models
+package com.frotagestor.database.models
 
 import org.jetbrains.exposed.sql.Table
 

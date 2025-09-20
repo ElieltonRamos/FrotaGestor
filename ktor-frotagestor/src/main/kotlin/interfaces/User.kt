@@ -1,4 +1,5 @@
-package com.redenorte.interfaces
+package com.frotagestor.interfaces
+
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
