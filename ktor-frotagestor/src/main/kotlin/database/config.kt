@@ -7,8 +7,8 @@ object DatabaseFactory {
         Database.connect(
             url = "jdbc:mysql://localhost:3306/db_frota_gestor",
             driver = "com.mysql.cj.jdbc.Driver",
-            user = "root",
-            password = "root"
+            user = "appuser",
+            password = "apppass"
         )
     }
 }

@@ -1,25 +1,54 @@
 package com.redenorte.services
 
+import at.favre.lib.crypto.bcrypt.BCrypt
+import com.redenorte.database.models.UsersTable
+import com.redenorte.interfaces.ServiceResponse
+import com.redenorte.interfaces.LoginResponse
+import com.redenorte.interfaces.User
+import io.ktor.http.HttpStatusCode
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
+
 class UserService {
-    fun login(username: String, password: String): ServiceResult {
-        // regra de negócio de login
-        return ServiceResult("SUCCESS", mapOf("token" to "fake-jwt-token"))
-    }
+    fun login(username: String, password: String): ServiceResponse<LoginResponse> {
+        // busca usuário no banco
+        val userRow = transaction {
+            UsersTable
+                .selectAll().where { UsersTable.username eq username }
+                .singleOrNull()
+        }
 
-    fun create(request: CreateUserRequest): ServiceResult {
-        // regra de cadastro
-        return ServiceResult("CREATED", mapOf("message" to "Usuário criado com sucesso"))
-    }
+        if (userRow == null) {
+            return ServiceResponse(
+                status = HttpStatusCode.NotFound,
+                data = LoginResponse.Error("Usuário não encontrado")
+            )
+        }
 
-    fun getAll(): ServiceResult {
-        return ServiceResult("SUCCESS", listOf(mapOf("id" to 1, "username" to "teste")))
-    }
+        val storedHash = userRow[UsersTable.password]
+        val role = userRow[UsersTable.role]
+        val user = User(
+            id = userRow[UsersTable.id],
+            username = userRow[UsersTable.username],
+            role = role,
+            password = storedHash
+        )
 
-    fun updateUser(id: Int, request: UpdateUserRequest): ServiceResult {
-        return ServiceResult("SUCCESS", mapOf("message" to "Usuário $id atualizado"))
-    }
+        // valida senha
+        val result = BCrypt.verifyer().verify(password.toCharArray(), storedHash)
+        if (!result.verified) {
+            return ServiceResponse(
+                status = HttpStatusCode.Unauthorized,
+                data = LoginResponse.Error("Senha inválida")
+            )
+        }
 
-    fun deleteUser(id: Int): ServiceResult {
-        return ServiceResult("SUCCESS", mapOf("message" to "Usuário $id deletado"))
+        // gera token JWT (aqui seria JwtConfig.generateToken)
+        val token = "fake-jwt-token-${user.username}"
+
+        return ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = LoginResponse.Success(token, user)
+        )
     }
 }

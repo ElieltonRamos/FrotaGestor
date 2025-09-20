@@ -1,4 +1,4 @@
-package com.redenorte.models
+package com.redenorte.interfaces
 
 import kotlinx.serialization.Serializable
 
@@ -6,7 +6,10 @@ import kotlinx.serialization.Serializable
 data class LoginRequest(val username: String, val password: String)
 
 @Serializable
-data class LoginResponse(val token: String)
+sealed class LoginResponse {
+    data class Success(val token: String, val user: User) : LoginResponse()
+    data class Error(val message: String) : LoginResponse()
+}
 
 data class User(
     val id: Int? = null,

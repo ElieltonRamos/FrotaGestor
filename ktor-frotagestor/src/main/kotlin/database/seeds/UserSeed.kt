@@ -1,2 +1,31 @@
 package com.redenorte.database.seeds
 
+import com.redenorte.database.models.UsersTable
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.transactions.transaction
+import at.favre.lib.crypto.bcrypt.BCrypt
+import org.jetbrains.exposed.sql.selectAll
+
+object UserSeed {
+    fun run(jdbcUrl: String, user: String, password: String) {
+        Database.connect(jdbcUrl, driver = "com.mysql.cj.jdbc.Driver", user = user, password = password)
+
+        transaction {
+            val exists = UsersTable.selectAll().where { UsersTable.username eq "admin" }.count() > 0
+            if (!exists) {
+                // Gera hash para a senha padrão do admin
+                val hashedPassword = BCrypt.withDefaults().hashToString(12, "admin123".toCharArray())
+
+                UsersTable.insert {
+                    it[username] = "admin"
+                    it[UsersTable.password] = hashedPassword
+                    it[role] = "ADMIN"
+                }
+                println("✅ Usuário admin criado (seed).")
+            } else {
+                println("ℹ️ Usuário admin já existe, seed ignorado.")
+            }
+        }
+    }
+}
