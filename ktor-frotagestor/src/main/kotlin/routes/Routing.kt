@@ -10,13 +10,6 @@ fun Application.configureRouting() {
         get("/") {
             call.respondText("Hello World!")
         }
-
         userRoutes()
-
-        authenticate("auth-jwt") {
-            get("/secure") {
-                call.respondText("Rota protegida ✅")
-            }
-        }
     }
 }

@@ -22,6 +22,12 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt:2.3.4")
     implementation("io.ktor:ktor-server-content-negotiation:2.3.4")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.4")
+    implementation("at.favre.lib:bcrypt:0.10.2")
+    implementation("org.jetbrains.exposed:exposed-core:0.56.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.56.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.56.0")
+    implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.56.0")
+    implementation("mysql:mysql-connector-java:8.0.33")
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
 }
