@@ -27,6 +27,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:0.56.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.56.0")
     implementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.56.0")
+    implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("mysql:mysql-connector-java:8.0.33")
     implementation("org.flywaydb:flyway-core:10.14.0")
     implementation("org.flywaydb:flyway-mysql:10.14.0")
