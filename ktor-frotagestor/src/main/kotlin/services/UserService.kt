@@ -58,7 +58,7 @@ class UserService {
             role = resDb[UsersTable.role]
         )
 
-        val token = JwtConfig.generateToken(user.id.toString(), user.role)
+        val token = JwtConfig.generateToken(user.id.toString(), user.role, user.username)
 
         return ServiceResponse(
             status = HttpStatusCode.OK,

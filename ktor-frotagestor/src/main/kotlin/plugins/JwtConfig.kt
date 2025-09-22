@@ -9,11 +9,12 @@ object JwtConfig {
 
     private val algorithm = Algorithm.HMAC256(secret)
 
-    fun generateToken(userId: String, role: String): String {
+    fun generateToken(userId: String, role: String, username: String): String {
         return JWT.create()
             .withIssuer(issuer)
             .withClaim("userId", userId)
             .withClaim("role", role)
+            .withClaim("username", username)
             .sign(algorithm)
     }
 }
