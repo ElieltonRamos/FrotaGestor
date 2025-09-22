@@ -1,24 +1,23 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
 import { API_URL } from './api-url';
+import { Token } from '../interfaces/user';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private tokenKey = 'auth_token';
+  private apiUrl = API_URL;
 
-  constructor(private http: HttpClient) {}
 
-  login(email: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${API_URL}/users/login`, { email, password })
-      .pipe(
-        tap(res => {
-          localStorage.setItem(this.tokenKey, res.token);
-        })
-      );
+  constructor(private client: HttpClient) {}
+
+  login(username: string, password: string) {
+    return this.client.post<Token>(`${this.apiUrl}/users/login`, {
+      username,
+      password,
+    });
   }
-
+  
   logout() {
     localStorage.removeItem(this.tokenKey);
   }

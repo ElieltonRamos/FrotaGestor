@@ -35,9 +35,15 @@
         <!-- Botão -->
         <button
           type="submit"
-          class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded"
+          [disabled]="isLoading"
+          class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded flex items-center justify-center"
         >
-          Entrar
+          @if (isLoading) {
+            <span class="loader border-2 border-white border-t-transparent rounded-full w-5 h-5 animate-spin mr-2"></span>
+            Entrando...
+          } @else {
+            Entrar
+          }
         </button>
 
         <!-- Link Esqueceu senha -->

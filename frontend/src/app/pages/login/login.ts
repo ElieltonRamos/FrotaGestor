@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user-service';
@@ -6,19 +6,35 @@ import { alertError } from '../../utils/custom-alerts';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [FormsModule],
   templateUrl: './login.html',
 })
 export class Login {
   username = '';
   password = '';
+  isLoading = false;
+
   private router = inject(Router);
   private userService = inject(UserService);
+  private cdr = inject(ChangeDetectorRef);
 
   login() {
-    this.userService.login(this.username, this.password).subscribe({
-      next: () => this.router.navigate(['/menu']),
-      error: (err) => alertError(`Erro ao fazer login: ${err.message}`),
-    });
+    this.isLoading = true;
+
+    this.userService.login(this.username, this.password)
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+          this.router.navigate(['/menu']);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+          const backendMessage = err.error?.message || 'Erro inesperado';
+          alertError(`Erro ao fazer login: ${backendMessage}`);
+        }
+      });
   }
 }
