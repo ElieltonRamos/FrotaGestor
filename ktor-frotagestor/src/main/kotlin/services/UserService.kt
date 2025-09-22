@@ -4,41 +4,42 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.UsersTable
 import com.frotagestor.interfaces.LoginResponse
+import com.frotagestor.interfaces.Message
 import com.frotagestor.plugins.JwtConfig
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.User
-import com.frotagestor.validations.ValidationResult
+import com.frotagestor.validations.getOrReturn
+import com.frotagestor.validations.validateLogin
 import com.frotagestor.validations.validateUser
 import io.ktor.http.HttpStatusCode
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 
 class UserService {
-    suspend fun login(username: String, password: String): ServiceResponse<LoginResponse> {
-        val result = DatabaseFactory.dbQuery {
-            UsersTable
-                .selectAll().where { UsersTable.username eq username }
-                .singleOrNull()
-                ?.let {
-                    val user = User(
-                        id = it[UsersTable.id],
-                        username = it[UsersTable.username],
-                        role = it[UsersTable.role]
-                    )
-                    val storedHash = it[UsersTable.password]
-                    user to storedHash
-                }
+    suspend fun login(req: String): ServiceResponse<LoginResponse> {
+        val loginReq = validateLogin(req).getOrReturn { msg ->
+            return ServiceResponse(
+                status = HttpStatusCode.BadRequest,
+                data = LoginResponse.Error(msg)
+            )
         }
 
-        if (result == null) {
+        val resDb = DatabaseFactory.dbQuery {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.username eq loginReq.username }
+                .singleOrNull()
+        }
+
+        if (resDb == null) {
             return ServiceResponse(
                 status = HttpStatusCode.NotFound,
                 data = LoginResponse.Error("Usuário não encontrado")
             )
         }
 
-        val (user, storedHash) = result
-        val verified = BCrypt.verifyer().verify(password.toCharArray(), storedHash)
+        val storedHash = resDb[UsersTable.password]
+        val verified = BCrypt.verifyer().verify(loginReq.password.toCharArray(), storedHash)
 
         if (!verified.verified) {
             return ServiceResponse(
@@ -46,6 +47,12 @@ class UserService {
                 data = LoginResponse.Error("Senha inválida")
             )
         }
+
+        val user = User(
+            id = resDb[UsersTable.id],
+            username = resDb[UsersTable.username],
+            role = resDb[UsersTable.role]
+        )
 
         val token = JwtConfig.generateToken(user.id.toString(), user.role)
 
@@ -55,48 +62,43 @@ class UserService {
         )
     }
 
-    suspend fun createUser(req: String): ServiceResponse<String> {
-        return when (val result = validateUser(req)) {
-            is ValidationResult.Error -> {
-                ServiceResponse(
-                    status = HttpStatusCode.BadRequest,
-                    data = result.message
-                )
-            }
 
-            is ValidationResult.Success -> {
-                val newUser = result.data
-                val existingUser = DatabaseFactory.dbQuery {
-                    UsersTable
-                        .selectAll()
-                        .where { UsersTable.username eq newUser.username }
-                        .singleOrNull()
-                }
+    suspend fun createUser(req: String): ServiceResponse<Message> {
+        val newUser = validateUser(req).getOrReturn { msg ->
+            return ServiceResponse(
+                status = HttpStatusCode.BadRequest,
+                data = Message(msg)
+            )
+        }
 
-                if (existingUser != null) {
-                    return ServiceResponse(
-                        status = HttpStatusCode.Conflict,
-                        data = "Usuário já registrado!"
-                    )
-                }
+        val existingUser = DatabaseFactory.dbQuery {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.username eq newUser.username }
+                .singleOrNull()
+        }
 
-                val hashedPassword = BCrypt.withDefaults()
-                    .hashToString(12, newUser.password!!.toCharArray())
+        if (existingUser != null) {
+            return ServiceResponse(
+                status = HttpStatusCode.Conflict,
+                data = Message("Usuário já registrado!")
+            )
+        }
 
-                DatabaseFactory.dbQuery {
-                    UsersTable.insert {
-                        it[username] = newUser.username
-                        it[password] = hashedPassword
-                        it[role] = newUser.role
-                    }
-                }
+        val hashedPassword = BCrypt.withDefaults()
+            .hashToString(12, newUser.password!!.toCharArray())
 
-                ServiceResponse(
-                    status = HttpStatusCode.Created,
-                    data = "Usuário criado com sucesso"
-                )
+        DatabaseFactory.dbQuery {
+            UsersTable.insert {
+                it[username] = newUser.username
+                it[password] = hashedPassword
+                it[role] = newUser.role
             }
         }
-    }
 
+        return ServiceResponse(
+            status = HttpStatusCode.Created,
+            data = Message("Usuário criado com sucesso")
+        )
+    }
 }

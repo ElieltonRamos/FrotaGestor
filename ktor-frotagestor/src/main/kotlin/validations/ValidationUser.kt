@@ -9,6 +9,16 @@ sealed class ValidationResult<out T> {
     data class Error(val message: String) : ValidationResult<Nothing>()
 }
 
+inline fun <T, R> ValidationResult<T>.getOrReturn(
+    onError: (String) -> R
+): T {
+    return when (this) {
+        is ValidationResult.Error -> return onError(this.message) as T
+        is ValidationResult.Success -> this.data
+    }
+}
+
+
 fun validateUser(rawBody: String): ValidationResult<User> {
     if (rawBody.isBlank()) {
         return ValidationResult.Error("Body da requisição está vazio")

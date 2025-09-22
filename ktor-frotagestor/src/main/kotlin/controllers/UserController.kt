@@ -17,12 +17,15 @@ class UserController(private val userService: UserService) {
 
     suspend fun login(call: ApplicationCall) {
         try {
-            val req = call.receive<LoginRequest>()
-            val result = userService.login(req.username, req.password)
+            val rawBody = call.attributes[RawBodyKey]
+            val result = userService.login(rawBody)
             call.respond(result.status, result.data)
         } catch (e: Exception) {
             println("Error in login controller: ${e.message}")
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Internal server error")
+            )
         }
     }
 

@@ -1,6 +1,7 @@
 package com.frotagestor.interfaces
 
 import io.ktor.http.HttpStatusCode
+import kotlinx.serialization.Serializable
 
 data class PaginatedResponse<T>(
     val data: List<T>,
@@ -13,4 +14,9 @@ data class PaginatedResponse<T>(
 data class ServiceResponse<T>(
     val status: HttpStatusCode,
     val data: T
+)
+
+@Serializable
+data class Message (
+    val message: String
 )
