@@ -1,16 +1,10 @@
 package com.frotagestor.controllers
 
-import com.frotagestor.interfaces.LoginRequest
-import com.frotagestor.interfaces.User
 import com.frotagestor.services.UserService
-import com.frotagestor.validations.validateUser
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
-import io.ktor.server.request.receive
 import com.frotagestor.plugins.RawBodyKey
 import io.ktor.server.response.respond
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
 
 class UserController(private val userService: UserService) {
     private val internalMsgError = "Internal server error"
@@ -21,7 +15,7 @@ class UserController(private val userService: UserService) {
             val result = userService.login(rawBody)
             call.respond(result.status, result.data)
         } catch (e: Exception) {
-            println("Error in login controller: ${e.message}")
+            println("Error in login user route: ${e.message}")
             call.respond(
                 HttpStatusCode.InternalServerError,
                 mapOf("message" to "Internal server error")
@@ -36,7 +30,47 @@ class UserController(private val userService: UserService) {
             call.respond(serviceResult.status, serviceResult.data)
 
         } catch (e: Exception) {
-            println("Error in create controller: ${e.message}")
+            println("Error in create user route: ${e.message}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to internalMsgError)
+            )
+        }
+    }
+
+    suspend fun update(call: ApplicationCall) {
+        try {
+            val rawBody = call.attributes[RawBodyKey]
+
+            val id = call.parameters["id"]?.toIntOrNull() ?: return call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+            )
+
+            val serviceResult = userService.updateUser(id, rawBody)
+            call.respond(serviceResult.status, serviceResult.data)
+
+        } catch (e: Exception) {
+            println("Error in update user route: ${e.message}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to internalMsgError)
+            )
+        }
+    }
+
+    suspend fun delete(call: ApplicationCall) {
+        try {
+            val id = call.parameters["id"]?.toIntOrNull() ?: return call.respond(
+                HttpStatusCode.BadRequest,
+                mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+            )
+
+            val serviceResult = userService.deleteUser(id)
+            call.respond(serviceResult.status, serviceResult.data)
+
+        } catch (e: Exception) {
+            println("Error in delete user route: ${e.message}")
             call.respond(
                 HttpStatusCode.InternalServerError,
                 mapOf("message" to internalMsgError)

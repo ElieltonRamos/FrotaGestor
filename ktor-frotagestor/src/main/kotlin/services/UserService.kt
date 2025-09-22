@@ -10,10 +10,14 @@ import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.User
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateLogin
+import com.frotagestor.validations.validatePartialUser
 import com.frotagestor.validations.validateUser
 import io.ktor.http.HttpStatusCode
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 
 class UserService {
     suspend fun login(req: String): ServiceResponse<LoginResponse> {
@@ -101,4 +105,71 @@ class UserService {
             data = Message("Usuário criado com sucesso")
         )
     }
+
+    suspend fun updateUser(id: Int, req: String): ServiceResponse<Message> {
+        val updatedUser = validatePartialUser(req).getOrReturn { msg ->
+            return ServiceResponse(
+                status = HttpStatusCode.BadRequest,
+                data = Message(msg)
+            )
+        }
+
+        val existingUser = DatabaseFactory.dbQuery {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.id eq id }
+                .singleOrNull()
+        }
+
+        if (existingUser == null) {
+            return ServiceResponse(
+                status = HttpStatusCode.NotFound,
+                data = Message("Usuário não encontrado!")
+            )
+        }
+
+        val hashedPassword = updatedUser.password?.let {
+            BCrypt.withDefaults().hashToString(12, it.toCharArray())
+        }
+
+        DatabaseFactory.dbQuery {
+            UsersTable.update({ UsersTable.id eq id }) {
+                updatedUser.username.takeIf { !it.isNullOrBlank() }?.let { u -> it[username] = u }
+                hashedPassword?.let { pwd -> it[password] = pwd }
+                updatedUser.role.takeIf { !it.isNullOrBlank() }?.let { r -> it[role] = r }
+            }
+        }
+
+        return ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = Message("Usuário atualizado com sucesso")
+        )
+    }
+
+    suspend fun deleteUser(id: Int): ServiceResponse<Message> {
+        val existingUser = DatabaseFactory.dbQuery {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.id eq id }
+                .singleOrNull()
+        }
+
+        if (existingUser == null) {
+            return ServiceResponse(
+                status = HttpStatusCode.NotFound,
+                data = Message("Usuário não encontrado!")
+            )
+        }
+
+        DatabaseFactory.dbQuery {
+            UsersTable.deleteWhere { UsersTable.id eq id }
+        }
+
+        return ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = Message("Usuário deletado com sucesso")
+        )
+    }
+
+
 }

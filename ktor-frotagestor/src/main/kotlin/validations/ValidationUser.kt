@@ -46,3 +46,22 @@ fun validateUser(rawBody: String): ValidationResult<User> {
         ValidationResult.Success(user)
     }
 }
+
+fun validatePartialUser(rawBody: String): ValidationResult<User> {
+    if (rawBody.isBlank()) {
+        return ValidationResult.Error("Body da requisição está vazio")
+    }
+
+    val user: User = try {
+        Json.decodeFromString<User>(rawBody)
+    } catch (e: SerializationException) {
+        return ValidationResult.Error("JSON inválido")
+    }
+
+    if (user.username.isBlank() && user.password.isNullOrBlank() && user.role.isBlank()) {
+        return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
+    }
+
+    return ValidationResult.Success(user)
+}
+

@@ -7,6 +7,10 @@ import io.ktor.server.routing.*
 fun Route.userRoutes() {
     val controller = UserController(UserService())
 
-    post("/login") { controller.login(call) }
-    post("/create-user") { controller.create(call) }
+    route("users") {
+        post("login") { controller.login(call) }
+        post("create") { controller.create(call) }
+        patch("update/{id}") { controller.update(call) }
+        delete("delete/{id}") { controller.delete(call) }
+    }
 }
