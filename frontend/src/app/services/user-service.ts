@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { API_URL } from './api-url';
-import { Token } from '../interfaces/user';
+import { Token, TokenPayload } from '../interfaces/user';
+import * as jwt from 'jwt-decode';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -28,5 +29,18 @@ export class UserService {
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  /** 🔑 Retorna os dados do usuário contidos no token */
+  getUserInfo(): TokenPayload | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      return jwt.jwtDecode<TokenPayload>(token);
+    } catch (e) {
+      console.error('Erro ao decodificar token', e);
+      return null;
+    }
   }
 }

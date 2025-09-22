@@ -8,3 +8,9 @@ export default interface User {
 export interface Token {
   token: string;
 }
+
+export interface TokenPayload {
+  id: number;
+  username: string;
+  role: string;
+}

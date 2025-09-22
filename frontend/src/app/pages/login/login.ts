@@ -24,9 +24,10 @@ export class Login {
 
     this.userService.login(this.username, this.password)
       .subscribe({
-        next: () => {
+        next: (res) => {
           this.isLoading = false;
           this.cdr.detectChanges();
+          localStorage.setItem('auth_token', res.token)
           this.router.navigate(['/menu']);
         },
         error: (err) => {
