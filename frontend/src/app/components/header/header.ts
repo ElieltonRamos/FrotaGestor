@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { UserService } from '../../services/user-service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -8,6 +9,7 @@ import { UserService } from '../../services/user-service';
 })
 export class Header {
   private userService = inject(UserService);
+  private router = inject(Router);
   user = '';
   role = '';
   id = 1;
@@ -19,5 +21,14 @@ export class Header {
       this.role = info.role;
       this.id = info.id;
     }
+  }
+
+  logout() {
+    this.userService.logout();
+    this.router.navigate(['']);
+  }
+
+  navChangePassword() {
+    this.router.navigate(['/alterar-senha']);
   }
 }

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { API_URL } from './api-url';
-import { Token, TokenPayload } from '../interfaces/user';
+import { Message, Token, TokenPayload } from '../interfaces/user';
 import * as jwt from 'jwt-decode';
 
 @Injectable({ providedIn: 'root' })
@@ -18,6 +18,17 @@ export class UserService {
       password,
     });
   }
+
+  changePassword(newPassword: string) {
+    const token = this.getToken() || '';
+
+    const decodedToken = jwt.jwtDecode<TokenPayload>(token);
+    const userId = decodedToken.id;
+
+    return this.client.patch<Message>(`${this.apiUrl}/users/${userId}`, {
+      newPassword,
+    })
+  }
   
   logout() {
     localStorage.removeItem(this.tokenKey);
@@ -31,7 +42,6 @@ export class UserService {
     return !!this.getToken();
   }
 
-  /** 🔑 Retorna os dados do usuário contidos no token */
   getUserInfo(): TokenPayload | null {
     const token = this.getToken();
     if (!token) return null;

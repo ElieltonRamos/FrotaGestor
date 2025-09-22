@@ -14,3 +14,7 @@ export interface TokenPayload {
   username: string;
   role: string;
 }
+
+export interface Message {
+  message: string;
+}
