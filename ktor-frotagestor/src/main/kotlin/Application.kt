@@ -13,6 +13,7 @@ fun Application.module() {
     configureSerialization()  // JSON
     configureSecurity()       // JWT
     DatabaseFactory.init()
+    install(ValidateBodyPlugin)
     configureRouting()        // rotas
 }
 

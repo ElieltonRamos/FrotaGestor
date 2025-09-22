@@ -8,5 +8,5 @@ fun Route.userRoutes() {
     val controller = UserController(UserService())
 
     post("/login") { controller.login(call) }
-//    post("/users") { controller.create(call) }
+    post("/create-user") { controller.create(call) }
 }

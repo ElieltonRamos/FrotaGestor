@@ -7,7 +7,10 @@ import com.frotagestor.interfaces.LoginResponse
 import com.frotagestor.plugins.JwtConfig
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.User
+import com.frotagestor.validations.ValidationResult
+import com.frotagestor.validations.validateUser
 import io.ktor.http.HttpStatusCode
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 
 class UserService {
@@ -51,5 +54,49 @@ class UserService {
             data = LoginResponse.Success(token)
         )
     }
-}
 
+    suspend fun createUser(req: String): ServiceResponse<String> {
+        return when (val result = validateUser(req)) {
+            is ValidationResult.Error -> {
+                ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = result.message
+                )
+            }
+
+            is ValidationResult.Success -> {
+                val newUser = result.data
+                val existingUser = DatabaseFactory.dbQuery {
+                    UsersTable
+                        .selectAll()
+                        .where { UsersTable.username eq newUser.username }
+                        .singleOrNull()
+                }
+
+                if (existingUser != null) {
+                    return ServiceResponse(
+                        status = HttpStatusCode.Conflict,
+                        data = "Usuário já registrado!"
+                    )
+                }
+
+                val hashedPassword = BCrypt.withDefaults()
+                    .hashToString(12, newUser.password!!.toCharArray())
+
+                DatabaseFactory.dbQuery {
+                    UsersTable.insert {
+                        it[username] = newUser.username
+                        it[password] = hashedPassword
+                        it[role] = newUser.role
+                    }
+                }
+
+                ServiceResponse(
+                    status = HttpStatusCode.Created,
+                    data = "Usuário criado com sucesso"
+                )
+            }
+        }
+    }
+
+}

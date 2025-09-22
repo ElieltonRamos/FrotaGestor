@@ -25,7 +25,7 @@ sealed class LoginResponse {
 @Serializable
 data class User(
     val id: Int? = null,
-    val username: String,
+    val username: String = "",
     val password: String? = null,
-    val role: String
+    val role: String = ""
 )
