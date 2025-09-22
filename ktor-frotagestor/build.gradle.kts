@@ -2,13 +2,14 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     kotlin("plugin.serialization") version "1.9.0"
+    id("com.gradleup.shadow") version "8.3.8"
 }
 
 group = "com.frotagestor"
 version = "0.0.1"
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass.set("io.ktor.server.netty.EngineMain")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=true")
 }
 
@@ -31,20 +32,8 @@ dependencies {
     implementation("mysql:mysql-connector-java:8.0.33")
     implementation("org.flywaydb:flyway-core:10.14.0")
     implementation("org.flywaydb:flyway-mysql:10.14.0")
+    implementation("io.ktor:ktor-server-cors:2.3.4")
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
-}
-
-tasks.register<Jar>("fatJar") {
-    group = "build"
-    archiveClassifier.set("all") // gera algo como myapp-all.jar
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    manifest {
-        attributes["Main-Class"] = "com.frotagestor.ApplicationKt"
-    }
-
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    with(tasks.jar.get() as CopySpec)
 }
 

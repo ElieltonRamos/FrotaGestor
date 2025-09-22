@@ -11,7 +11,7 @@ export class UserService {
   constructor(private http: HttpClient) {}
 
   login(email: string, password: string): Observable<{ token: string }> {
-    return this.http.post<{ token: string }>(`${API_URL}/login`, { email, password })
+    return this.http.post<{ token: string }>(`${API_URL}/users/login`, { email, password })
       .pipe(
         tap(res => {
           localStorage.setItem(this.tokenKey, res.token);
