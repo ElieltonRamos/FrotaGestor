@@ -1,11 +1,14 @@
 package com.frotagestor.controllers
 
+import com.frotagestor.database.models.DriversTable
+import com.frotagestor.interfaces.DriverStatus
 import com.frotagestor.services.DriverService
 import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.ktor.util.reflect.TypeInfo
+import org.jetbrains.exposed.sql.SortOrder
 
 class DriverController(private val driverService: DriverService) {
     private val internalMsgError = "Internal server error"
@@ -37,11 +40,47 @@ class DriverController(private val driverService: DriverService) {
 
     suspend fun getAll(call: ApplicationCall) {
         try {
-            val serviceResult = driverService.getAllDrivers()
+            // 🔹 Query params com valores default
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+            val sortByParam = call.request.queryParameters["sortBy"] ?: "id"
+            val orderParam = call.request.queryParameters["order"] ?: "asc"
+            val nameFilter = call.request.queryParameters["name"]
+            val statusFilter = call.request.queryParameters["status"]?.let {
+                runCatching { DriverStatus.valueOf(it.uppercase()) }.getOrNull()
+            }
+
+            // 🔹 Mapeia string -> coluna
+            val sortByColumn = when (sortByParam.lowercase()) {
+                "name" -> DriversTable.name
+                "cpf" -> DriversTable.cpf
+                "cnh" -> DriversTable.cnh
+                "status" -> DriversTable.status
+                else -> DriversTable.id
+            }
+
+            val sortOrder = if (orderParam.equals("desc", ignoreCase = true)) {
+                SortOrder.DESC
+            } else {
+                SortOrder.ASC
+            }
+
+            val serviceResult = driverService.getAllDrivers(
+                page = page,
+                limit = limit,
+                sortBy = sortByColumn,
+                sortOrder = sortOrder,
+                nameFilter = nameFilter,
+                statusFilter = statusFilter
+            )
+
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getAll driver route: ${e.message}")
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to internalMsgError)
+            )
         }
     }
 

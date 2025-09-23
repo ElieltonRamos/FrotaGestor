@@ -3,7 +3,9 @@ package com.frotagestor.services
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.DriversTable
 import com.frotagestor.interfaces.Driver
+import com.frotagestor.interfaces.DriverStatus
 import com.frotagestor.interfaces.Message
+import com.frotagestor.interfaces.PaginatedResponse
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateDriver
@@ -17,6 +19,10 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import kotlin.let
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.transaction
 
 class DriverService {
 
@@ -103,11 +109,34 @@ class DriverService {
         )
     }
 
-    suspend fun getAllDrivers(): ServiceResponse<List<Driver>> {
-        val drivers = DatabaseFactory.dbQuery {
-            DriversTable
+    suspend fun getAllDrivers(
+        page: Int = 1,
+        limit: Int = 10,
+        sortBy: Column<*> = DriversTable.id, // coluna padrão
+        sortOrder: SortOrder = SortOrder.ASC,
+        nameFilter: String? = null,
+        statusFilter: DriverStatus? = null
+    ): ServiceResponse<PaginatedResponse<Driver>> {
+        return DatabaseFactory.dbQuery {
+            val query = DriversTable
                 .selectAll()
                 .where { DriversTable.deletedAt.isNull() }
+                .apply {
+                    if (!nameFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.name like "%$nameFilter%" }
+                    }
+                    if (statusFilter != null) {
+                        andWhere { DriversTable.status eq statusFilter }
+                    }
+                }
+
+            // Conta total antes da paginação
+            val total = query.count()
+
+            // Aplica ordenação, limite e offset
+            val results = query
+                .orderBy(sortBy to sortOrder)
+                .limit(limit, offset = ((page - 1) * limit).toLong())
                 .map {
                     Driver(
                         id = it[DriversTable.id],
@@ -118,16 +147,24 @@ class DriverService {
                         cnhExpiration = it[DriversTable.cnhExpiration],
                         phone = it[DriversTable.phone],
                         email = it[DriversTable.email],
-                        status = it[DriversTable.status]
+                        status = it[DriversTable.status],
+                        deletedAt = it[DriversTable.deletedAt]
                     )
                 }
-        }
 
-        return ServiceResponse(
-            status = HttpStatusCode.OK,
-            data = drivers
-        )
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = PaginatedResponse(
+                    data = results,
+                    total = total.toInt(),
+                    page = page,
+                    limit = limit,
+                    totalPages = if (total.toInt() == 0) 0 else ((total + limit - 1) / limit).toInt()
+                )
+            )
+        }
     }
+
 
     suspend fun findDriverById(id: Int): ServiceResponse<Any> {
         val driver = DatabaseFactory.dbQuery {
