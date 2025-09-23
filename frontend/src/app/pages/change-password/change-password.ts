@@ -1,7 +1,13 @@
 import { Component, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, ValidationErrors, AbstractControl } from '@angular/forms';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  ValidationErrors,
+  AbstractControl,
+} from '@angular/forms';
 import { alertError, alertSuccess } from '../../utils/custom-alerts';
-import { UserService } from '../../services/user-service';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-change-password',
@@ -20,7 +26,9 @@ export class ChangePassword {
     { validators: this.passwordsMatchValidator }
   );
 
-  private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
+  private passwordsMatchValidator(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const newPassword = control.get('newPassword')?.value;
     const confirmPassword = control.get('confirmPassword')?.value;
 

@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { UserService } from '../../services/user-service';
+import { UserService } from '../../services/user.service';
 import { alertError } from '../../utils/custom-alerts';
 
 @Component({
@@ -22,20 +22,19 @@ export class Login {
   login() {
     this.isLoading = true;
 
-    this.userService.login(this.username, this.password)
-      .subscribe({
-        next: (res) => {
-          this.isLoading = false;
-          this.cdr.detectChanges();
-          localStorage.setItem('auth_token', res.token)
-          this.router.navigate(['/menu']);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.cdr.detectChanges();
-          const backendMessage = err.error?.message || 'Erro inesperado';
-          alertError(`Erro ao fazer login: ${backendMessage}`);
-        }
-      });
+    this.userService.login(this.username, this.password).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        localStorage.setItem('auth_token', res.token);
+        this.router.navigate(['/menu']);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        const backendMessage = err.error?.message || 'Erro inesperado';
+        alertError(`Erro ao fazer login: ${backendMessage}`);
+      },
+    });
   }
 }

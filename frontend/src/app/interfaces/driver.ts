@@ -1,15 +1,16 @@
 export interface Driver {
   id?: number;
-  nome: string;
+  name: string;
   cpf: string;
   cnh: string;
-  categoriaCnh?: string;
-  validadeCnh?: Date;
-  telefone?: string;
+  cnhCategory?: string;
+  cnhExpiration?: Date;
+  phone?: string;
   email?: string;
   status: DriverStatus;
+  deletedAt?: Date;
 }
 
-export type DriverStatus = 'Ativo' | 'Inativo';
+export type DriverStatus = 'ATIVO' | 'INATIVO';
 
 

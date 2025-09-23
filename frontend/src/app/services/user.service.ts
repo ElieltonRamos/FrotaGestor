@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { API_URL } from './api-url';
+import { API_URL } from './api.url';
 import { Message, Token, TokenPayload } from '../interfaces/user';
 import * as jwt from 'jwt-decode';
 
@@ -8,7 +8,6 @@ import * as jwt from 'jwt-decode';
 export class UserService {
   private tokenKey = 'auth_token';
   private apiUrl = API_URL;
-
 
   constructor(private client: HttpClient) {}
 
@@ -27,9 +26,9 @@ export class UserService {
 
     return this.client.patch<Message>(`${this.apiUrl}/users/update/${userId}`, {
       password: newPassword,
-    })
+    });
   }
-  
+
   logout() {
     localStorage.removeItem(this.tokenKey);
   }
