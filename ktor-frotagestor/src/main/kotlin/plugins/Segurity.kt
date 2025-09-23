@@ -12,8 +12,8 @@ fun Application.configureSecurity() {
             realm = "Access to 'api'"
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256("super-secret-key")) // chave secreta
-                    .withIssuer("com.redenorte")
+                    .require(Algorithm.HMAC256("dev-secret")) // chave secreta
+                    .withIssuer("com.frotagestor.app")
                     .build()
             )
             validate { credential ->

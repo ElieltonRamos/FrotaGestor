@@ -1,14 +1,15 @@
 package com.frotagestor.interfaces
 
 import kotlinx.datetime.LocalDateTime
-import java.math.BigDecimal
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class FuelLog(
     val id: Int? = null,
     val vehicleId: Int,
     val driverId: Int? = null,
     val date: LocalDateTime,
-    val liters: BigDecimal,
-    val cost: BigDecimal,
+    val liters: Double,
+    val cost: Double,
     val station: String? = null
 )

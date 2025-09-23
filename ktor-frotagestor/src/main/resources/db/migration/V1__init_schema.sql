@@ -16,7 +16,8 @@ CREATE TABLE drivers (
     cnh_expiration DATE,                                        -- Data de validade da CNH
     phone VARCHAR(20),                                          -- Telefone do motorista
     email VARCHAR(100),                                         -- E-mail do motorista
-    status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active' -- Situação do motorista
+    status ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO', -- Situação do motorista
+    deleted_at DATETIME NULL
 );
 
 -- Tabela de veículos da frota
@@ -26,7 +27,8 @@ CREATE TABLE vehicles (
     model VARCHAR(100) NOT NULL,                                               -- Modelo do veículo
     brand VARCHAR(100),                                                        -- Marca/fabricante do veículo
     year INT,                                                                  -- Ano de fabricação
-    status ENUM('Active', 'Inactive', 'Maintenance') DEFAULT 'Active'          -- Situação do veículo
+    status ENUM('ATIVO', 'INATIVO', 'MANUTENCAO') DEFAULT 'ATIVO',          -- Situação do veículo
+    deleted_at DATETIME NULL
 );
 
 -- Tabela de viagens/rotas realizadas

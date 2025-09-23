@@ -3,6 +3,7 @@ package com.frotagestor.database.models
 import com.frotagestor.interfaces.DriverStatus
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.kotlin.datetime.date
+import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
 object DriversTable : Table("drivers") {
     val id = integer("id").autoIncrement()
@@ -14,6 +15,7 @@ object DriversTable : Table("drivers") {
     val phone = varchar("phone", 20).nullable()
     val email = varchar("email", 100).nullable()
     val status = enumerationByName("status", 20, DriverStatus::class)
+    val deletedAt = datetime("deleted_at").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

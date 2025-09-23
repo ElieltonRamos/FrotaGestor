@@ -1,8 +1,9 @@
 package com.frotagestor.interfaces
 
-import java.math.BigDecimal
-import java.time.LocalDate
+import kotlinx.serialization.Serializable
+import kotlinx.datetime.LocalDate
 
+@Serializable
 data class Expense(
     val id: Int? = null,
     val vehicleId: Int? = null,
@@ -11,5 +12,5 @@ data class Expense(
     val date: LocalDate,
     val type: String,
     val description: String? = null,
-    val amount: BigDecimal
+    val amount: Double
 )

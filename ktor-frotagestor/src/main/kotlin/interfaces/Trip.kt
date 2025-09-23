@@ -1,8 +1,10 @@
 package com.frotagestor.interfaces
 
+import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.Serializable
 import java.math.BigDecimal
-import java.time.LocalDateTime
 
+@Serializable
 enum class TripStatus {
     Planned,
     InProgress,
@@ -10,6 +12,7 @@ enum class TripStatus {
     Cancelled
 }
 
+@Serializable
 data class Trip(
     val id: Int? = null,
     val vehicleId: Int,
@@ -18,6 +21,6 @@ data class Trip(
     val endLocation: String? = null,
     val startTime: LocalDateTime,
     val endTime: LocalDateTime? = null,
-    val distanceKm: BigDecimal? = null,
+    val distanceKm: Double? = null,
     val status: TripStatus = TripStatus.Planned
 )
