@@ -3,6 +3,7 @@ package com.frotagestor.interfaces
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.Serializable
 
+@Serializable
 data class PaginatedResponse<T>(
     val data: List<T>,
     val total: Int,

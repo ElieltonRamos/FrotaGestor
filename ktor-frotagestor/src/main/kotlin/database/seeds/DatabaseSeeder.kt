@@ -11,6 +11,7 @@ object DatabaseSeeder {
         println("🚀 Executando seeds...")
 
         UserSeed.run(jdbcUrl, user, password)
+        DriverSeed.run(jdbcUrl, user, password)
 
         println("✅ Seeds executados com sucesso.")
     }
