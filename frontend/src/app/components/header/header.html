@@ -10,8 +10,28 @@
 
   <!-- Usuário -->
   <div class="flex items-center space-x-4">
-    <span class="text-gray-700 font-medium">Usuário: {{user}}</span>
-    <button (click)="navChangePassword()" class="px-3 py-1 text-sm border rounded hover:bg-gray-100 cursor-pointer">Alterar Senha</button>
-    <button (click)="logout()" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer">Sair</button>
+    <span class="text-gray-700 font-medium">Usuário: {{ user }}</span>
+
+    <!-- Botão voltar -->
+    <button
+      (click)="navMenu()"
+      class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
+    >
+      Menu
+    </button>
+
+    <button
+      (click)="navChangePassword()"
+      class="px-3 py-1 text-sm border rounded hover:bg-gray-100 cursor-pointer"
+    >
+      Alterar Senha
+    </button>
+
+    <button
+      (click)="logout()"
+      class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"
+    >
+      Sair
+    </button>
   </div>
 </header>

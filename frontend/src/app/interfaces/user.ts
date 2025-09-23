@@ -10,7 +10,7 @@ export interface Token {
 }
 
 export interface TokenPayload {
-  id: number;
+  userId: number;
   username: string;
   role: string;
 }

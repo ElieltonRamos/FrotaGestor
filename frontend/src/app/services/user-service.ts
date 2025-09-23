@@ -23,10 +23,10 @@ export class UserService {
     const token = this.getToken() || '';
 
     const decodedToken = jwt.jwtDecode<TokenPayload>(token);
-    const userId = decodedToken.id;
+    const userId = decodedToken.userId;
 
-    return this.client.patch<Message>(`${this.apiUrl}/users/${userId}`, {
-      newPassword,
+    return this.client.patch<Message>(`${this.apiUrl}/users/update/${userId}`, {
+      password: newPassword,
     })
   }
   

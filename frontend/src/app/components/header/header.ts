@@ -19,7 +19,7 @@ export class Header {
     if (info) {
       this.user = info.username;
       this.role = info.role;
-      this.id = info.id;
+      this.id = info.userId;
     }
   }
 
@@ -30,5 +30,9 @@ export class Header {
 
   navChangePassword() {
     this.router.navigate(['/alterar-senha']);
+  }
+
+  navMenu() {
+    this.router.navigate(['/menu']);
   }
 }
