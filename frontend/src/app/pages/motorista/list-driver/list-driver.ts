@@ -43,7 +43,7 @@ export class ListDriver {
   filter = {
     name: '',
     cpf: '',
-    status: '',
+    status: 'ATIVO',
   };
 
   // ordenação
@@ -78,6 +78,7 @@ export class ListDriver {
   applyFilters() {
     this.page = 1;
     this.listDrivers(this.page, this.limit);
+    this.cdr.detectChanges();
   }
 
   sortBy(key: keyof Driver) {

@@ -3,6 +3,7 @@
   <div class="flex flex-wrap justify-between mb-4 gap-4">
     <!-- Filtros -->
     <div class="flex flex-wrap gap-4 items-end">
+      <!-- Nome -->
       <div class="flex flex-col">
         <label class="text-sm mb-1">Nome</label>
         <input
@@ -10,10 +11,10 @@
           placeholder="Nome..."
           class="px-3 py-2 rounded border bg-gray-50 text-sm"
           [(ngModel)]="filter.name"
-          (ngModelChange)="applyFilters()"
         />
       </div>
 
+      <!-- CPF -->
       <div class="flex flex-col">
         <label class="text-sm mb-1">CPF</label>
         <input
@@ -21,31 +22,38 @@
           placeholder="CPF..."
           class="px-3 py-2 rounded border bg-gray-50 text-sm"
           [(ngModel)]="filter.cpf"
-          (ngModelChange)="applyFilters()"
         />
       </div>
 
+      <!-- Status -->
       <div class="flex flex-col">
         <label class="text-sm mb-1">Status</label>
         <select
           class="px-3 py-2 rounded border bg-gray-50 text-sm"
           [(ngModel)]="filter.status"
-          (change)="applyFilters()"
         >
-          <option value="">Todos</option>
           <option value="ATIVO">Ativo</option>
           <option value="INATIVO">Inativo</option>
         </select>
       </div>
 
-      <div class="flex flex-col">
+      <!-- Botões de ação -->
+      <div class="flex flex-col gap-2">
         <label class="text-sm mb-1 invisible">.</label>
-        <button
-          class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm"
-          (click)="clearFilters()"
-        >
-          Limpar Filtros
-        </button>
+        <div class="flex gap-2">
+          <button
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 text-sm"
+            (click)="applyFilters()"
+          >
+            Filtrar
+          </button>
+          <button
+            class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm"
+            (click)="clearFilters()"
+          >
+            Limpar
+          </button>
+        </div>
       </div>
     </div>
 
@@ -59,6 +67,7 @@
     ></app-paginator>
   </div>
 
+  <!-- Dica -->
   <div class="text-gray-500 text-xs italic mb-2 select-none">
     Clique no cabeçalho das colunas para ordenar (▲ ascendente, ▼ descendente).
   </div>
@@ -130,6 +139,7 @@
         }
       </tbody>
     </table>
+
     <app-modal-edit-component
       [title]="'Editar Motorista'"
       [show]="showModal"

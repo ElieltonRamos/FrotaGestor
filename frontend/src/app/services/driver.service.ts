@@ -28,8 +28,8 @@ export class DriverService {
       .set('sort', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    if (filters.nome) {
-      params = params.set('nome', filters.nome);
+    if (filters.name) {
+      params = params.set('name', filters.name);
     }
     if (filters.cpf) {
       params = params.set('cpf', filters.cpf);
@@ -39,6 +39,7 @@ export class DriverService {
     }
     
     const url = `${API_URL}/drivers?${params.toString()}`;
+    console.log(url)
     return this.http.get<PaginatedResponse<Driver>>(url);
   }
 
@@ -49,7 +50,7 @@ export class DriverService {
 
   // Atualizar motorista
   update(id: number | string, driver: Partial<Driver>): Observable<Driver> {
-    return this.http.put<Driver>(`${API_URL}/drivers/${id}`, driver);
+    return this.http.patch<Driver>(`${API_URL}/drivers/${id}`, driver);
   }
 
   // Deletar motorista
