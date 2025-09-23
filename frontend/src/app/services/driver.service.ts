@@ -44,16 +44,16 @@ export class DriverService {
 
   // Buscar motorista por ID
   getById(id: number | string): Observable<Driver> {
-    return this.http.get<Driver>(`${API_URL}/${id}`);
+    return this.http.get<Driver>(`${API_URL}/drivers/${id}`);
   }
 
   // Atualizar motorista
   update(id: number | string, driver: Partial<Driver>): Observable<Driver> {
-    return this.http.put<Driver>(`${API_URL}/${id}`, driver);
+    return this.http.put<Driver>(`${API_URL}/drivers/${id}`, driver);
   }
 
   // Deletar motorista
   delete(id: number | string): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/${id}`);
+    return this.http.delete<void>(`${API_URL}/drivers/${id}`);
   }
 }

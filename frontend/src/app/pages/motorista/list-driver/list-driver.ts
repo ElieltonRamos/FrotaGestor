@@ -5,6 +5,7 @@ import { DriverService } from '../../../services/driver.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { PaginatorComponent } from '../../../components/paginator/paginator.component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-list-driver',
@@ -13,7 +14,9 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
 })
 export class ListDriver {
   private serviceDriver = inject(DriverService);
-    private cdr = inject(ChangeDetectorRef);
+  private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
+
   driverFields = [
     { name: 'name', label: 'Nome', type: 'text', required: true },
     { name: 'cpf', label: 'CPF', type: 'text', required: true },
@@ -51,28 +54,26 @@ export class ListDriver {
     this.listDrivers(1, 10);
   }
 
-
-listDrivers(page: number, limit: number) {
-  this.serviceDriver
-    .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
-    .subscribe({
-      next: (res: PaginatedResponse<Driver>) => {
-        this.drivers = res.data;
-        this.total = res.total;
-        this.page = res.page;
-        this.limit = res.limit;
-        this.totalPages = res.totalPages;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.log('Erro ao carregar motoristas:', err);
-        this.drivers = [];
-        this.total = 0;
-        this.totalPages = 0;
-      },
-    });
-}
-
+  listDrivers(page: number, limit: number) {
+    this.serviceDriver
+      .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
+      .subscribe({
+        next: (res: PaginatedResponse<Driver>) => {
+          this.drivers = res.data;
+          this.total = res.total;
+          this.page = res.page;
+          this.limit = res.limit;
+          this.totalPages = res.totalPages;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.log('Erro ao carregar motoristas:', err);
+          this.drivers = [];
+          this.total = 0;
+          this.totalPages = 0;
+        },
+      });
+  }
 
   applyFilters() {
     this.page = 1;
@@ -114,5 +115,10 @@ listDrivers(page: number, limit: number) {
       this.showModal = false;
       this.selectedDriver = undefined;
     });
+  }
+
+  onNavDetails(id?: number) {
+    if (!id) return;
+    this.router.navigate(['/motoristas', id]);
   }
 }
