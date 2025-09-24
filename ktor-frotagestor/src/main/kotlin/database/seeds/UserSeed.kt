@@ -15,16 +15,16 @@ object UserSeed {
             val exists = UsersTable.selectAll().where { UsersTable.username eq "admin" }.count() > 0
             if (!exists) {
                 // Gera hash para a senha padrão do admin
-                val hashedPassword = BCrypt.withDefaults().hashToString(12, "admin123".toCharArray())
+                val hashedPassword = BCrypt.withDefaults().hashToString(12, "Ancap2001.".toCharArray())
 
                 UsersTable.insert {
-                    it[username] = "admin"
+                    it[username] = "Elielton"
                     it[UsersTable.password] = hashedPassword
                     it[role] = "ADMIN"
                 }
-                println("✅ Usuário admin criado (seed).")
+                println("✅ Usuário Elielton criado (seed).")
             } else {
-                println("ℹ️ Usuário admin já existe, seed ignorado.")
+                println("ℹ️ Usuário Elielton já existe, seed ignorado.")
             }
         }
     }

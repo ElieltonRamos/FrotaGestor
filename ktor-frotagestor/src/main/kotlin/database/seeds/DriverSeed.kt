@@ -17,12 +17,6 @@ object DriverSeed {
             Triple("Maria Oliveira", "987.654.321-00", DriverStatus.ATIVO),
             Triple("Carlos Pereira", "111.222.333-44", DriverStatus.INATIVO),
             Triple("Ana Souza", "555.666.777-88", DriverStatus.ATIVO),
-            Triple("Pedro Santos", "999.888.777-66", DriverStatus.ATIVO),
-            Triple("Fernanda Costa", "444.333.222-11", DriverStatus.INATIVO),
-            Triple("Rafael Gomes", "222.333.444-55", DriverStatus.ATIVO),
-            Triple("Juliana Rocha", "666.777.888-99", DriverStatus.ATIVO),
-            Triple("Lucas Almeida", "777.888.999-00", DriverStatus.ATIVO),
-            Triple("Paula Lima", "888.999.000-11", DriverStatus.INATIVO)
         )
 
         transaction {
@@ -39,11 +33,11 @@ object DriverSeed {
                         it[DriversTable.email] = "${name.lowercase().replace(" ", ".")}@teste.com"
                         it[DriversTable.status] = status
                     }
-                    println("✅ Motorista $name criado.")
                 } else {
                     println("ℹ️ Motorista $name já existe, seed ignorado.")
                 }
             }
+            println("✅ Seed de motoristas concluída.")
         }
     }
 }

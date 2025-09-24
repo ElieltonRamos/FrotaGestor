@@ -41,7 +41,7 @@ CREATE TABLE trips (
     start_time DATETIME NOT NULL,                                              -- Data e hora de início
     end_time DATETIME,                                                         -- Data e hora de término
     distance_km DECIMAL(10,2),                                                 -- Distância percorrida em km
-    status ENUM('Planned', 'InProgress', 'Completed', 'Cancelled') DEFAULT 'Planned', -- Status da viagem
+    status ENUM('PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA') DEFAULT 'PLANEJADA', -- Status da viagem
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),                          -- Relacionamento com veículos
     FOREIGN KEY (driver_id) REFERENCES drivers(id)                             -- Relacionamento com motoristas
 );

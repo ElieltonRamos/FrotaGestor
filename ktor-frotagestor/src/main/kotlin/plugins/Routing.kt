@@ -1,6 +1,7 @@
 package com.frotagestor.plugins
 
 import com.frotagestor.routes.driverRoutes
+import com.frotagestor.routes.tripRoutes
 import com.frotagestor.routes.userRoutes
 import com.frotagestor.routes.vehicleRoutes
 import io.ktor.server.application.*
@@ -15,5 +16,6 @@ fun Application.configureRouting() {
         userRoutes()
         driverRoutes()
         vehicleRoutes()
+        tripRoutes()
     }
 }
