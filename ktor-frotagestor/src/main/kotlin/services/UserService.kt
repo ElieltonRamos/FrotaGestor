@@ -5,6 +5,7 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.UsersTable
 import com.frotagestor.interfaces.LoginResponse
 import com.frotagestor.interfaces.Message
+import com.frotagestor.interfaces.PaginatedResponse
 import com.frotagestor.plugins.JwtConfig
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.User
@@ -13,7 +14,10 @@ import com.frotagestor.validations.validateLogin
 import com.frotagestor.validations.validatePartialUser
 import com.frotagestor.validations.validateUser
 import io.ktor.http.HttpStatusCode
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -171,5 +175,81 @@ class UserService {
         )
     }
 
+    suspend fun getAllUsers(
+        page: Int = 1,
+        limit: Int = 10,
+        sortBy: Column<*> = UsersTable.id,
+        sortOrder: SortOrder = SortOrder.ASC,
+        idFilter: Int? = null,
+        usernameFilter: String? = null,
+        roleFilter: String? = null
+    ): ServiceResponse<PaginatedResponse<User>> {
+        return DatabaseFactory.dbQuery {
+            val query = UsersTable
+                .selectAll()
+                .apply {
+                    if (idFilter != null) {
+                        andWhere { UsersTable.id eq idFilter }
+                    }
+                    if (!usernameFilter.isNullOrBlank()) {
+                        andWhere { UsersTable.username like "%$usernameFilter%" }
+                    }
+                    if (!roleFilter.isNullOrBlank()) {
+                        andWhere { UsersTable.role eq roleFilter }
+                    }
+                }
 
+            val total = query.count()
+
+            val results = query
+                .orderBy(sortBy to sortOrder)
+                .limit(limit, offset = ((page - 1) * limit).toLong())
+                .map {
+                    User(
+                        id = it[UsersTable.id],
+                        username = it[UsersTable.username],
+                        role = it[UsersTable.role]
+                    )
+                }
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = PaginatedResponse(
+                    data = results,
+                    total = total.toInt(),
+                    page = page,
+                    limit = limit,
+                    totalPages = if (total == 0L) 0 else ((total + limit - 1) / limit).toInt()
+                )
+            )
+        }
+    }
+
+    suspend fun findUserById(id: Int): ServiceResponse<Any> {
+        val user = DatabaseFactory.dbQuery {
+            UsersTable
+                .selectAll()
+                .where { UsersTable.id eq id }
+                .singleOrNull()
+                ?.let {
+                    User(
+                        id = it[UsersTable.id],
+                        username = it[UsersTable.username],
+                        role = it[UsersTable.role]
+                    )
+                }
+        }
+
+        return if (user == null) {
+            ServiceResponse(
+                status = HttpStatusCode.NotFound,
+                data = mapOf("message" to "Usuário não encontrado")
+            )
+        } else {
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = user
+            )
+        }
+    }
 }

@@ -9,10 +9,12 @@ fun Route.userRoutes() {
     val controller = UserController(UserService())
 
     route("users") {
-        post("login") { controller.login(call) } // ❌ sem JWT (qualquer um pode logar)
+        post("login") { controller.login(call) }
 
         authenticate("auth-jwt") {
+            get { controller.getAll(call) }
             post { controller.create(call) }
+            get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.delete(call) }
         }
