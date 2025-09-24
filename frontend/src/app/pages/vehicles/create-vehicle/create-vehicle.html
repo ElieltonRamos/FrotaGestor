@@ -1,0 +1,8 @@
+<div class="p-6">
+  <h2 class="text-2xl font-semibold mb-4">Cadastro de Veículo</h2>
+
+  <app-dynamic-form
+    [fields]="vehicleFields"
+    (formSubmit)="saveVehicle($event)">
+  </app-dynamic-form>
+</div>

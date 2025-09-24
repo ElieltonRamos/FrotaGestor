@@ -1,0 +1,89 @@
+<div
+  class="max-w-3xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 flex flex-col justify-between min-h-[500px]"
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6 gap-4">
+    <h2 class="text-xl font-semibold text-gray-800">Detalhes do Veículo</h2>
+    <button
+      class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+      (click)="goBack()"
+    >
+      Voltar
+    </button>
+  </div>
+
+  <!-- Conteúdo -->
+  <div class="flex-1">
+    @if (vehicle) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Placa
+          </label>
+          <p class="text-gray-800 text-sm">{{ vehicle.plate }}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Modelo
+          </label>
+          <p class="text-gray-800 text-sm">{{ vehicle.model }}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Marca
+          </label>
+          <p class="text-gray-800 text-sm">{{ vehicle.brand || '-' }}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Ano
+          </label>
+          <p class="text-gray-800 text-sm">{{ vehicle.year || '-' }}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Status
+          </label>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-medium"
+            [class.bg-green-100]="vehicle.status === 'ATIVO'"
+            [class.text-green-700]="vehicle.status === 'ATIVO'"
+            [class.bg-red-100]="vehicle.status === 'INATIVO'"
+            [class.text-red-700]="vehicle.status === 'INATIVO'"
+            [class.bg-yellow-100]="vehicle.status === 'MANUTENCAO'"
+            [class.text-yellow-700]="vehicle.status === 'MANUTENCAO'"
+          >
+            {{ vehicle.status }}
+          </span>
+        </div>
+      </div>
+    } @else {
+      <p class="text-gray-500 text-sm italic">Carregando veículo...</p>
+    }
+  </div>
+
+  <!-- Rodapé com botões -->
+  @if(vehicle && vehicle.status === 'ATIVO') {
+    <div class="mt-8 pt-4 border-t border-gray-200 flex justify-end">
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
+        (click)="disableVehicle()"
+        [disabled]="loading"
+      >
+        @if(loading) { Aguardando... } @else { Desabilitar Veículo }
+      </button>
+    </div>
+  }
+
+  @if(vehicle && vehicle.status === 'INATIVO') {
+    <div class="mt-8 pt-4 border-t border-gray-200 flex justify-end">
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
+        (click)="activateVehicle()"
+        [disabled]="loading"
+      >
+        @if(loading) { Aguardando... } @else { Ativar Veículo }
+      </button>
+    </div>
+  }
+</div>

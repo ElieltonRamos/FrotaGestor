@@ -1,0 +1,170 @@
+<div class="overflow-x-auto overflow-y-auto">
+  <!-- Filtros e Paginador -->
+  <div class="flex flex-wrap justify-between mb-4 gap-4">
+    <!-- Filtros -->
+    <div class="flex flex-wrap gap-4 items-end">
+      <!-- Placa -->
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Placa</label>
+        <input
+          type="text"
+          placeholder="Placa..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.plate"
+        />
+      </div>
+
+      <!-- Modelo -->
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Modelo</label>
+        <input
+          type="text"
+          placeholder="Modelo..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.model"
+        />
+      </div>
+
+      <!-- Marca -->
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Marca</label>
+        <input
+          type="text"
+          placeholder="Marca..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.brand"
+        />
+      </div>
+
+      <!-- Ano -->
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Ano</label>
+        <input
+          type="number"
+          placeholder="Ano..."
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.year"
+        />
+      </div>
+
+      <!-- Status -->
+      <div class="flex flex-col">
+        <label class="text-sm mb-1">Status</label>
+        <select
+          class="px-3 py-2 rounded border bg-gray-50 text-sm"
+          [(ngModel)]="filter.status"
+        >
+          <option value="">Todos</option>
+          <option value="ATIVO">Ativo</option>
+          <option value="INATIVO">Inativo</option>
+          <option value="MANUTENCAO">Manutenção</option>
+        </select>
+      </div>
+
+      <!-- Botões de ação -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm mb-1 invisible">.</label>
+        <div class="flex gap-2">
+          <button
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 text-sm"
+            (click)="applyFilters()"
+          >
+            Filtrar
+          </button>
+          <button
+            class="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm"
+            (click)="clearFilters()"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paginador -->
+    <app-paginator
+      [totalItems]="total"
+      [itemsPerPage]="limit"
+      [totalPages]="totalPages"
+      [page]="page"
+      (pageChanged)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+
+  <!-- Dica -->
+  <div class="text-gray-500 text-xs italic mb-2 select-none">
+    Clique no cabeçalho das colunas para ordenar (▲ ascendente, ▼ descendente).
+  </div>
+
+  <!-- Tabela -->
+  <div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-200 text-gray-700 uppercase text-xs font-semibold">
+        <tr>
+          <th class="px-4 py-3 cursor-pointer" (click)="sortBy('plate')">
+            Placa @if(sortKey === 'plate') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer" (click)="sortBy('model')">
+            Modelo @if(sortKey === 'model') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer" (click)="sortBy('brand')">
+            Marca @if(sortKey === 'brand') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer" (click)="sortBy('year')">
+            Ano @if(sortKey === 'year') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th class="px-4 py-3 cursor-pointer" (click)="sortBy('status')">
+            Status @if(sortKey === 'status') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th class="px-4 py-3 text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        @for (v of vehicles; track v.id) {
+        <tr class="hover:bg-gray-50 odd:bg-white even:bg-gray-50">
+          <td class="px-4 py-3">{{ v.plate }}</td>
+          <td class="px-4 py-3">{{ v.model }}</td>
+          <td class="px-4 py-3">{{ v.brand }}</td>
+          <td class="px-4 py-3">{{ v.year }}</td>
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 text-xs rounded-full"
+              [class.bg-green-100]="v.status === 'ATIVO'"
+              [class.text-green-700]="v.status === 'ATIVO'"
+              [class.bg-red-100]="v.status === 'INATIVO'"
+              [class.text-red-700]="v.status === 'INATIVO'"
+              [class.bg-yellow-100]="v.status === 'MANUTENCAO'"
+              [class.text-yellow-700]="v.status === 'MANUTENCAO'"
+            >
+              {{ v.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center space-x-2">
+            <button
+              class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+              (click)="onEdit(v)"
+            >
+              Editar
+            </button>
+            <button
+              class="px-3 py-1 text-xs font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
+              (click)="onNavDetails(v.id)"
+            >
+              Detalhes
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+
+    <app-modal-edit-component
+      [title]="'Editar Veículo'"
+      [show]="showModal"
+      [entity]="selectedVehicle"
+      [fields]="vehicleFields"
+      (close)="onCloseModal()"
+      (save)="onSaveModal($event)"
+    ></app-modal-edit-component>
+  </div>
+</div>
