@@ -1,6 +1,7 @@
 package com.frotagestor.plugins
 
 import com.frotagestor.routes.driverRoutes
+import com.frotagestor.routes.expenseRoutes
 import com.frotagestor.routes.tripRoutes
 import com.frotagestor.routes.userRoutes
 import com.frotagestor.routes.vehicleRoutes
@@ -17,5 +18,6 @@ fun Application.configureRouting() {
         driverRoutes()
         vehicleRoutes()
         tripRoutes()
+        expenseRoutes()
     }
 }

@@ -14,3 +14,15 @@ data class Expense(
     val description: String? = null,
     val amount: Double
 )
+
+@Serializable
+data class PartialExpense(
+    val id: Int? = null,
+    val vehicleId: Int? = null,
+    val driverId: Int? = null,
+    val tripId: Int? = null,
+    val date: LocalDate? = null,
+    val type: String? = null,
+    val description: String? = null,
+    val amount: Double? = null
+)

@@ -129,12 +129,9 @@ class DriverService {
             val query = DriversTable
                 .selectAll()
                 .apply {
-                    if (statusFilter == DriverStatus.INATIVO) {
-                        // 👉 não aplica filtro deletedAt, traz todos
-                    } else {
+                    if (statusFilter != DriverStatus.INATIVO) {
                         andWhere { DriversTable.deletedAt.isNull() }
                     }
-
                     if (idFilter != null) {
                         andWhere { DriversTable.id eq idFilter }
                     }
