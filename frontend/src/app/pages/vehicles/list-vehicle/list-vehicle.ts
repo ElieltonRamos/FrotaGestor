@@ -3,15 +3,28 @@ import { FormsModule } from '@angular/forms';
 import { Vehicle } from '../../../interfaces/vehicle';
 import { VehicleService } from '../../../services/vehicle.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
-import { PaginatorComponent } from '../../../components/paginator/paginator.component';
-import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 import { Router } from '@angular/router';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 import { CommonModule } from '@angular/common';
+import {
+  BaseListComponent,
+  ColumnConfig,
+} from '../../../components/base-list-component/base-list-component';
+import { PaginatorComponent } from '../../../components/paginator/paginator.component';
+import {
+  BaseFilterComponent,
+  FilterConfig,
+} from '../../../components/base-filter-component/base-filter-component';
 
 @Component({
   selector: 'app-list-vehicle',
-  imports: [FormsModule, PaginatorComponent, ModalEditComponent, CommonModule],
+  imports: [
+    FormsModule,
+    CommonModule,
+    BaseListComponent,
+    PaginatorComponent,
+    BaseFilterComponent,
+  ],
   templateUrl: './list-vehicle.html',
 })
 export class ListVehicle {
@@ -31,6 +44,32 @@ export class ListVehicle {
       options: ['ATIVO', 'INATIVO', 'MANUTENCAO'],
     },
   ];
+
+  vehicleColumns: ColumnConfig<Vehicle>[] = [
+    { key: 'plate' as keyof Vehicle, label: 'Placa', sortable: true },
+    { key: 'model' as keyof Vehicle, label: 'Modelo', sortable: true },
+    { key: 'brand' as keyof Vehicle, label: 'Marca', sortable: true },
+    { key: 'year' as keyof Vehicle, label: 'Ano', sortable: true },
+    {
+      key: 'status' as keyof Vehicle,
+      label: 'Status',
+      type: 'status',
+      sortable: true,
+    },
+  ];
+
+  vehicleFilters = [
+    { key: 'plate', label: 'Placa', type: 'text', placeholder: 'Placa...' },
+    { key: 'model', label: 'Modelo', type: 'text', placeholder: 'Modelo...' },
+    { key: 'brand', label: 'Marca', type: 'text', placeholder: 'Marca...' },
+    { key: 'year', label: 'Ano', type: 'number', placeholder: 'Ano...' },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: ['ATIVO', 'INATIVO', 'MANUTENCAO'],
+    },
+  ] satisfies FilterConfig[];
 
   vehicles: Vehicle[] = [];
   total = 0;
