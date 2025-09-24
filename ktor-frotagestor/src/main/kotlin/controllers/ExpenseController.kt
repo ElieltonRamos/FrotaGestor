@@ -56,6 +56,14 @@ class ExpenseController(private val expenseService: ExpenseService) {
             }
             val typeFilter = call.request.queryParameters["type"]
 
+            // 🔹 Filtros avançados
+            val minAmountFilter = call.request.queryParameters["minAmount"]?.toDoubleOrNull()
+            val maxAmountFilter = call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
+            val minLitersFilter = call.request.queryParameters["minLiters"]?.toDoubleOrNull()
+            val maxLitersFilter = call.request.queryParameters["maxLiters"]?.toDoubleOrNull()
+            val minOdometerFilter = call.request.queryParameters["minOdometer"]?.toIntOrNull()
+            val maxOdometerFilter = call.request.queryParameters["maxOdometer"]?.toIntOrNull()
+
             val sortByColumn = when (sortByParam.lowercase()) {
                 "vehicleid" -> ExpensesTable.vehicleId
                 "driverid" -> ExpensesTable.driverId
@@ -63,6 +71,9 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 "date" -> ExpensesTable.date
                 "type" -> ExpensesTable.type
                 "amount" -> ExpensesTable.amount
+                "liters" -> ExpensesTable.liters
+                "priceperliter" -> ExpensesTable.pricePerLiter
+                "odometer" -> ExpensesTable.odometer
                 else -> ExpensesTable.id
             }
 
@@ -82,7 +93,13 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 driverIdFilter = driverIdFilter,
                 tripIdFilter = tripIdFilter,
                 dateFilter = dateFilter,
-                typeFilter = typeFilter
+                typeFilter = typeFilter,
+                minAmountFilter = minAmountFilter,
+                maxAmountFilter = maxAmountFilter,
+                minLitersFilter = minLitersFilter,
+                maxLitersFilter = maxLitersFilter,
+                minOdometerFilter = minOdometerFilter,
+                maxOdometerFilter = maxOdometerFilter
             )
 
             call.respond(serviceResult.status, serviceResult.data)

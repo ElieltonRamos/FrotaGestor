@@ -30,6 +30,10 @@ class ExpenseService {
                 it[type] = newExpense.type
                 it[description] = newExpense.description
                 it[amount] = newExpense.amount.toBigDecimal()
+                // 🔹 novos campos de abastecimento
+                it[liters] = newExpense.liters?.toBigDecimal()
+                it[pricePerLiter] = newExpense.pricePerLiter?.toBigDecimal()
+                it[odometer] = newExpense.odometer
             }
         }
 
@@ -70,6 +74,10 @@ class ExpenseService {
                 updatedExpense.type?.let { tp -> it[type] = tp }
                 updatedExpense.description?.let { desc -> it[description] = desc }
                 updatedExpense.amount?.let { am -> it[amount] = am.toBigDecimal() }
+                // 🔹 novos campos de abastecimento
+                updatedExpense.liters?.let { l -> it[liters] = l.toBigDecimal() }
+                updatedExpense.pricePerLiter?.let { ppl -> it[pricePerLiter] = ppl.toBigDecimal() }
+                updatedExpense.odometer?.let { odo -> it[odometer] = odo }
             }
         }
 
@@ -89,30 +97,32 @@ class ExpenseService {
         driverIdFilter: Int? = null,
         tripIdFilter: Int? = null,
         typeFilter: String? = null,
-        dateFilter: LocalDate? = null
+        dateFilter: LocalDate? = null,
+        minAmountFilter: Double? = null,
+        maxAmountFilter: Double? = null,
+        minLitersFilter: Double? = null,
+        maxLitersFilter: Double? = null,
+        minOdometerFilter: Int? = null,
+        maxOdometerFilter: Int? = null
     ): ServiceResponse<PaginatedResponse<Expense>> {
         return DatabaseFactory.dbQuery {
             val query = ExpensesTable
                 .selectAll()
                 .apply {
-                    if (idFilter != null) {
-                        andWhere { ExpensesTable.id eq idFilter }
-                    }
-                    if (vehicleIdFilter != null) {
-                        andWhere { ExpensesTable.vehicleId eq vehicleIdFilter }
-                    }
-                    if (driverIdFilter != null) {
-                        andWhere { ExpensesTable.driverId eq driverIdFilter }
-                    }
-                    if (tripIdFilter != null) {
-                        andWhere { ExpensesTable.tripId eq tripIdFilter }
-                    }
-                    if (!typeFilter.isNullOrBlank()) {
-                        andWhere { ExpensesTable.type like "%$typeFilter%" }
-                    }
-                    if (dateFilter != null) {
-                        andWhere { ExpensesTable.date eq dateFilter }
-                    }
+                    if (idFilter != null) andWhere { ExpensesTable.id eq idFilter }
+                    if (vehicleIdFilter != null) andWhere { ExpensesTable.vehicleId eq vehicleIdFilter }
+                    if (driverIdFilter != null) andWhere { ExpensesTable.driverId eq driverIdFilter }
+                    if (tripIdFilter != null) andWhere { ExpensesTable.tripId eq tripIdFilter }
+                    if (!typeFilter.isNullOrBlank()) andWhere { ExpensesTable.type like "%$typeFilter%" }
+                    if (dateFilter != null) andWhere { ExpensesTable.date eq dateFilter }
+
+                    // 🔹 filtros numéricos adicionais
+                    if (minAmountFilter != null) andWhere { ExpensesTable.amount greaterEq minAmountFilter.toBigDecimal() }
+                    if (maxAmountFilter != null) andWhere { ExpensesTable.amount lessEq maxAmountFilter.toBigDecimal() }
+                    if (minLitersFilter != null) andWhere { ExpensesTable.liters greaterEq minLitersFilter.toBigDecimal() }
+                    if (maxLitersFilter != null) andWhere { ExpensesTable.liters lessEq maxLitersFilter.toBigDecimal() }
+                    if (minOdometerFilter != null) andWhere { ExpensesTable.odometer greaterEq minOdometerFilter }
+                    if (maxOdometerFilter != null) andWhere { ExpensesTable.odometer lessEq maxOdometerFilter }
                 }
 
             val total = query.count()
@@ -129,7 +139,10 @@ class ExpenseService {
                         date = it[ExpensesTable.date],
                         type = it[ExpensesTable.type],
                         description = it[ExpensesTable.description],
-                        amount = it[ExpensesTable.amount].toDouble()
+                        amount = it[ExpensesTable.amount].toDouble(),
+                        liters = it[ExpensesTable.liters]?.toDouble(),
+                        pricePerLiter = it[ExpensesTable.pricePerLiter]?.toDouble(),
+                        odometer = it[ExpensesTable.odometer]
                     )
                 }
 
@@ -146,6 +159,7 @@ class ExpenseService {
         }
     }
 
+
     suspend fun findExpenseById(id: Int): ServiceResponse<Any> {
         val expense = DatabaseFactory.dbQuery {
             ExpensesTable
@@ -161,7 +175,10 @@ class ExpenseService {
                         date = it[ExpensesTable.date],
                         type = it[ExpensesTable.type],
                         description = it[ExpensesTable.description],
-                        amount = it[ExpensesTable.amount].toDouble()
+                        amount = it[ExpensesTable.amount].toDouble(),
+                        liters = it[ExpensesTable.liters]?.toDouble(),
+                        pricePerLiter = it[ExpensesTable.pricePerLiter]?.toDouble(),
+                        odometer = it[ExpensesTable.odometer]
                     )
                 }
         }

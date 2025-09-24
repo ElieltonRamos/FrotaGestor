@@ -12,7 +12,10 @@ data class Expense(
     val date: LocalDate,
     val type: String,
     val description: String? = null,
-    val amount: Double
+    val amount: Double,
+    val liters: Double? = null,
+    val pricePerLiter: Double? = null,
+    val odometer: Int? = null
 )
 
 @Serializable
@@ -24,5 +27,8 @@ data class PartialExpense(
     val date: LocalDate? = null,
     val type: String? = null,
     val description: String? = null,
-    val amount: Double? = null
+    val amount: Double? = null,
+    val liters: Double? = null,
+    val pricePerLiter: Double? = null,
+    val odometer: Int? = null
 )

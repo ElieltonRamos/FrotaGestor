@@ -46,19 +46,6 @@ CREATE TABLE trips (
     FOREIGN KEY (driver_id) REFERENCES drivers(id)                             -- Relacionamento com motoristas
 );
 
--- Tabela de abastecimentos
-CREATE TABLE fuel_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,         -- Identificador único do registro de abastecimento
-    vehicle_id INT NOT NULL,                   -- Veículo abastecido
-    driver_id INT,                             -- Motorista que realizou o abastecimento (opcional)
-    date DATETIME NOT NULL,                    -- Data e hora do abastecimento
-    liters DECIMAL(10,2) NOT NULL,             -- Quantidade de litros abastecidos
-    cost DECIMAL(10,2) NOT NULL,               -- Custo total do abastecimento
-    station VARCHAR(255),                      -- Nome do posto de combustível
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id), -- Relacionamento com veículos
-    FOREIGN KEY (driver_id) REFERENCES drivers(id)    -- Relacionamento com motoristas
-);
-
 -- Tabela de despesas gerais relacionadas à frota
 CREATE TABLE expenses (
     id INT AUTO_INCREMENT PRIMARY KEY,       -- Identificador único da despesa
@@ -67,8 +54,12 @@ CREATE TABLE expenses (
     trip_id INT,                             -- Viagem relacionada à despesa (opcional)
     date DATE NOT NULL,                      -- Data da despesa
     type VARCHAR(50) NOT NULL,               -- Tipo da despesa (ex.: Pedágio, Estacionamento, Lavagem, Outro)
-    description TEXT,                        -- Descrição detalhada da despesa
     amount DECIMAL(10,2) NOT NULL,           -- Valor da despesa
+    description TEXT,                        -- Descrição detalhada da despesa
+    liters DECIMAL(10,2),                        -- Quantidade de litros abastecidos
+    price_per_liter DECIMAL(10,2),               -- Preço por litro de combustível
+    odometer INT,                                -- Quilometragem do veículo no momento do abastecimento
+
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id), -- Relacionamento com veículos
     FOREIGN KEY (driver_id) REFERENCES drivers(id),   -- Relacionamento com motoristas
     FOREIGN KEY (trip_id) REFERENCES trips(id)        -- Relacionamento com viagens
