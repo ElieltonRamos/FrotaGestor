@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Driver } from '../interfaces/driver';
 import { API_URL } from './api.url';
 import { PaginatedResponse } from '../interfaces/paginator';
+import { Message } from '../interfaces/user';
 
 @Injectable({
   providedIn: 'root',
@@ -11,8 +12,8 @@ import { PaginatedResponse } from '../interfaces/paginator';
 export class DriverService {
   constructor(private http: HttpClient) {}
 
-  create(driver: Omit<Driver, 'id'>): Observable<Driver> {
-    return this.http.post<Driver>(API_URL, driver);
+  create(driver: Omit<Driver, 'id'>): Observable<Message> {
+    return this.http.post<Message>(`${API_URL}/drivers`, driver);
   }
 
   getAll(
