@@ -1,7 +1,7 @@
 @if (show) {
   <div class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transition-all">
-
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transition-all max-h-[90vh] flex flex-col">
+      
       <!-- Cabeçalho -->
       <div class="flex justify-between items-center border-b border-gray-200 px-6 py-4 bg-gray-50">
         <h2 class="text-lg font-semibold text-gray-800">{{ title }}</h2>
@@ -14,7 +14,7 @@
       </div>
 
       <!-- Formulário dinâmico -->
-      <div class="p-6 flex flex-col gap-4">
+      <div class="p-6 flex flex-col gap-4 overflow-y-auto">
         @for (field of fields; track field.name) {
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">

@@ -12,6 +12,7 @@ import com.frotagestor.validations.validateDriver
 import com.frotagestor.validations.validatePartialDriver
 import io.ktor.http.HttpStatusCode
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.and
@@ -112,28 +113,59 @@ class DriverService {
     suspend fun getAllDrivers(
         page: Int = 1,
         limit: Int = 10,
-        sortBy: Column<*> = DriversTable.id, // coluna padrão
+        sortBy: Column<*> = DriversTable.id,
         sortOrder: SortOrder = SortOrder.ASC,
+        idFilter: Int? = null,
         nameFilter: String? = null,
+        cpfFilter: String? = null,
+        cnhFilter: String? = null,
+        cnhCategoryFilter: String? = null,
+        cnhExpirationFilter: LocalDate? = null,
+        phoneFilter: String? = null,
+        emailFilter: String? = null,
         statusFilter: DriverStatus? = null
     ): ServiceResponse<PaginatedResponse<Driver>> {
         return DatabaseFactory.dbQuery {
             val query = DriversTable
                 .selectAll()
-                .where { DriversTable.deletedAt.isNull() }
                 .apply {
+                    if (statusFilter == DriverStatus.INATIVO) {
+                        // 👉 não aplica filtro deletedAt, traz todos
+                    } else {
+                        andWhere { DriversTable.deletedAt.isNull() }
+                    }
+
+                    if (idFilter != null) {
+                        andWhere { DriversTable.id eq idFilter }
+                    }
                     if (!nameFilter.isNullOrBlank()) {
                         andWhere { DriversTable.name like "%$nameFilter%" }
+                    }
+                    if (!cpfFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.cpf like "%$cpfFilter%" }
+                    }
+                    if (!cnhFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.cnh like "%$cnhFilter%" }
+                    }
+                    if (!cnhCategoryFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.cnhCategory eq cnhCategoryFilter }
+                    }
+                    if (cnhExpirationFilter != null) {
+                        andWhere { DriversTable.cnhExpiration eq cnhExpirationFilter }
+                    }
+                    if (!phoneFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.phone like "%$phoneFilter%" }
+                    }
+                    if (!emailFilter.isNullOrBlank()) {
+                        andWhere { DriversTable.email like "%$emailFilter%" }
                     }
                     if (statusFilter != null) {
                         andWhere { DriversTable.status eq statusFilter }
                     }
                 }
 
-            // Conta total antes da paginação
             val total = query.count()
 
-            // Aplica ordenação, limite e offset
             val results = query
                 .orderBy(sortBy to sortOrder)
                 .limit(limit, offset = ((page - 1) * limit).toLong())
@@ -159,11 +191,12 @@ class DriverService {
                     total = total.toInt(),
                     page = page,
                     limit = limit,
-                    totalPages = if (total.toInt() == 0) 0 else ((total + limit - 1) / limit).toInt()
+                    totalPages = if (total == 0L) 0 else ((total + limit - 1) / limit).toInt()
                 )
             )
         }
     }
+
 
 
     suspend fun findDriverById(id: Int): ServiceResponse<Any> {

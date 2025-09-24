@@ -97,6 +97,18 @@
           </th>
           <th
             class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('cnh')"
+          >
+            Categoria CNH @if(sortKey === 'cnhCategory') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
+            (click)="sortBy('cnh')"
+          >
+            Validade CNH @if(sortKey === 'cnhExpiration') { {{ sortAsc ? "▲" : "▼" }} }
+          </th>
+          <th
+            class="px-4 py-3 cursor-pointer select-none"
             (click)="sortBy('status')"
           >
             Status @if(sortKey === 'status') { {{ sortAsc ? "▲" : "▼" }} }
@@ -110,6 +122,8 @@
           <td class="px-4 py-3">{{ m.name }}</td>
           <td class="px-4 py-3">{{ m.cpf }}</td>
           <td class="px-4 py-3">{{ m.cnh }}</td>
+          <td class="px-4 py-3">{{ m.cnhCategory }}</td>
+          <td class="px-4 py-3">{{ m.cnhExpiration | date:'dd/MM/yyyy' }}</td>
           <td class="px-4 py-3">
             <span
               class="px-2 py-1 text-xs rounded-full"

@@ -49,8 +49,9 @@ export class DriverService {
   }
 
   // Atualizar motorista
-  update(id: number | string, driver: Partial<Driver>): Observable<Driver> {
-    return this.http.patch<Driver>(`${API_URL}/drivers/${id}`, driver);
+  update(id: number | string, driver: Partial<Driver>): Observable<any> {
+    console.log(driver)
+    return this.http.patch(`${API_URL}/drivers/${id}`, driver);
   }
 
   // Deletar motorista

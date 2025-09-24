@@ -40,21 +40,36 @@ class DriverController(private val driverService: DriverService) {
 
     suspend fun getAll(call: ApplicationCall) {
         try {
-            // 🔹 Query params com valores default
+            // 📌 Query params básicos de paginação/ordenação
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
             val sortByParam = call.request.queryParameters["sortBy"] ?: "id"
             val orderParam = call.request.queryParameters["order"] ?: "asc"
+
+            // 📌 Query params de filtro
+            val idFilter = call.request.queryParameters["id"]?.toIntOrNull()
             val nameFilter = call.request.queryParameters["name"]
+            val cpfFilter = call.request.queryParameters["cpf"]
+            val cnhFilter = call.request.queryParameters["cnh"]
+            val cnhCategoryFilter = call.request.queryParameters["cnhCategory"]
+            val cnhExpirationFilter = call.request.queryParameters["cnhExpiration"]?.let {
+                runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull()
+            }
+            val phoneFilter = call.request.queryParameters["phone"]
+            val emailFilter = call.request.queryParameters["email"]
             val statusFilter = call.request.queryParameters["status"]?.let {
                 runCatching { DriverStatus.valueOf(it.uppercase()) }.getOrNull()
             }
 
-            // 🔹 Mapeia string -> coluna
+            // 📌 Mapeia string -> coluna do banco
             val sortByColumn = when (sortByParam.lowercase()) {
                 "name" -> DriversTable.name
                 "cpf" -> DriversTable.cpf
                 "cnh" -> DriversTable.cnh
+                "cnhcategory" -> DriversTable.cnhCategory
+                "cnhexpiration" -> DriversTable.cnhExpiration
+                "phone" -> DriversTable.phone
+                "email" -> DriversTable.email
                 "status" -> DriversTable.status
                 else -> DriversTable.id
             }
@@ -65,12 +80,20 @@ class DriverController(private val driverService: DriverService) {
                 SortOrder.ASC
             }
 
+            // 📌 Chama o service passando todos os filtros
             val serviceResult = driverService.getAllDrivers(
                 page = page,
                 limit = limit,
                 sortBy = sortByColumn,
                 sortOrder = sortOrder,
+                idFilter = idFilter,
                 nameFilter = nameFilter,
+                cpfFilter = cpfFilter,
+                cnhFilter = cnhFilter,
+                cnhCategoryFilter = cnhCategoryFilter,
+                cnhExpirationFilter = cnhExpirationFilter,
+                phoneFilter = phoneFilter,
+                emailFilter = emailFilter,
                 statusFilter = statusFilter
             )
 
@@ -83,6 +106,7 @@ class DriverController(private val driverService: DriverService) {
             )
         }
     }
+
 
     suspend fun getById(call: ApplicationCall) {
         try {

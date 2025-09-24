@@ -10,7 +10,8 @@ object DatabaseFactory {
 
     fun init() {
         val config = HikariConfig().apply {
-            jdbcUrl = System.getenv("DB_URL") ?: "jdbc:mysql://localhost:3306/db_frota_gestor"
+            jdbcUrl = System.getenv("DB_URL")
+                ?: "jdbc:mysql://localhost:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
             driverClassName = "com.mysql.cj.jdbc.Driver"
             username = System.getenv("DB_USER") ?: "appuser"
             password = System.getenv("DB_PASS") ?: "apppass"
@@ -22,6 +23,7 @@ object DatabaseFactory {
 
             validate()
         }
+
 
         val dataSource = HikariDataSource(config)
         Database.connect(dataSource)

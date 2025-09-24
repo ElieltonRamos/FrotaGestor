@@ -2,11 +2,12 @@ import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Driver } from '../../../interfaces/driver';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DriverService } from '../../../services/driver.service';
-import { alertConfirm, alertError, alertSuccess } from '../../../utils/custom-alerts';
+import { alertError, alertSuccess } from '../../../utils/custom-alerts';
+import { CommonModule, DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-details-driver',
-  imports: [],
+  imports: [CommonModule, DatePipe],
   templateUrl: './details-driver.html',
   styles: ``,
 })
