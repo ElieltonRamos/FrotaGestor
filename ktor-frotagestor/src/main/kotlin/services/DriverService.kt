@@ -166,8 +166,14 @@ class DriverService {
 
             val total = query.count()
 
+            val orderExpr = if (sortBy == DriversTable.cnhCategory) {
+                CustomFunction<String>("UPPER", TextColumnType(), DriversTable.cnhCategory)
+            } else {
+                sortBy
+            }
+
             val results = query
-                .orderBy(sortBy to sortOrder)
+                .orderBy(orderExpr to sortOrder)
                 .limit(limit, offset = ((page - 1) * limit).toLong())
                 .map {
                     Driver(
@@ -183,6 +189,7 @@ class DriverService {
                         deletedAt = it[DriversTable.deletedAt]
                     )
                 }
+
 
             ServiceResponse(
                 status = HttpStatusCode.OK,
