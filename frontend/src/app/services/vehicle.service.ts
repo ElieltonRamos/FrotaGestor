@@ -27,7 +27,7 @@ export class VehicleService {
       .set('page', page.toString())
       .set('limit', limit.toString())
       .set('sortBy', sortKey)
-      .set('sortOrder', sortAsc ? 'asc' : 'desc');
+      .set('order', sortAsc ? 'asc' : 'desc');
 
     if (filters.id) {
       params = params.set('id', filters.id);
