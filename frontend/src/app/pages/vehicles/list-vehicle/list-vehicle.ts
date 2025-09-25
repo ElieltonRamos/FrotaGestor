@@ -15,6 +15,7 @@ import {
   BaseFilterComponent,
   FilterConfig,
 } from '../../../components/base-filter-component/base-filter-component';
+import { ModalEditComponent } from "../../../components/modal-edit-component/modal-edit-component";
 
 @Component({
   selector: 'app-list-vehicle',
@@ -24,7 +25,8 @@ import {
     BaseListComponent,
     PaginatorComponent,
     BaseFilterComponent,
-  ],
+    ModalEditComponent
+],
   templateUrl: './list-vehicle.html',
 })
 export class ListVehicle {

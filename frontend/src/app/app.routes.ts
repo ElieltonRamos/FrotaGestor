@@ -9,6 +9,8 @@ import { DetailsDriver } from './pages/driver/details-driver/details-driver';
 import { Vehicles } from './pages/vehicles/vehicles';
 import { DetailsVehicle } from './pages/vehicles/details-vehicle/details-vehicle';
 import { guestGuard } from './guards/guest-guard';
+import { DetailsTrip } from './pages/trip/details-trip/details-trip';
+import { Trip } from './pages/trip/trip';
 
 export const routes: Routes = [
   {
@@ -39,6 +41,16 @@ export const routes: Routes = [
   {
     path: 'motoristas/:id',
     component: DetailsDriver,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'viagens',
+    component: Trip,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'viagens/:id',
+    component: DetailsTrip,
     canActivate: [authGuard],
   },
   {

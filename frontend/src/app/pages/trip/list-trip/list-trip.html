@@ -1,7 +1,7 @@
 <div class="flex flex-wrap justify-between mb-4 gap-4">
   <!-- Filtros dinâmicos -->
   <app-base-filter
-    [filtersConfig]="vehicleFilters"
+    [filtersConfig]="tripFilters"
     [(filter)]="filter"
     (apply)="applyFilters()"
     (clear)="clearFilters()"
@@ -20,8 +20,8 @@
 </div>
 
 <app-base-list
-  [columns]="vehicleColumns"
-  [data]="vehicles"
+  [columns]="tripColumns"
+  [data]="trips"
   [page]="page"
   [limit]="limit"
   [total]="total"
@@ -35,10 +35,10 @@
 ></app-base-list>
 
 <app-modal-edit-component
-  [title]="'Editar Veiculo'"
+  [title]="'Editar Viagem'"
   [show]="showModal"
-  [entity]="selectedVehicle"
-  [fields]="vehicleFields"
+  [entity]="selectedTrip"
+  [fields]="tripFields"
   (close)="onCloseModal()"
   (save)="onSaveModal($event)"
 ></app-modal-edit-component>

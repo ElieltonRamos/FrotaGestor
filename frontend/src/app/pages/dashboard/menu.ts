@@ -16,6 +16,6 @@ export class Menu {
     { name: 'Financeiro', icon: 'attach_money', route: '/financeiro' },
     { name: 'Relatórios', icon: 'bar_chart', route: '/relatorios' },
     { name: 'Segurança', icon: 'security', route: '/seguranca' },
-    { name: 'Logística', icon: 'local_shipping', route: '/logistica' }
+    { name: 'Viagens', icon: 'local_shipping', route: '/viagens' }
   ];
 }
