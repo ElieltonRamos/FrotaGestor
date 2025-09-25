@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { alertError } from '../../utils/custom-alerts';
+import { mapNetworkError } from '../../services/api.url';
 
 @Component({
   selector: 'app-login',
@@ -32,8 +33,8 @@ export class Login {
       error: (err) => {
         this.isLoading = false;
         this.cdr.detectChanges();
-        const backendMessage = err.error?.message || 'Erro inesperado';
-        alertError(`Erro ao fazer login: ${backendMessage}`);
+        const message = mapNetworkError(err, 'Erro ao fazer login');
+        alertError(message);
       },
     });
   }

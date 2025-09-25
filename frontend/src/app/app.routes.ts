@@ -8,11 +8,13 @@ import { Motorista } from './pages/driver/motorista';
 import { DetailsDriver } from './pages/driver/details-driver/details-driver';
 import { Vehicles } from './pages/vehicles/vehicles';
 import { DetailsVehicle } from './pages/vehicles/details-vehicle/details-vehicle';
+import { guestGuard } from './guards/guest-guard';
 
 export const routes: Routes = [
   {
     path: '',
     component: Login,
+    canActivate: [guestGuard],
   },
   {
     path: 'menu',
