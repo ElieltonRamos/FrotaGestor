@@ -1,7 +1,9 @@
 package com.frotagestor.services
 
 import com.frotagestor.database.DatabaseFactory
+import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.TripsTable
+import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.*
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateTrip
@@ -91,11 +93,17 @@ class TripService {
         driverIdFilter: Int? = null,
         statusFilter: TripStatus? = null,
         startDateFilter: LocalDateTime? = null,
-        endDateFilter: LocalDateTime? = null
+        endDateFilter: LocalDateTime? = null,
+        driverNameFilter: String? = null,
+        vehiclePlateFilter: String? = null
     ): ServiceResponse<PaginatedResponse<Trip>> {
         return DatabaseFactory.dbQuery {
             val query = TripsTable
-                .selectAll()
+                .join(DriversTable, JoinType.INNER, additionalConstraint = { TripsTable.driverId eq DriversTable.id })
+                .join(VehiclesTable, JoinType.INNER, additionalConstraint = { TripsTable.vehicleId eq VehiclesTable.id })
+                .select(
+                    TripsTable.columns + DriversTable.name + VehiclesTable.plate
+                )
                 .apply {
                     if (idFilter != null) {
                         andWhere { TripsTable.id eq idFilter }
@@ -115,6 +123,12 @@ class TripService {
                     if (endDateFilter != null) {
                         andWhere { TripsTable.endTime lessEq endDateFilter }
                     }
+                    if (driverNameFilter != null) {
+                        andWhere { DriversTable.name like "%$driverNameFilter%" }
+                    }
+                    if (vehiclePlateFilter != null) {
+                        andWhere { VehiclesTable.plate like "%$vehiclePlateFilter%" }
+                    }
                 }
 
             val total = query.count()
@@ -127,6 +141,8 @@ class TripService {
                         id = it[TripsTable.id],
                         vehicleId = it[TripsTable.vehicleId],
                         driverId = it[TripsTable.driverId],
+                        driverName = it[DriversTable.name],
+                        vehiclePlate = it[VehiclesTable.plate],
                         startLocation = it[TripsTable.startLocation],
                         endLocation = it[TripsTable.endLocation],
                         startTime = it[TripsTable.startTime],
@@ -148,6 +164,7 @@ class TripService {
             )
         }
     }
+
 
     suspend fun findTripById(id: Int): ServiceResponse<Any> {
         val trip = DatabaseFactory.dbQuery {

@@ -1,6 +1,8 @@
 package com.frotagestor.controllers
 
+import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.TripsTable
+import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.TripStatus
 import com.frotagestor.services.TripService
 import com.frotagestor.plugins.RawBodyKey
@@ -48,9 +50,13 @@ class TripController(private val tripService: TripService) {
             val idFilter = call.request.queryParameters["id"]?.toIntOrNull()
             val vehicleIdFilter = call.request.queryParameters["vehicleId"]?.toIntOrNull()
             val driverIdFilter = call.request.queryParameters["driverId"]?.toIntOrNull()
+            val driverNameFilter = call.request.queryParameters["driverName"]
+            val vehiclePlateFilter = call.request.queryParameters["vehiclePlate"]
+
             val statusFilter = call.request.queryParameters["status"]?.let {
                 runCatching { TripStatus.valueOf(it.uppercase()) }.getOrNull()
             }
+
             val startDateFilter = call.request.queryParameters["startDate"]?.let {
                 runCatching { LocalDateTime.parse(it) }.getOrNull()
             }
@@ -67,8 +73,11 @@ class TripController(private val tripService: TripService) {
                 "endtime" -> TripsTable.endTime
                 "distancekm" -> TripsTable.distanceKm
                 "status" -> TripsTable.status
+                "drivername" -> DriversTable.name
+                "vehicleplate" -> VehiclesTable.plate
                 else -> TripsTable.id
             }
+
 
             val sortOrder = if (orderParam.equals("desc", ignoreCase = true)) {
                 SortOrder.DESC
@@ -86,7 +95,9 @@ class TripController(private val tripService: TripService) {
                 driverIdFilter = driverIdFilter,
                 statusFilter = statusFilter,
                 startDateFilter = startDateFilter,
-                endDateFilter = endDateFilter
+                endDateFilter = endDateFilter,
+                driverNameFilter = driverNameFilter,
+                vehiclePlateFilter = vehiclePlateFilter
             )
 
             call.respond(serviceResult.status, serviceResult.data)
@@ -95,6 +106,7 @@ class TripController(private val tripService: TripService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
 
     suspend fun getById(call: ApplicationCall) {
         try {

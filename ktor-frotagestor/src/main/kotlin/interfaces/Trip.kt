@@ -22,7 +22,9 @@ data class Trip(
     val startTime: LocalDateTime,
     val endTime: LocalDateTime? = null,
     val distanceKm: Double? = null,
-    val status: TripStatus = TripStatus.PLANEJADA
+    val status: TripStatus = TripStatus.PLANEJADA,
+    val driverName: String? = null,
+    val vehiclePlate: String? = null
 )
 
 @Serializable
