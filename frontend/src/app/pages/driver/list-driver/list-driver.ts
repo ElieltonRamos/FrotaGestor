@@ -8,10 +8,19 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
 import { Router } from '@angular/router';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 import { CommonModule, DatePipe } from '@angular/common';
+import { BaseListComponent, ColumnConfig } from '../../../components/base-list-component/base-list-component';
+import { BaseFilterComponent, FilterConfig } from '../../../components/base-filter-component/base-filter-component';
 
 @Component({
   selector: 'app-list-driver',
-  imports: [FormsModule, PaginatorComponent, ModalEditComponent, CommonModule, DatePipe],
+  imports: [
+    FormsModule,
+    PaginatorComponent,
+    ModalEditComponent,
+    CommonModule,
+    BaseListComponent,
+    BaseFilterComponent,
+  ],
   templateUrl: './list-driver.html',
 })
 export class ListDriver {
@@ -33,6 +42,31 @@ export class ListDriver {
     },
     { name: 'email', label: 'Email', type: 'email' },
     { name: 'phone', label: 'Telefone', type: 'text' },
+  ];
+
+  driverColumns: ColumnConfig<Driver>[] = [
+    { key: 'name', label: 'Nome', sortable: true },
+    { key: 'cpf', label: 'CPF', sortable: true },
+    { key: 'cnh', label: 'CNH', sortable: true },
+    { key: 'cnhCategory', label: 'Categoria CNH', sortable: true },
+    {
+      key: 'cnhExpiration',
+      label: 'Validade CNH',
+      type: 'date',
+      sortable: true,
+    },
+    { key: 'status', label: 'Status', type: 'status', sortable: true },
+  ];
+
+  driverFilters: FilterConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
+    { key: 'cpf', label: 'CPF', type: 'text', placeholder: 'CPF...' },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: ['ATIVO', 'INATIVO'],
+    },
   ];
 
   drivers: Driver[] = [];
@@ -96,7 +130,7 @@ export class ListDriver {
   }
 
   clearFilters() {
-    this.filter = { name: '', cpf: '', status: '' };
+    this.filter = { name: '', cpf: '', status: 'ATIVO' };
     this.applyFilters();
   }
 

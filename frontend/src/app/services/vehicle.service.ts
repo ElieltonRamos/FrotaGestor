@@ -44,10 +44,9 @@ export class VehicleService {
     if (filters.year) {
       params = params.set('year', filters.year);
     }
-    if (filters.status && filters.status !== VehicleStatus.INATIVO) {
+    if (filters.status) {
       params = params.set('status', filters.status);
     }
-
     const url = `${API_URL}/vehicles?${params.toString()}`;
     return this.http.get<PaginatedResponse<Vehicle>>(url);
   }

@@ -97,6 +97,7 @@ export class ListVehicle {
   }
 
   listVehicles(page: number, limit: number) {
+    console.log('Listando veículos...', this.filter);
     this.serviceVehicle
       .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
       .subscribe({
@@ -134,7 +135,7 @@ export class ListVehicle {
   }
 
   clearFilters() {
-    this.filter = { plate: '', model: '', brand: '', year: '', status: '' };
+    this.filter = { plate: '', model: '', brand: '', year: '', status: 'ATIVO' };
     this.applyFilters();
   }
 
