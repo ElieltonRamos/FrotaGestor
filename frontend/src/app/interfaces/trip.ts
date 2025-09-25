@@ -2,12 +2,14 @@ export interface Trip {
   id?: number;
   vehicleId: number;
   driverId: number;
+  status: TripStatus;
   startLocation?: string | null;
   endLocation?: string | null;
   startTime: string;
   endTime?: string | null;
   distanceKm?: number | null;
-  status: TripStatus;
+  vehiclePlate?: string | null;
+  driverName?: string | null;
 }
 
 export enum TripStatus {
@@ -16,4 +18,3 @@ export enum TripStatus {
   CONCLUIDA = 'CONCLUIDA',
   CANCELADA = 'CANCELADA',
 }
-

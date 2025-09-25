@@ -37,8 +37,8 @@ export class ListTrip {
   // Configuração das colunas
   tripColumns: ColumnConfig<Trip>[] = [
     { key: 'id' as keyof Trip, label: 'ID', sortable: true },
-    { key: 'vehicleId' as keyof Trip, label: 'Veículo', sortable: true },
-    { key: 'driverId' as keyof Trip, label: 'Motorista', sortable: true },
+    { key: 'vehiclePlate' as keyof Trip, label: 'Veículo', sortable: true },
+    { key: 'driverName' as keyof Trip, label: 'Motorista', sortable: true },
     { key: 'startLocation' as keyof Trip, label: 'Origem', sortable: true },
     { key: 'endLocation' as keyof Trip, label: 'Destino', sortable: true },
     {
@@ -70,16 +70,16 @@ export class ListTrip {
   tripFilters = [
     { key: 'id', label: 'ID', type: 'number', placeholder: 'ID...' },
     {
-      key: 'vehicleId',
+      key: 'vehiclePlate',
       label: 'Veículo',
       type: 'number',
-      placeholder: 'ID veículo...',
+      placeholder: 'Placa do veículo...',
     },
     {
-      key: 'driverId',
+      key: 'driverName',
       label: 'Motorista',
       type: 'number',
-      placeholder: 'ID motorista...',
+      placeholder: 'Motorista...',
     },
     {
       key: 'startLocation',
@@ -102,8 +102,8 @@ export class ListTrip {
   ] satisfies FilterConfig[];
 
   tripFields = [
-    { name: 'vehicleId', label: 'ID do Veículo', type: 'number' },
-    { name: 'driverId', label: 'ID do Motorista', type: 'number' },
+    { name: 'vehiclePlate', label: 'Placa do Veículo', type: 'text' },
+    { name: 'driverName', label: 'Motorista', type: 'text' },
     { name: 'startLocation', label: 'Origem', type: 'text' },
     { name: 'endLocation', label: 'Destino', type: 'text' },
     { name: 'startTime', label: 'Data/Hora Início', type: 'datetime-local' },
