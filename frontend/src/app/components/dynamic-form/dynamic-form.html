@@ -38,6 +38,20 @@
     }
   </div>
   }
+  
+  <!-- Input Data/Hora -->
+  @if (field.type === 'datetime-local') {
+  <div>
+    <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
+    <input type="datetime-local" [formControlName]="field.name" class="input" />
+
+    <!-- Validação -->
+    @if (form.get(field.name)?.hasError('required') &&
+    (form.get(field.name)?.touched || form.get(field.name)?.dirty)) {
+    <p class="text-red-600 text-xs mt-1">⚠️ {{ field.label }} é obrigatório</p>
+    }
+  </div>
+  }
 
   <!-- Select -->
   @if (field.type === 'select') {
