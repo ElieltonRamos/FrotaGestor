@@ -22,11 +22,17 @@ export class BaseListComponent<T extends { id?: number }> {
   @Input() totalPages = 1;
   @Input() sortKey?: keyof T;
   @Input() sortAsc = true;
+  @Input() showActions = true;
 
   @Output() sortChange = new EventEmitter<keyof T>();
   @Output() pageChange = new EventEmitter<number>();
   @Output() edit = new EventEmitter<T>();
   @Output() details = new EventEmitter<number>();
+  @Output() rowClick = new EventEmitter<T>();
+
+  onRowClick(item: T) {
+    this.rowClick.emit(item);
+  }
 
   onSort(key: keyof T) {
     this.sortChange.emit(key);

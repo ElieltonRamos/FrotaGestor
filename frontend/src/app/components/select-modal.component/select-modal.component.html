@@ -1,1 +1,50 @@
-<p>select-modal.component works!</p>
+@if (show) {
+  <div class="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-4 flex flex-col gap-4 max-h-[90vh]">
+      
+      <!-- Header -->
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-lg font-semibold">{{ title }}</h2>
+        <button (click)="onClose()">✖</button>
+      </div>
+
+      <!-- Filtros -->
+      <app-base-filter
+        [filtersConfig]="filtersConfig"
+        [(filter)]="filter"
+        (apply)="applyFilters()"
+        (clear)="clearFilters()"
+      ></app-base-filter>
+
+      <!-- Lista (scrollável) -->
+      <div class="flex-1 overflow-y-auto">
+        <app-base-list
+          [columns]="columns"
+          [data]="data"
+          [page]="page"
+          [limit]="limit"
+          [total]="total"
+          [totalPages]="totalPages"
+          [sortKey]="sortKey"
+          [sortAsc]="sortAsc"
+          (sortChange)="onSort($event)"
+          (pageChange)="onPageChange($event)"
+          (details)="onSelect($event)"
+          [showActions]="false"
+          (rowClick)="onSelect($event)"
+        ></app-base-list>
+      </div>
+
+      <!-- Paginador -->
+      <div class="border-t border-gray-200 pt-3 flex justify-end">
+        <app-paginator
+          [totalItems]="total"
+          [itemsPerPage]="limit"
+          [totalPages]="totalPages"
+          [page]="page"
+          (pageChanged)="onPageChange($event)">
+        </app-paginator>
+      </div>
+    </div>
+  </div>
+}

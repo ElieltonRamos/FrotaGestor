@@ -1,8 +1,79 @@
 <div class="p-6">
-  <h2 class="text-2xl font-semibold mb-4">Cadastro de Viagem</h2>
+  <h2 class="text-2xl font-semibold mb-6">Cadastro de Viagem</h2>
 
-  <app-dynamic-form
-    [fields]="tripFields"
-    (formSubmit)="saveTrip($event)">
+  <!-- Seleção de veículo e motorista -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+    <!-- Veículo -->
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1"
+        >Veículo</label
+      >
+      <div class="flex gap-2">
+        <input
+          type="text"
+          class="border border-gray-300 rounded-lg px-3 py-1.5 w-full text-sm bg-gray-100"
+          [value]="
+            selectedVehicle
+              ? selectedVehicle.model + ' (' + selectedVehicle.plate + ')'
+              : ''
+          "
+          readonly
+        />
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+          (click)="showVehicleModal = true"
+        >
+          Selecionar
+        </button>
+      </div>
+    </div>
+
+    <!-- Motorista -->
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1"
+        >Motorista</label
+      >
+      <div class="flex gap-2">
+        <input
+          type="text"
+          class="border border-gray-300 rounded-lg px-3 py-1.5 w-full text-sm bg-gray-100"
+          [value]="selectedDriver ? selectedDriver.name : ''"
+          readonly
+        />
+        <button
+          type="button"
+          class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+          (click)="showDriverModal = true"
+        >
+          Selecionar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inputs simples -->
+  <app-dynamic-form [fields]="tripFields" (formSubmit)="saveTrip($event)">
   </app-dynamic-form>
+
+  <!-- Modais -->
+  <app-select-modal
+    [show]="showVehicleModal"
+    title="Selecionar Veiculo"
+    [columns]="vehicleColumns"
+    [filtersConfig]="vehicleFilters"
+    [dataFetcher]="vehicleFetcher"
+    (select)="onVehicleSelect($event)"
+    (close)="showVehicleModal = false"
+  ></app-select-modal>
+
+  <app-select-modal
+    [show]="showDriverModal"
+    title="Selecionar Motorista"
+    [columns]="driverColumns"
+    [filtersConfig]="driverFilters"
+    [dataFetcher]="driverFetcher"
+    (select)="onDriverSelect($event)"
+    (close)="showDriverModal = false"
+  ></app-select-modal>
 </div>
