@@ -37,3 +37,48 @@ dependencies {
     testImplementation(libs.kotlin.test.junit)
 }
 
+tasks.register<Exec>("packageWin") {
+    dependsOn("shadowJar")
+
+    val appName = "FrotaGestor"
+    val appVersion = project.version.toString()
+    val mainJar = "ktor-frotagestor-all.jar"
+    val mainClass = "io.ktor.server.netty.EngineMain"
+
+    commandLine(
+        "jpackage",
+        "--name", appName,
+        "--app-version", appVersion,
+        "--input", "build/libs",
+        "--main-jar", mainJar,
+        "--main-class", mainClass,
+        "--type", "exe",
+        "--win-dir-chooser",
+        "--win-menu",
+        "--win-shortcut"
+        // "--icon", "src/main/resources/icon.ico" // opcional
+    )
+}
+
+tasks.register<Exec>("packageLinux") {
+    dependsOn("shadowJar")
+
+    val appName = "FrotaGestor"
+    val appVersion = project.version.toString()
+    val mainJar = "ktor-frotagestor-all.jar"
+    val mainClass = "io.ktor.server.netty.EngineMain"
+
+    commandLine(
+        "jpackage",
+        "--name", appName,
+        "--app-version", appVersion,
+        "--input", "build/libs",
+        "--main-jar", mainJar,
+        "--main-class", mainClass,
+        "--type", "deb",
+        "--linux-shortcut",
+        "--linux-menu-group", appName
+        // "--icon", "src/main/resources/icon.png" // opcional
+    )
+}
+
