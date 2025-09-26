@@ -33,11 +33,11 @@ export class TripService {
     if (filters.id) {
       params = params.set('id', filters.id);
     }
-    if (filters.vehicleId) {
-      params = params.set('vehicleId', filters.vehicleId);
+    if (filters.vehiclePlate) {
+      params = params.set('vehiclePlate', filters.vehiclePlate);
     }
-    if (filters.driverId) {
-      params = params.set('driverId', filters.driverId);
+    if (filters.driverName) {
+      params = params.set('driverName', filters.driverName);
     }
     if (filters.status) {
       params = params.set('status', filters.status);
@@ -50,6 +50,7 @@ export class TripService {
     }
 
     const url = `${API_URL}/trips?${params.toString()}`;
+    console.log(url)
     return this.http.get<PaginatedResponse<Trip>>(url);
   }
 

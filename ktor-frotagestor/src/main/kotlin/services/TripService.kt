@@ -169,7 +169,9 @@ class TripService {
     suspend fun findTripById(id: Int): ServiceResponse<Any> {
         val trip = DatabaseFactory.dbQuery {
             TripsTable
-                .selectAll()
+                .join(DriversTable, JoinType.INNER, additionalConstraint = { TripsTable.driverId eq DriversTable.id })
+                .join(VehiclesTable, JoinType.INNER, additionalConstraint = { TripsTable.vehicleId eq VehiclesTable.id })
+                .select(TripsTable.columns + DriversTable.name + VehiclesTable.plate)
                 .where { TripsTable.id eq id }
                 .singleOrNull()
                 ?.let {
@@ -177,6 +179,8 @@ class TripService {
                         id = it[TripsTable.id],
                         vehicleId = it[TripsTable.vehicleId],
                         driverId = it[TripsTable.driverId],
+                        driverName = it[DriversTable.name],
+                        vehiclePlate = it[VehiclesTable.plate],
                         startLocation = it[TripsTable.startLocation],
                         endLocation = it[TripsTable.endLocation],
                         startTime = it[TripsTable.startTime],
@@ -187,18 +191,13 @@ class TripService {
                 }
         }
 
-        return if (trip == null) {
-            ServiceResponse(
-                status = HttpStatusCode.NotFound,
-                data = mapOf("message" to "Viagem não encontrada")
-            )
+        return if (trip != null) {
+            ServiceResponse(HttpStatusCode.OK, trip)
         } else {
-            ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = trip
-            )
+            ServiceResponse(HttpStatusCode.NotFound, mapOf("message" to "Viagem não encontrada"))
         }
     }
+
 
     suspend fun deleteTrip(id: Int): ServiceResponse<Message> {
         val existingTrip = DatabaseFactory.dbQuery {

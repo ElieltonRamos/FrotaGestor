@@ -8,14 +8,12 @@ import { RouterLink } from '@angular/router';
 })
 export class Menu {
   menus = [
-    { name: 'Configurações', icon: 'settings', route: '/configuracoes' },
     { name: 'Veículos', icon: 'directions_car', route: '/veiculos' },
+    { name: 'Viagens', icon: 'local_shipping', route: '/viagens' },
     { name: 'Motoristas', icon: 'person', route: '/motoristas' },
     { name: 'Manutenções', icon: 'build', route: '/manutencoes' },
+    { name: 'Despesas', icon: 'tire_repair', route: '/despesas' },
     { name: 'Abastecimento', icon: 'local_gas_station', route: '/abastecimento' },
-    { name: 'Financeiro', icon: 'attach_money', route: '/financeiro' },
     { name: 'Relatórios', icon: 'bar_chart', route: '/relatorios' },
-    { name: 'Segurança', icon: 'security', route: '/seguranca' },
-    { name: 'Viagens', icon: 'local_shipping', route: '/viagens' }
   ];
 }

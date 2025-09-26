@@ -72,13 +72,13 @@ export class ListTrip {
     {
       key: 'vehiclePlate',
       label: 'Veículo',
-      type: 'number',
+      type: 'text',
       placeholder: 'Placa do veículo...',
     },
     {
       key: 'driverName',
       label: 'Motorista',
-      type: 'number',
+      type: 'text',
       placeholder: 'Motorista...',
     },
     {
@@ -128,8 +128,8 @@ export class ListTrip {
   // filtros
   filter = {
     id: '',
-    vehicleId: '',
-    driverId: '',
+    vehiclePlate: '',
+    driverName: '',
     startLocation: '',
     endLocation: '',
     status: '',
@@ -184,8 +184,8 @@ export class ListTrip {
   clearFilters() {
     this.filter = {
       id: '',
-      vehicleId: '',
-      driverId: '',
+      vehiclePlate: '',
+      driverName: '',
       startLocation: '',
       endLocation: '',
       status: '',
@@ -198,7 +198,6 @@ export class ListTrip {
   }
 
   onEdit(trip: Trip) {
-    console.log('Editando viagem:', trip);
     this.selectedTrip = { ...trip };
     this.showModal = true;
   }
