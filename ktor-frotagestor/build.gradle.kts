@@ -82,30 +82,3 @@ tasks.register<Exec>("packageLinux") {
         // "--icon", "src/main/resources/icon.png" // opcional
     )
 }
-
-tasks.register<Exec>("packageMigrateLinux") {
-    group = "distribution"
-    description = "Gera pacote .deb para executar apenas as migrations + seeds"
-
-    dependsOn("shadowJar")
-
-    val appName = "FrotaGestor-Migrate"
-    val appVersion = project.version.toString()
-
-    val shadowJar = tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar").get()
-    val mainJar = shadowJar.archiveFileName.get()
-
-    commandLine(
-        "jpackage",
-        "--name", appName,
-        "--app-version", appVersion,
-        "--input", "build/libs",
-        "--main-jar", mainJar,
-        "--main-class", "com.frotagestor.database.migrations.MainMigrationsKt", // classe correta
-        "--type", "deb",
-        "--linux-shortcut",
-        "--linux-menu-group", "FrotaGestor"
-    )
-}
-
-
