@@ -5,10 +5,16 @@ import java.sql.DriverManager
 
 object MigrationManager {
 
-    private const val hostUrl = "jdbc:mysql://localhost:3306/"
+//    private const val hostUrl = "jdbc:mysql://localhost:3306/"
+//    private const val dbName = "db_frota_gestor"
+//    private const val user = "appuser"
+//    private const val password = "apppass"
+
+    private const val hostUrl = "jdbc:mysql://10.1.254.19:3306/"
     private const val dbName = "db_frota_gestor"
-    private const val user = "appuser"
-    private const val password = "apppass"
+    private const val user = "eliel"
+    private const val password = "elielton"
+
 
     // Cria o banco de dados se não existir
     fun createDatabaseIfNotExists() {
