@@ -11,6 +11,8 @@ import { DetailsVehicle } from './pages/vehicles/details-vehicle/details-vehicle
 import { guestGuard } from './guards/guest-guard';
 import { DetailsTrip } from './pages/trip/details-trip/details-trip';
 import { Trip } from './pages/trip/trip';
+import { Expenses } from './pages/expenses/expenses';
+import { DetailsExpense } from './pages/expenses/details-expense/details-expense';
 
 export const routes: Routes = [
   {
@@ -56,6 +58,16 @@ export const routes: Routes = [
   {
     path: 'alterar-senha',
     component: ChangePassword,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'despesas',
+    component: Expenses,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'despesas/:id',
+    component: DetailsExpense,
     canActivate: [authGuard],
   },
   { path: '**', component: NotFound },

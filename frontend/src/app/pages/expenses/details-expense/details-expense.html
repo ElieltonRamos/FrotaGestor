@@ -1,1 +1,92 @@
-<p>details-expense works!</p>
+<div
+  class="max-w-3xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 flex flex-col justify-between min-h-[500px]"
+>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6 gap-4">
+    <h2 class="text-xl font-semibold text-gray-800">Detalhes da Despesa</h2>
+    <button
+      class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+      (click)="goBack()"
+    >
+      Voltar
+    </button>
+  </div>
+
+  <!-- Conteúdo -->
+  <div class="flex-1">
+    @if (expense) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Descrição</label>
+          <p class="text-gray-800 text-sm">{{ expense.description }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Valor</label>
+          <p class="text-gray-800 text-sm">R$ {{ expense.amount }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Tipo</label>
+          <p class="text-gray-800 text-sm">{{ expense.type }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Data</label>
+          <p class="text-gray-800 text-sm">{{ expense.date | date:'dd/MM/yyyy' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Veículo</label>
+          <p class="text-gray-800 text-sm">{{ expense.vehicleId || '-' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Motorista</label>
+          <p class="text-gray-800 text-sm">{{ expense.driverId || '-' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Viagem</label>
+          <p class="text-gray-800 text-sm">{{ expense.tripId || '-' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Litros</label>
+          <p class="text-gray-800 text-sm">{{ expense.liters || '-' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Preço por Litro</label>
+          <p class="text-gray-800 text-sm">R$ {{ expense.pricePerLiter || '-' }}</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Odômetro</label>
+          <p class="text-gray-800 text-sm">{{ expense.odometer || '-' }}</p>
+        </div>
+      </div>
+    } @else {
+      <p class="text-gray-500 text-sm italic">Carregando despesa...</p>
+    }
+  </div>
+
+  <!-- Rodapé com botões -->
+  @if(expense) {
+    <div class="mt-8 pt-4 border-t border-gray-200 flex justify-end gap-4">
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+        (click)="onEditExpense()"
+      >
+        Editar
+      </button>
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
+        (click)="deleteExpense()"
+        [disabled]="loading"
+      >
+        @if(loading) { Aguardando... } @else { Excluir }
+      </button>
+    </div>
+  }
+</div>
