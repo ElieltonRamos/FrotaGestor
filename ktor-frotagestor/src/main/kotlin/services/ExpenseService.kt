@@ -1,7 +1,9 @@
 package com.frotagestor.services
 
 import com.frotagestor.database.DatabaseFactory
+import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.ExpensesTable
+import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.*
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateExpense
@@ -103,10 +105,14 @@ class ExpenseService {
         minLitersFilter: Double? = null,
         maxLitersFilter: Double? = null,
         minOdometerFilter: Int? = null,
-        maxOdometerFilter: Int? = null
+        maxOdometerFilter: Int? = null,
+        driverNameFilter: String? = null,
+        vehiclePlateFilter: String? = null
     ): ServiceResponse<PaginatedResponse<Expense>> {
         return DatabaseFactory.dbQuery {
             val query = ExpensesTable
+                .join(DriversTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.driverId eq DriversTable.id })
+                .join(VehiclesTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.vehicleId eq VehiclesTable.id })
                 .selectAll()
                 .apply {
                     if (idFilter != null) andWhere { ExpensesTable.id eq idFilter }
@@ -116,13 +122,14 @@ class ExpenseService {
                     if (!typeFilter.isNullOrBlank()) andWhere { ExpensesTable.type like "%$typeFilter%" }
                     if (dateFilter != null) andWhere { ExpensesTable.date eq dateFilter }
 
-                    // 🔹 filtros numéricos adicionais
                     if (minAmountFilter != null) andWhere { ExpensesTable.amount greaterEq minAmountFilter.toBigDecimal() }
                     if (maxAmountFilter != null) andWhere { ExpensesTable.amount lessEq maxAmountFilter.toBigDecimal() }
                     if (minLitersFilter != null) andWhere { ExpensesTable.liters greaterEq minLitersFilter.toBigDecimal() }
                     if (maxLitersFilter != null) andWhere { ExpensesTable.liters lessEq maxLitersFilter.toBigDecimal() }
                     if (minOdometerFilter != null) andWhere { ExpensesTable.odometer greaterEq minOdometerFilter }
                     if (maxOdometerFilter != null) andWhere { ExpensesTable.odometer lessEq maxOdometerFilter }
+                    if (!driverNameFilter.isNullOrBlank()) andWhere { DriversTable.name like "%$driverNameFilter%" }
+                    if (!vehiclePlateFilter.isNullOrBlank()) andWhere { VehiclesTable.plate like "%$vehiclePlateFilter%" }
                 }
 
             val total = query.count()
@@ -142,7 +149,9 @@ class ExpenseService {
                         amount = it[ExpensesTable.amount].toDouble(),
                         liters = it[ExpensesTable.liters]?.toDouble(),
                         pricePerLiter = it[ExpensesTable.pricePerLiter]?.toDouble(),
-                        odometer = it[ExpensesTable.odometer]
+                        odometer = it[ExpensesTable.odometer],
+                        driverName = it[DriversTable.name],
+                        vehiclePlate = it[VehiclesTable.plate]
                     )
                 }
 

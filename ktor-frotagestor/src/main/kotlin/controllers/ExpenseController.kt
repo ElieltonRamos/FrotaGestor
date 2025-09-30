@@ -1,6 +1,8 @@
 package com.frotagestor.controllers
 
+import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.ExpensesTable
+import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.services.ExpenseService
 import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
@@ -56,13 +58,14 @@ class ExpenseController(private val expenseService: ExpenseService) {
             }
             val typeFilter = call.request.queryParameters["type"]
 
-            // 🔹 Filtros avançados
             val minAmountFilter = call.request.queryParameters["minAmount"]?.toDoubleOrNull()
             val maxAmountFilter = call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
             val minLitersFilter = call.request.queryParameters["minLiters"]?.toDoubleOrNull()
             val maxLitersFilter = call.request.queryParameters["maxLiters"]?.toDoubleOrNull()
             val minOdometerFilter = call.request.queryParameters["minOdometer"]?.toIntOrNull()
             val maxOdometerFilter = call.request.queryParameters["maxOdometer"]?.toIntOrNull()
+            val driverNameFilter = call.request.queryParameters["driverName"]
+            val vehiclePlateFilter = call.request.queryParameters["vehiclePlate"]
 
             val sortByColumn = when (sortByParam.lowercase()) {
                 "vehicleid" -> ExpensesTable.vehicleId
@@ -74,6 +77,8 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 "liters" -> ExpensesTable.liters
                 "priceperliter" -> ExpensesTable.pricePerLiter
                 "odometer" -> ExpensesTable.odometer
+                "drivername" -> DriversTable.name
+                "vehicleplate" -> VehiclesTable.plate
                 else -> ExpensesTable.id
             }
 
@@ -99,7 +104,9 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 minLitersFilter = minLitersFilter,
                 maxLitersFilter = maxLitersFilter,
                 minOdometerFilter = minOdometerFilter,
-                maxOdometerFilter = maxOdometerFilter
+                maxOdometerFilter = maxOdometerFilter,
+                driverNameFilter = driverNameFilter,
+                vehiclePlateFilter = vehiclePlateFilter
             )
 
             call.respond(serviceResult.status, serviceResult.data)

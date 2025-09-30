@@ -15,7 +15,9 @@ data class Expense(
     val amount: Double,
     val liters: Double? = null,
     val pricePerLiter: Double? = null,
-    val odometer: Int? = null
+    val odometer: Int? = null,
+    val driverName: String? = null,
+    val vehiclePlate: String? = null
 )
 
 @Serializable
