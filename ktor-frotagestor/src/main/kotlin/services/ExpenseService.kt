@@ -99,7 +99,8 @@ class ExpenseService {
         driverIdFilter: Int? = null,
         tripIdFilter: Int? = null,
         typeFilter: String? = null,
-        dateFilter: LocalDate? = null,
+        dateStartFilter: LocalDate? = null,
+        dateEndFilter: LocalDate? = null,
         minAmountFilter: Double? = null,
         maxAmountFilter: Double? = null,
         minLitersFilter: Double? = null,
@@ -120,7 +121,8 @@ class ExpenseService {
                     if (driverIdFilter != null) andWhere { ExpensesTable.driverId eq driverIdFilter }
                     if (tripIdFilter != null) andWhere { ExpensesTable.tripId eq tripIdFilter }
                     if (!typeFilter.isNullOrBlank()) andWhere { ExpensesTable.type like "%$typeFilter%" }
-                    if (dateFilter != null) andWhere { ExpensesTable.date eq dateFilter }
+                    if (dateStartFilter != null) andWhere { ExpensesTable.date greaterEq dateStartFilter }
+                    if (dateEndFilter != null) andWhere { ExpensesTable.date lessEq dateEndFilter }
 
                     if (minAmountFilter != null) andWhere { ExpensesTable.amount greaterEq minAmountFilter.toBigDecimal() }
                     if (maxAmountFilter != null) andWhere { ExpensesTable.amount lessEq maxAmountFilter.toBigDecimal() }
@@ -172,6 +174,8 @@ class ExpenseService {
     suspend fun findExpenseById(id: Int): ServiceResponse<Any> {
         val expense = DatabaseFactory.dbQuery {
             ExpensesTable
+                .join(DriversTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.driverId eq DriversTable.id })
+                .join(VehiclesTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.vehicleId eq VehiclesTable.id })
                 .selectAll()
                 .where { ExpensesTable.id eq id }
                 .singleOrNull()
@@ -187,7 +191,9 @@ class ExpenseService {
                         amount = it[ExpensesTable.amount].toDouble(),
                         liters = it[ExpensesTable.liters]?.toDouble(),
                         pricePerLiter = it[ExpensesTable.pricePerLiter]?.toDouble(),
-                        odometer = it[ExpensesTable.odometer]
+                        odometer = it[ExpensesTable.odometer],
+                        driverName = it[DriversTable.name],
+                        vehiclePlate = it[VehiclesTable.plate]
                     )
                 }
         }
