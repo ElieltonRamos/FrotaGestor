@@ -53,10 +53,16 @@ class ExpenseController(private val expenseService: ExpenseService) {
             val vehicleIdFilter = call.request.queryParameters["vehicleId"]?.toIntOrNull()
             val driverIdFilter = call.request.queryParameters["driverId"]?.toIntOrNull()
             val tripIdFilter = call.request.queryParameters["tripId"]?.toIntOrNull()
-            val dateFilter = call.request.queryParameters["date"]?.let {
+
+            val dateStartFilter = call.request.queryParameters["dateStart"]?.let {
                 runCatching { LocalDate.parse(it) }.getOrNull()
             }
+            val dateEndFilter = call.request.queryParameters["dateEnd"]?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
             val typeFilter = call.request.queryParameters["type"]
+            val descriptionFilter = call.request.queryParameters["description"]
 
             val minAmountFilter = call.request.queryParameters["minAmount"]?.toDoubleOrNull()
             val maxAmountFilter = call.request.queryParameters["maxAmount"]?.toDoubleOrNull()
@@ -64,6 +70,9 @@ class ExpenseController(private val expenseService: ExpenseService) {
             val maxLitersFilter = call.request.queryParameters["maxLiters"]?.toDoubleOrNull()
             val minOdometerFilter = call.request.queryParameters["minOdometer"]?.toIntOrNull()
             val maxOdometerFilter = call.request.queryParameters["maxOdometer"]?.toIntOrNull()
+            val minPricePerLiterFilter = call.request.queryParameters["minPricePerLiter"]?.toDoubleOrNull()
+            val maxPricePerLiterFilter = call.request.queryParameters["maxPricePerLiter"]?.toDoubleOrNull()
+
             val driverNameFilter = call.request.queryParameters["driverName"]
             val vehiclePlateFilter = call.request.queryParameters["vehiclePlate"]
 
@@ -73,6 +82,7 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 "tripid" -> ExpensesTable.tripId
                 "date" -> ExpensesTable.date
                 "type" -> ExpensesTable.type
+                "description" -> ExpensesTable.description
                 "amount" -> ExpensesTable.amount
                 "liters" -> ExpensesTable.liters
                 "priceperliter" -> ExpensesTable.pricePerLiter
@@ -97,14 +107,18 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 vehicleIdFilter = vehicleIdFilter,
                 driverIdFilter = driverIdFilter,
                 tripIdFilter = tripIdFilter,
-                dateFilter = dateFilter,
+                dateStartFilter = dateStartFilter,
+                dateEndFilter = dateEndFilter,
                 typeFilter = typeFilter,
+                descriptionFilter = descriptionFilter,
                 minAmountFilter = minAmountFilter,
                 maxAmountFilter = maxAmountFilter,
                 minLitersFilter = minLitersFilter,
                 maxLitersFilter = maxLitersFilter,
                 minOdometerFilter = minOdometerFilter,
                 maxOdometerFilter = maxOdometerFilter,
+                minPricePerLiterFilter = minPricePerLiterFilter,
+                maxPricePerLiterFilter = maxPricePerLiterFilter,
                 driverNameFilter = driverNameFilter,
                 vehiclePlateFilter = vehiclePlateFilter
             )
@@ -115,6 +129,7 @@ class ExpenseController(private val expenseService: ExpenseService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
 
     suspend fun getById(call: ApplicationCall) {
         try {

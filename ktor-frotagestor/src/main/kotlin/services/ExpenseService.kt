@@ -101,12 +101,15 @@ class ExpenseService {
         typeFilter: String? = null,
         dateStartFilter: LocalDate? = null,
         dateEndFilter: LocalDate? = null,
+        descriptionFilter: String? = null,
         minAmountFilter: Double? = null,
         maxAmountFilter: Double? = null,
         minLitersFilter: Double? = null,
         maxLitersFilter: Double? = null,
         minOdometerFilter: Int? = null,
         maxOdometerFilter: Int? = null,
+        minPricePerLiterFilter: Double? = null,
+        maxPricePerLiterFilter: Double? = null,
         driverNameFilter: String? = null,
         vehiclePlateFilter: String? = null
     ): ServiceResponse<PaginatedResponse<Expense>> {
@@ -121,6 +124,7 @@ class ExpenseService {
                     if (driverIdFilter != null) andWhere { ExpensesTable.driverId eq driverIdFilter }
                     if (tripIdFilter != null) andWhere { ExpensesTable.tripId eq tripIdFilter }
                     if (!typeFilter.isNullOrBlank()) andWhere { ExpensesTable.type like "%$typeFilter%" }
+                    if (!descriptionFilter.isNullOrBlank()) andWhere { ExpensesTable.description like "%$descriptionFilter%" }
                     if (dateStartFilter != null) andWhere { ExpensesTable.date greaterEq dateStartFilter }
                     if (dateEndFilter != null) andWhere { ExpensesTable.date lessEq dateEndFilter }
 
@@ -130,6 +134,8 @@ class ExpenseService {
                     if (maxLitersFilter != null) andWhere { ExpensesTable.liters lessEq maxLitersFilter.toBigDecimal() }
                     if (minOdometerFilter != null) andWhere { ExpensesTable.odometer greaterEq minOdometerFilter }
                     if (maxOdometerFilter != null) andWhere { ExpensesTable.odometer lessEq maxOdometerFilter }
+                    if (minPricePerLiterFilter != null) andWhere { ExpensesTable.pricePerLiter greaterEq minPricePerLiterFilter.toBigDecimal() }
+                    if (maxPricePerLiterFilter != null) andWhere { ExpensesTable.pricePerLiter lessEq maxPricePerLiterFilter.toBigDecimal() }
                     if (!driverNameFilter.isNullOrBlank()) andWhere { DriversTable.name like "%$driverNameFilter%" }
                     if (!vehiclePlateFilter.isNullOrBlank()) andWhere { VehiclesTable.plate like "%$vehiclePlateFilter%" }
                 }
@@ -169,6 +175,7 @@ class ExpenseService {
             )
         }
     }
+
 
 
     suspend fun findExpenseById(id: Int): ServiceResponse<Any> {
