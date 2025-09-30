@@ -1,13 +1,25 @@
 export interface Expense {
   date: string;
-  type: string;
+  type: ExpenseType;
   amount: number;
   description: string;
   id?: number;
   vehicleId?: number;
   driverId?: number;
+  vehiclePlate?: string | null;
+  driverName?: string | null;
   tripId?: number;
   liters?: number;
   pricePerLiter?: number;
   odometer?: number;
+}
+
+export enum ExpenseType {
+  COMBUSTIVEL = 'Combustivel',
+  MANUTENCAO = 'Manutencao',
+  ALIMENTACAO = 'Alimentacao',
+  HOSPEDAGEM = 'Hospedagem',
+  MULTAS = 'Multas',
+  IMPOSTOS = 'Impostos',
+  OUTROS = 'Outros',
 }

@@ -32,9 +32,6 @@ export class ListExpense {
     { key: 'amount', label: 'Valor', sortable: true },
     { key: 'type', label: 'Tipo', sortable: true },
     { key: 'date', label: 'Data da Despesa', type: 'date', sortable: true },
-    { key: 'liters', label: 'Litros', sortable: true },
-    { key: 'pricePerLiter', label: 'Preço por Litro', sortable: true },
-    { key: 'odometer', label: 'Odômetro', sortable: true },
   ];
 
   expenseFilters: FilterConfig[] = [
@@ -53,7 +50,7 @@ export class ListExpense {
   // filtros
   filter: Partial<Expense> = {
     description: '',
-    type: '',
+    type: undefined,
     date: '',
   };
 
@@ -103,7 +100,7 @@ export class ListExpense {
   }
 
   clearFilters() {
-    this.filter = { description: '', type: '', date: '' };
+    this.filter = { description: '', type: undefined, date: '' };
     this.applyFilters();
   }
 

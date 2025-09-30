@@ -84,7 +84,6 @@ export class CreateExpense {
   ];
 
   saveExpense(data: Expense) {
-    console.log(data, 'data');
     this.expenseService.create(data).subscribe({
       next: () => {
         alertSuccess(`Despesa cadastrada com sucesso`);
