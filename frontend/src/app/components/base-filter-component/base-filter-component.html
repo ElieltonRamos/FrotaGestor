@@ -3,7 +3,7 @@
   <div class="flex flex-col">
     <label class="text-sm mb-1">{{ f.label }}</label>
 
-    @if(f.type === 'text' || f.type === 'number') {
+    @if(f.type === 'text' || f.type === 'number' || f.type === 'date') {
     <input
       [type]="f.type"
       class="px-3 py-2 rounded border bg-gray-50 text-sm"

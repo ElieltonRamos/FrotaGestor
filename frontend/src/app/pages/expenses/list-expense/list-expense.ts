@@ -1,19 +1,30 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { ColumnConfig, BaseListComponent } from '../../../components/base-list-component/base-list-component';
-import { Expense } from '../../../interfaces/expense';
+import {
+  ColumnConfig,
+  BaseListComponent,
+} from '../../../components/base-list-component/base-list-component';
+import { Expense, ExpenseType } from '../../../interfaces/expense';
 import { ExpenseService } from '../../../services/expense.service';
-import { FilterConfig, BaseFilterComponent } from '../../../components/base-filter-component/base-filter-component';
+import {
+  FilterConfig,
+  BaseFilterComponent,
+} from '../../../components/base-filter-component/base-filter-component';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
-import { PaginatorComponent } from "../../../components/paginator/paginator.component";
-import { ModalEditComponent } from "../../../components/modal-edit-component/modal-edit-component";
+import { PaginatorComponent } from '../../../components/paginator/paginator.component';
+import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 
 @Component({
   selector: 'app-list-expense',
-  imports: [BaseFilterComponent, PaginatorComponent, BaseListComponent, ModalEditComponent],
+  imports: [
+    BaseFilterComponent,
+    PaginatorComponent,
+    BaseListComponent,
+    ModalEditComponent,
+  ],
   templateUrl: './list-expense.html',
-  styles: ``
+  styles: ``,
 })
 export class ListExpense {
   private serviceExpense = inject(ExpenseService);
@@ -23,7 +34,12 @@ export class ListExpense {
   expenseFields = [
     { name: 'description', label: 'Descrição', type: 'text' },
     { name: 'amount', label: 'Valor', type: 'number' },
-    { name: 'type', label: 'Tipo', type: 'text' },
+    {
+      name: 'type',
+      label: 'Tipo',
+      type: 'select',
+      options: Object.values(ExpenseType),
+    },
     { name: 'date', label: 'Data da Despesa', type: 'date' },
   ];
 
@@ -35,8 +51,15 @@ export class ListExpense {
   ];
 
   expenseFilters: FilterConfig[] = [
-    { key: 'description', label: 'Descrição', type: 'text', placeholder: 'Descrição...' },
+    {
+      key: 'description',
+      label: 'Descrição',
+      type: 'text',
+      placeholder: 'Descrição...',
+    },
     { key: 'type', label: 'Tipo', type: 'text', placeholder: 'Tipo...' },
+    { key: 'dateStart', label: 'Data Inicial', type: 'date' },
+    { key: 'dateEnd', label: 'Data Final', type: 'date' },
   ];
 
   expenses: Expense[] = [];
@@ -47,11 +70,11 @@ export class ListExpense {
   selectedExpense?: Expense;
   showModal = false;
 
-  // filtros
-  filter: Partial<Expense> = {
+  filter: Partial<Expense & { dateStart?: string; dateEnd?: string }> = {
     description: '',
     type: undefined,
-    date: '',
+    dateStart: '',
+    dateEnd: '',
   };
 
   // ordenação
@@ -100,7 +123,12 @@ export class ListExpense {
   }
 
   clearFilters() {
-    this.filter = { description: '', type: undefined, date: '' };
+    this.filter = {
+      description: '',
+      type: undefined,
+      dateStart: '',
+      dateEnd: '',
+    };
     this.applyFilters();
   }
 

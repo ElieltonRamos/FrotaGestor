@@ -15,11 +15,11 @@ export class ExpenseService {
   create(expense: Expense): Observable<Message> {
     return this.http.post<Message>(`${API_URL}/expenses`, expense);
   }
-
+  
   getAll(
     page: number = 1,
     limit: number = 10,
-    filters: any = {},
+    filters: Record<string, any> = {},
     sortKey: string = 'id',
     sortAsc: boolean = true
   ): Observable<PaginatedResponse<Expense>> {
@@ -29,42 +29,16 @@ export class ExpenseService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    if (filters.id) {
-      params = params.set('id', filters.id);
-    }
-    if (filters.description) {
-      params = params.set('description', filters.description);
-    }
-    if (filters.type) {
-      params = params.set('type', filters.type);
-    }
-    if (filters.date) {
-      params = params.set('date', filters.date);
-    }
-    if (filters.amount) {
-      params = params.set('amount', filters.amount);
-    }
-    if (filters.vehicleId) {
-      params = params.set('vehicleId', filters.vehicleId);
-    }
-    if (filters.driverId) {
-      params = params.set('driverId', filters.driverId);
-    }
-    if (filters.tripId) {
-      params = params.set('tripId', filters.tripId);
-    }
-    if (filters.liters) {
-      params = params.set('liters', filters.liters);
-    }
-    if (filters.pricePerLiter) {
-      params = params.set('pricePerLiter', filters.pricePerLiter);
-    }
-    if (filters.odometer) {
-      params = params.set('odometer', filters.odometer);
-    }
+    // aplica dinamicamente todos os filtros preenchidos
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
 
-    const url = `${API_URL}/expenses?${params.toString()}`;
-    return this.http.get<PaginatedResponse<Expense>>(url);
+    return this.http.get<PaginatedResponse<Expense>>(`${API_URL}/expenses`, {
+      params,
+    });
   }
 
   getById(id: number | string): Observable<Expense> {

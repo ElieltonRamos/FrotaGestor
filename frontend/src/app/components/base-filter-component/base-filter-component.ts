@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 export interface FilterConfig {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'select';
+  type: 'text' | 'number' | 'select' | 'date';
   placeholder?: string;
   options?: string[];
 }
