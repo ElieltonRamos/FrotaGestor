@@ -15,7 +15,7 @@ export class ExpenseService {
   create(expense: Expense): Observable<Message> {
     return this.http.post<Message>(`${API_URL}/expenses`, expense);
   }
-  
+
   getAll(
     page: number = 1,
     limit: number = 10,
@@ -36,9 +36,10 @@ export class ExpenseService {
       }
     });
 
-    return this.http.get<PaginatedResponse<Expense>>(`${API_URL}/expenses`, {
-      params,
-    });
+    const url = `${API_URL}/expenses?${params.toString()}`;
+    console.log('🔎 URL chamada:', url);
+
+    return this.http.get<PaginatedResponse<Expense>>(url);
   }
 
   getById(id: number | string): Observable<Expense> {

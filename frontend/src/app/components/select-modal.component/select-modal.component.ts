@@ -1,6 +1,8 @@
 import {
+  ChangeDetectorRef,
   Component,
   EventEmitter,
+  inject,
   Input,
   Output,
   SimpleChanges,
@@ -30,6 +32,7 @@ import { Observable } from 'rxjs';
   templateUrl: './select-modal.component.html',
 })
 export class SelectModalComponent<T extends { id?: number }> {
+  private cdr = inject(ChangeDetectorRef);
   @Input() show = false;
   @Input() title = 'Selecionar';
   @Input() columns: ColumnConfig<T>[] = [];
@@ -49,21 +52,25 @@ export class SelectModalComponent<T extends { id?: number }> {
   filter: any = {};
   total = 0;
   page = 1;
-  limit = 10;
+  limit = 5;
   totalPages = 1;
   sortKey: keyof T = 'id' as keyof T;
   sortAsc = true;
 
+  ngOnInit() {
+    this.page = 1;
+    this.limit = 5;
+    this.loadData();
+  }
+
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['show']?.currentValue === true) {
-      this.page = 1;
+    if (changes['filtersConfig'] && !changes['filtersConfig'].firstChange) {
       this.loadData();
     }
   }
 
   loadData() {
     const appliedFilters = { ...this.filter, status: 'ATIVO' };
-    if (!this.dataFetcher) return;
     this.dataFetcher(
       this.page,
       this.limit,
@@ -77,6 +84,7 @@ export class SelectModalComponent<T extends { id?: number }> {
         this.page = res.page;
         this.limit = res.limit;
         this.totalPages = res.totalPages;
+        this.cdr.detectChanges();
       },
     });
   }

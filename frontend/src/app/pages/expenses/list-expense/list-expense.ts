@@ -47,6 +47,8 @@ export class ListExpense {
     { key: 'description', label: 'Descrição', sortable: true },
     { key: 'amount', label: 'Valor', sortable: true },
     { key: 'type', label: 'Tipo', sortable: true },
+    { key: 'driverName', label: 'Motorista', sortable: true },
+    { key: 'vehiclePlate', label: 'Placa', sortable: true },
     { key: 'date', label: 'Data da Despesa', type: 'date', sortable: true },
   ];
 
@@ -57,7 +59,9 @@ export class ListExpense {
       type: 'text',
       placeholder: 'Descrição...',
     },
-    { key: 'type', label: 'Tipo', type: 'text', placeholder: 'Tipo...' },
+    { key: 'type', label: 'Tipo', type: 'select', placeholder: 'Tipo...', options: Object.values(ExpenseType), },
+    { key: 'driverName', label: 'Motorista', type: 'text', placeholder: 'Motorista...' },
+    { key: 'vehiclePlate', label: 'Placa', type: 'text', placeholder: 'Placa...' },
     { key: 'dateStart', label: 'Data Inicial', type: 'date' },
     { key: 'dateEnd', label: 'Data Final', type: 'date' },
   ];
@@ -146,10 +150,12 @@ export class ListExpense {
   }
 
   onSaveModal(expense: Expense) {
-    const id = expense.id;
+    const id = expense.id || 0;
     delete expense.id;
+    delete expense.driverName;
+    delete expense.vehiclePlate;
 
-    this.serviceExpense.update(id!, expense).subscribe({
+    this.serviceExpense.update(id, expense).subscribe({
       next: () => {
         this.listexpenses(1, 10);
         this.showModal = false;

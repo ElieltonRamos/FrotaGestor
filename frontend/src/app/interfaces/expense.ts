@@ -4,11 +4,11 @@ export interface Expense {
   amount: number;
   description: string;
   id?: number;
-  vehicleId?: number;
-  driverId?: number;
+  vehicleId?: number | null;
+  driverId?: number | null;
   vehiclePlate?: string | null;
   driverName?: string | null;
-  tripId?: number;
+  tripId?: number | null;
   liters?: number;
   pricePerLiter?: number;
   odometer?: number;
