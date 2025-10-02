@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { API_URL } from './api.url';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Expense } from '../interfaces/expense';
+import { Observable, of } from 'rxjs';
+import { Expense, RefuelingIndicators } from '../interfaces/expense';
 import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
@@ -52,5 +52,18 @@ export class ExpenseService {
 
   delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${API_URL}/expenses/${id}`);
+  }
+
+  getIndicatorsRefueling(
+    filters: Record<string, any> = {}
+  ): Observable<RefuelingIndicators> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+    const url = `${API_URL}/expenses/fuels/indicators?${params.toString()}`;
+    return this.http.get<RefuelingIndicators>(url);
   }
 }

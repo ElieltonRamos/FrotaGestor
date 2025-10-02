@@ -14,7 +14,7 @@ export class Menu {
     { name: 'Motoristas', icon: 'heroUserGroupSolid', route: '/motoristas' },
     { name: 'Manutenções', icon: 'heroWrenchScrewdriverSolid', route: '/manutencoes' },
     { name: 'Despesas', icon: 'heroBarsArrowDownSolid', route: '/despesas' },
-    { name: 'Abastecimento', icon: 'heroFireSolid', route: '/abastecimento' },
+    { name: 'Abastecimento', icon: 'heroFireSolid', route: '/abastecimentos' },
     { name: 'Relatórios', icon: 'heroChartBarSolid', route: '/relatorios' },
   ];
 }

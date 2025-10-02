@@ -24,6 +24,7 @@ export interface FormField {
 export class DynamicFormComponent {
   @Input() fields: FormField[] = [];
   @Output() formSubmit = new EventEmitter<any>();
+  @Output() formChange = new EventEmitter<any>();
 
   form!: FormGroup;
 
@@ -35,6 +36,9 @@ export class DynamicFormComponent {
       group[field.name] = field.required ? [null, Validators.required] : [null];
     });
     this.form = this.fb.group(group);
+    this.form.valueChanges.subscribe((value) => {
+      this.formChange.emit(value);
+    });
   }
 
   onSubmit() {

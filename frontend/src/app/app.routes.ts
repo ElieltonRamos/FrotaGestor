@@ -13,6 +13,8 @@ import { DetailsTrip } from './pages/trip/details-trip/details-trip';
 import { Trip } from './pages/trip/trip';
 import { Expenses } from './pages/expenses/expenses';
 import { DetailsExpense } from './pages/expenses/details-expense/details-expense';
+import { Refueling } from './pages/refueling/refueling';
+import { DetailsRefueling } from './pages/refueling/details-refueling/details-refueling';
 
 export const routes: Routes = [
   {
@@ -68,6 +70,16 @@ export const routes: Routes = [
   {
     path: 'despesas/:id',
     component: DetailsExpense,
+    canActivate: [authGuard],
+  },
+    {
+    path: 'abastecimentos',
+    component: Refueling,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'abastecimentos/:id',
+    component: DetailsRefueling,
     canActivate: [authGuard],
   },
   { path: '**', component: NotFound },

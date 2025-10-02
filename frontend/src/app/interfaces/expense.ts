@@ -23,3 +23,25 @@ export enum ExpenseType {
   IMPOSTOS = 'Impostos',
   OUTROS = 'Outros',
 }
+
+export interface RefuelingIndicators {
+  totalAmount: number;
+  totalLiters: number;
+  avgPricePerLiter: number;
+  topDriver?: {
+    name: string;
+    count: number;
+  };
+  topVehicleByAmount?: {
+    plate: string;
+    amount: number;
+  };
+  topVehicleByLiters?: {
+    plate: string;
+    liters: number;
+  };
+  lastRefueling?: {
+    date: string;
+    plate: string;
+  };
+}
