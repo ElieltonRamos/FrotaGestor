@@ -65,9 +65,4 @@ export class DetailsExpense {
       },
     });
   }
-
-  onEditExpense() {
-    if (!this.expense || !this.expense.id) return;
-    this.router.navigate(['/despesas/editar', this.expense.id]);
-  }
 }

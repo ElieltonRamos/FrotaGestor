@@ -27,6 +27,8 @@
     "@angular/forms": "^20.1.0",
     "@angular/platform-browser": "^20.1.0",
     "@angular/router": "^20.1.0",
+    "@ng-icons/core": "^32.1.0",
+    "@ng-icons/heroicons": "^32.1.0",
     "@tailwindcss/postcss": "^4.1.13",
     "jwt-decode": "^4.0.0",
     "postcss": "^8.5.6",

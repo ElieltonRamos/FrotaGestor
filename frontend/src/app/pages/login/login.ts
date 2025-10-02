@@ -4,21 +4,28 @@ import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { alertError } from '../../utils/custom-alerts';
 import { mapNetworkError } from '../../services/api.url';
+import { CommonModule } from '@angular/common';
+import { NgIcon } from "@ng-icons/core";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, CommonModule, NgIcon],
   templateUrl: './login.html',
 })
 export class Login {
   username = '';
   password = '';
   isLoading = false;
+  showPassword = false;
 
   private router = inject(Router);
   private userService = inject(UserService);
   private cdr = inject(ChangeDetectorRef);
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+  }
 
   login() {
     this.isLoading = true;

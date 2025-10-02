@@ -1,19 +1,20 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NgIcon } from '@ng-icons/core';
 
 @Component({
   selector: 'app-menu',
-  imports: [RouterLink],
+  imports: [RouterLink, NgIcon],
   templateUrl: './menu.html',
 })
 export class Menu {
   menus = [
-    { name: 'Veículos', icon: 'directions_car', route: '/veiculos' },
-    { name: 'Viagens', icon: 'local_shipping', route: '/viagens' },
-    { name: 'Motoristas', icon: 'person', route: '/motoristas' },
-    { name: 'Manutenções', icon: 'build', route: '/manutencoes' },
-    { name: 'Despesas', icon: 'tire_repair', route: '/despesas' },
-    { name: 'Abastecimento', icon: 'local_gas_station', route: '/abastecimento' },
-    { name: 'Relatórios', icon: 'bar_chart', route: '/relatorios' },
+    { name: 'Veículos', icon: 'heroTruckSolid', route: '/veiculos' },
+    { name: 'Viagens', icon: 'heroMapSolid', route: '/viagens' },
+    { name: 'Motoristas', icon: 'heroUserGroupSolid', route: '/motoristas' },
+    { name: 'Manutenções', icon: 'heroWrenchScrewdriverSolid', route: '/manutencoes' },
+    { name: 'Despesas', icon: 'heroBarsArrowDownSolid', route: '/despesas' },
+    { name: 'Abastecimento', icon: 'heroFireSolid', route: '/abastecimento' },
+    { name: 'Relatórios', icon: 'heroChartBarSolid', route: '/relatorios' },
   ];
 }

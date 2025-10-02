@@ -8,16 +8,18 @@ import {
 } from '@angular/forms';
 import { alertError, alertSuccess } from '../../utils/custom-alerts';
 import { UserService } from '../../services/user.service';
+import { NgIcon } from '@ng-icons/core';
 
 @Component({
   selector: 'app-change-password',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NgIcon],
   templateUrl: './change-password.html',
 })
 export class ChangePassword {
   private formBuilder = inject(FormBuilder);
   private userService = inject(UserService);
-
+  showNewPassword = false;
+  showConfirmPassword = false;
   form = this.formBuilder.group(
     {
       newPassword: ['', [Validators.required, Validators.minLength(6)]],
@@ -25,6 +27,14 @@ export class ChangePassword {
     },
     { validators: this.passwordsMatchValidator }
   );
+
+  toggleNewPassword() {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmPassword() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   private passwordsMatchValidator(
     control: AbstractControl
