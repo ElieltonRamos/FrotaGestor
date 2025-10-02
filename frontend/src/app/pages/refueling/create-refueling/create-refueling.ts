@@ -19,7 +19,7 @@ import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'app-create-refueling',
-  imports: [DynamicFormComponent, SelectModalComponent, DecimalPipe],
+  imports: [DynamicFormComponent, DecimalPipe],
   templateUrl: './create-refueling.html',
   styles: ``,
 })
