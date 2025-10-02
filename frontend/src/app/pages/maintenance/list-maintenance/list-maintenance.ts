@@ -1,7 +1,6 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
-
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import {
   ColumnConfig,
   BaseListComponent,
@@ -9,7 +8,7 @@ import {
 import {
   Expense,
   ExpenseType,
-  RefuelingIndicators,
+  MaintenanceIndicators,
 } from '../../../interfaces/expense';
 import { ExpenseService } from '../../../services/expense.service';
 import {
@@ -22,7 +21,7 @@ import { PaginatorComponent } from '../../../components/paginator/paginator.comp
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 
 @Component({
-  selector: 'app-list-refueling',
+  selector: 'app-list-maintenance',
   imports: [
     BaseFilterComponent,
     PaginatorComponent,
@@ -30,48 +29,42 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
     ModalEditComponent,
     CurrencyPipe,
     DatePipe,
-    DecimalPipe,
   ],
-  templateUrl: './list-refueling.html',
+  templateUrl: './list-maintenance.html',
   styles: ``,
 })
-export class ListRefueling {
+export class ListMaintenance {
   private serviceExpense = inject(ExpenseService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
-  loadingIndicators = false;
-  indicators?: RefuelingIndicators;
 
-  expenseFields = [
+  loadingIndicators = false;
+  indicators?: MaintenanceIndicators;
+
+  // 🔹 Campos do formulário de manutenção
+  maintenanceFields = [
     { name: 'description', label: 'Descrição', type: 'text' },
-    { name: 'amount', label: 'Valor Total', type: 'number' },
-    { name: 'liters', label: 'Litros', type: 'number' },
-    { name: 'pricePerLiter', label: 'Preço/Litro', type: 'number' },
-    { name: 'date', label: 'Data do Abastecimento', type: 'date' },
+    { name: 'amount', label: 'Valor', type: 'number' },
+    { name: 'type', label: 'Tipo', type: 'text' },
+    { name: 'date', label: 'Data da Manutenção', type: 'date' },
   ];
 
-  expenseColumns: ColumnConfig<Expense>[] = [
+  // 🔹 Colunas da tabela
+  maintenanceColumns: ColumnConfig<Expense>[] = [
     { key: 'description', label: 'Descrição', sortable: true },
-    { key: 'amount', label: 'Valor Total', sortable: true },
-    { key: 'liters', label: 'Litros', sortable: true },
-    { key: 'pricePerLiter', label: 'Preço/Litro', sortable: true },
-    { key: 'driverName', label: 'Motorista', sortable: true },
+    { key: 'amount', label: 'Valor', sortable: true },
+    { key: 'type', label: 'Tipo', sortable: true },
     { key: 'vehiclePlate', label: 'Placa', sortable: true },
     { key: 'date', label: 'Data', type: 'date', sortable: true },
   ];
 
-  expenseFilters: FilterConfig[] = [
+  // 🔹 Filtros
+  maintenanceFilters: FilterConfig[] = [
     {
       key: 'description',
       label: 'Descrição',
       type: 'text',
       placeholder: 'Descrição...',
-    },
-    {
-      key: 'driverName',
-      label: 'Motorista',
-      type: 'text',
-      placeholder: 'Motorista...',
     },
     {
       key: 'vehiclePlate',
@@ -83,32 +76,32 @@ export class ListRefueling {
     { key: 'dateEnd', label: 'Data Final', type: 'date' },
   ];
 
-  expenses: Expense[] = [];
+  maintenances: Expense[] = [];
   total = 0;
   page = 1;
   limit = 10;
   totalPages = 1;
-  selectedExpense?: Expense;
+  selectedMaintenance?: Expense;
   showModal = false;
 
   filter: Partial<Expense & { dateStart?: string; dateEnd?: string }> = {
-    type: ExpenseType.COMBUSTIVEL,
+    type: ExpenseType.MANUTENCAO,
   };
 
   sortKey: keyof Expense = 'date';
   sortAsc = true;
 
   ngOnInit() {
-    this.listexpenses(1, 10);
+    this.listMaintenances(1, 10);
     this.loadIndicators();
   }
 
-  listexpenses(page: number, limit: number) {
+  listMaintenances(page: number, limit: number) {
     this.serviceExpense
       .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
       .subscribe({
         next: (res: PaginatedResponse<Expense>) => {
-          this.expenses = res.data;
+          this.maintenances = res.data;
           this.total = res.total;
           this.page = res.page;
           this.limit = res.limit;
@@ -117,10 +110,10 @@ export class ListRefueling {
         },
         error: (err) => {
           console.log(
-            'Erro ao carregar Abastecimentos:',
+            'Erro ao carregar Manutenções:',
             err?.error?.message || err
           );
-          this.expenses = [];
+          this.maintenances = [];
           this.total = 0;
           this.totalPages = 0;
         },
@@ -129,6 +122,7 @@ export class ListRefueling {
 
   loadIndicators() {
     this.loadingIndicators = true;
+
     let filterWithPeriod = { ...this.filter };
 
     if (!this.filter.dateStart && !this.filter.dateEnd) {
@@ -143,7 +137,7 @@ export class ListRefueling {
       };
     }
 
-    this.serviceExpense.getIndicatorsRefueling(filterWithPeriod).subscribe({
+    this.serviceExpense.getIndicatorsMaintenance(filterWithPeriod).subscribe({
       next: (data) => {
         this.indicators = data;
         this.loadingIndicators = false;
@@ -152,12 +146,10 @@ export class ListRefueling {
       error: () => {
         this.indicators = {
           totalAmount: 0,
-          totalLiters: 0,
-          avgPricePerLiter: 0,
-          topDriver: { name: '', count: 0 },
+          totalCount: 0,
+          mostCommonType: '',
           topVehicleByAmount: { plate: '', amount: 0 },
-          topVehicleByLiters: { plate: '', liters: 0 },
-          lastRefueling: { date: '', plate: '' },
+          lastMaintenance: { date: '', plate: '' },
         };
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -167,7 +159,7 @@ export class ListRefueling {
 
   applyFilters() {
     this.page = 1;
-    this.listexpenses(this.page, this.limit);
+    this.listMaintenances(this.page, this.limit);
     this.loadIndicators();
   }
 
@@ -178,20 +170,20 @@ export class ListRefueling {
       this.sortKey = key;
       this.sortAsc = true;
     }
-    this.listexpenses(this.page, this.limit);
+    this.listMaintenances(this.page, this.limit);
   }
 
   clearFilters() {
-    this.filter = { type: ExpenseType.COMBUSTIVEL };
+    this.filter = { type: ExpenseType.MANUTENCAO };
     this.applyFilters();
   }
 
   onPageChange(newPage: number) {
-    this.listexpenses(newPage, this.limit);
+    this.listMaintenances(newPage, this.limit);
   }
 
-  onEdit(expense: Expense) {
-    this.selectedExpense = { ...expense };
+  onEdit(maintenance: Expense) {
+    this.selectedMaintenance = { ...maintenance };
     this.showModal = true;
   }
 
@@ -199,24 +191,23 @@ export class ListRefueling {
     this.showModal = false;
   }
 
-  onSaveModal(expense: Expense) {
-    const id = expense.id || 0;
-    delete expense.id;
-    delete expense.driverName;
-    delete expense.vehiclePlate;
-    expense.type = ExpenseType.COMBUSTIVEL;
+  onSaveModal(maintenance: Expense) {
+    const id = maintenance.id || 0;
+    delete maintenance.id;
+    delete maintenance.vehiclePlate;
+    maintenance.type = ExpenseType.MANUTENCAO;
 
-    this.serviceExpense.update(id, expense).subscribe({
+    this.serviceExpense.update(id, maintenance).subscribe({
       next: () => {
-        this.listexpenses(1, 10);
+        this.listMaintenances(1, 10);
         this.loadIndicators();
         this.showModal = false;
-        this.selectedExpense = undefined;
-        alertSuccess('Abastecimento atualizado com sucesso');
+        this.selectedMaintenance = undefined;
+        alertSuccess('Manutenção atualizada com sucesso');
       },
       error: (err) => {
         alertError(
-          `Ocorreu um erro ao salvar o Abastecimento. ${
+          `Erro ao salvar Manutenção: ${
             err?.error?.message || 'Erro desconhecido.'
           }`
         );
@@ -226,6 +217,6 @@ export class ListRefueling {
 
   onNavDetails(id?: Number) {
     if (!id) return;
-    this.router.navigate(['/abastecimentos', id]);
+    this.router.navigate(['/manutencoes', id]);
   }
 }

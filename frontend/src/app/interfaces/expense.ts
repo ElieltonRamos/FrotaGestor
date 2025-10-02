@@ -45,3 +45,11 @@ export interface RefuelingIndicators {
     plate: string;
   };
 }
+
+export interface MaintenanceIndicators {
+  totalAmount: number;
+  totalCount: number;
+  mostCommonType: string;
+  topVehicleByAmount: { plate: string; amount: number };
+  lastMaintenance: { date: string; plate: string };
+}

@@ -15,6 +15,8 @@ import { Expenses } from './pages/expenses/expenses';
 import { DetailsExpense } from './pages/expenses/details-expense/details-expense';
 import { Refueling } from './pages/refueling/refueling';
 import { DetailsRefueling } from './pages/refueling/details-refueling/details-refueling';
+import { Maintenance } from './pages/maintenance/maintenance';
+import { DetailsMaintenance } from './pages/maintenance/details-maintenance/details-maintenance';
 
 export const routes: Routes = [
   {
@@ -72,7 +74,7 @@ export const routes: Routes = [
     component: DetailsExpense,
     canActivate: [authGuard],
   },
-    {
+  {
     path: 'abastecimentos',
     component: Refueling,
     canActivate: [authGuard],
@@ -80,6 +82,16 @@ export const routes: Routes = [
   {
     path: 'abastecimentos/:id',
     component: DetailsRefueling,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'manutencoes',
+    component: Maintenance,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'manutencoes/:id',
+    component: DetailsMaintenance,
     canActivate: [authGuard],
   },
   { path: '**', component: NotFound },
