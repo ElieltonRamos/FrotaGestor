@@ -18,3 +18,17 @@ export enum TripStatus {
   CONCLUIDA = 'CONCLUIDA',
   CANCELADA = 'CANCELADA',
 }
+
+export interface TripIndicators {
+  totalTrips: number;
+  inProgress: number;
+  completed: number;
+  canceled: number;
+  totalDistance: number;
+  avgDistance: number;
+  lastTrip?: {
+    date: string;
+    driverName: string;
+    vehiclePlate: string;
+  };
+}

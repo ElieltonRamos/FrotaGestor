@@ -13,4 +13,14 @@ export interface Driver {
 
 export type DriverStatus = 'ATIVO' | 'INATIVO';
 
-
+export interface DriverIndicators {
+  total: number;
+  withExpiredLicense: number;
+  withExpiringLicense: number;
+  mostCommonCategory?: string;
+  lastDriver?: {
+    name: string;
+    cpf: string;
+    date: string;
+  };
+}

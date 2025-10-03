@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-import { API_URL } from './api.url';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Vehicle, VehicleStatus } from '../interfaces/vehicle';
 import { Observable } from 'rxjs';
-import { Message } from '../interfaces/user';
+import { API_URL } from './api.url';
+import { Vehicle, VehicleIndicators } from '../interfaces/vehicle';
 import { PaginatedResponse } from '../interfaces/paginator';
+import { Message } from '../interfaces/user';
 
 @Injectable({
   providedIn: 'root',
@@ -19,7 +19,7 @@ export class VehicleService {
   getAll(
     page: number = 1,
     limit: number = 10,
-    filters: any = {},
+    filters: Record<string, any> = {},
     sortKey: string = 'id',
     sortAsc: boolean = true
   ): Observable<PaginatedResponse<Vehicle>> {
@@ -29,26 +29,16 @@ export class VehicleService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    if (filters.id) {
-      params = params.set('id', filters.id);
-    }
-    if (filters.plate) {
-      params = params.set('plate', filters.plate);
-    }
-    if (filters.model) {
-      params = params.set('model', filters.model);
-    }
-    if (filters.brand) {
-      params = params.set('brand', filters.brand);
-    }
-    if (filters.year) {
-      params = params.set('year', filters.year);
-    }
-    if (filters.status) {
-      params = params.set('status', filters.status);
-    }
-    const url = `${API_URL}/vehicles?${params.toString()}`;
-    return this.http.get<PaginatedResponse<Vehicle>>(url);
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get<PaginatedResponse<Vehicle>>(
+      `${API_URL}/vehicles`,
+      { params }
+    );
   }
 
   getById(id: number | string): Observable<Vehicle> {
@@ -61,5 +51,16 @@ export class VehicleService {
 
   delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${API_URL}/vehicles/${id}`);
+  }
+
+  getIndicators(filters: Record<string, any> = {}): Observable<VehicleIndicators> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, { params });
   }
 }

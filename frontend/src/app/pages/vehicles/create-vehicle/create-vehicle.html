@@ -1,8 +1,22 @@
-<div class="p-6">
-  <h2 class="text-2xl font-semibold mb-4">Cadastro de Veículo</h2>
+<div
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
+>
+  <!-- Coluna principal com formulário -->
+  <div class="lg:col-span-2">
+    <h2 class="text-2xl font-semibold mb-4">Cadastro de Veículo</h2>
 
-  <app-dynamic-form
-    [fields]="vehicleFields"
-    (formSubmit)="saveVehicle($event)">
-  </app-dynamic-form>
+    <app-dynamic-form
+      [fields]="vehicleFields"
+      (formSubmit)="saveVehicle($event)"
+    >
+    </app-dynamic-form>
+  </div>
+
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="register-vehicle.svg"
+      alt="Ilustração de cadastro de veículo"
+      class="max-h-64 opacity-90 custom-shadow-img"
+    />
+  </div>
 </div>

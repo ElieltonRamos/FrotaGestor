@@ -1,19 +1,22 @@
 <div
-  class="max-w-4xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 flex flex-col justify-between min-h-[400px]"
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
 >
-  <!-- Header -->
-  <div class="flex items-center justify-between mb-6 gap-4">
-    <h2 class="text-xl font-semibold text-gray-800">Detalhes da Manutenção</h2>
-    <button
-      class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
-      (click)="goBack()"
-    >
-      Voltar
-    </button>
-  </div>
+  <!-- Coluna principal -->
+  <div class="lg:col-span-2 flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6 gap-4">
+      <h2 class="text-xl font-semibold text-gray-800">
+        Detalhes da Manutenção
+      </h2>
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+        (click)="goBack()"
+      >
+        Voltar
+      </button>
+    </div>
 
-  <!-- Conteúdo -->
-  <div class="flex-1">
+    <!-- Conteúdo -->
     @if (maintenance) {
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
       <div>
@@ -62,5 +65,12 @@
     } @else {
     <p class="text-gray-500 text-sm italic">Carregando manutenção...</p>
     }
+  </div>
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="maintenance-details.png"
+      alt="Ilustração de manutenção"
+      class="max-h-60 opacity-90 custom-shadow-img"
+    />
   </div>
 </div>

@@ -4,7 +4,11 @@ import {
   ColumnConfig,
   BaseListComponent,
 } from '../../../components/base-list-component/base-list-component';
-import { Expense, ExpenseType } from '../../../interfaces/expense';
+import {
+  Expense,
+  ExpenseIndicators,
+  ExpenseType,
+} from '../../../interfaces/expense';
 import { ExpenseService } from '../../../services/expense.service';
 import {
   FilterConfig,
@@ -14,6 +18,7 @@ import { PaginatedResponse } from '../../../interfaces/paginator';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 import { PaginatorComponent } from '../../../components/paginator/paginator.component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-list-expense',
@@ -22,6 +27,8 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
     PaginatorComponent,
     BaseListComponent,
     ModalEditComponent,
+    DatePipe,
+    CurrencyPipe,
   ],
   templateUrl: './list-expense.html',
   styles: ``,
@@ -59,9 +66,25 @@ export class ListExpense {
       type: 'text',
       placeholder: 'Descrição...',
     },
-    { key: 'type', label: 'Tipo', type: 'select', placeholder: 'Tipo...', options: Object.values(ExpenseType), },
-    { key: 'driverName', label: 'Motorista', type: 'text', placeholder: 'Motorista...' },
-    { key: 'vehiclePlate', label: 'Placa', type: 'text', placeholder: 'Placa...' },
+    {
+      key: 'type',
+      label: 'Tipo',
+      type: 'select',
+      placeholder: 'Tipo...',
+      options: Object.values(ExpenseType),
+    },
+    {
+      key: 'driverName',
+      label: 'Motorista',
+      type: 'text',
+      placeholder: 'Motorista...',
+    },
+    {
+      key: 'vehiclePlate',
+      label: 'Placa',
+      type: 'text',
+      placeholder: 'Placa...',
+    },
     { key: 'dateStart', label: 'Data Inicial', type: 'date' },
     { key: 'dateEnd', label: 'Data Final', type: 'date' },
   ];
@@ -84,9 +107,47 @@ export class ListExpense {
   // ordenação
   sortKey: keyof Expense = 'description';
   sortAsc = true;
+  indicators?: ExpenseIndicators;
+  loadingIndicators = false;
 
   ngOnInit() {
     this.listexpenses(1, 10);
+    this.loadIndicators();
+  }
+
+  loadIndicators() {
+    this.loadingIndicators = true;
+    let filterWithPeriod = { ...this.filter };
+
+    if (!this.filter.dateStart && !this.filter.dateEnd) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      filterWithPeriod = {
+        ...this.filter,
+        dateStart: start.toISOString().split('T')[0],
+        dateEnd: end.toISOString().split('T')[0],
+      };
+    }
+
+    this.serviceExpense.getIndicatorsExpenses(filterWithPeriod).subscribe({
+      next: (data) => {
+        this.indicators = data;
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.indicators = {
+          totalAmount: 0,
+          totalCount: 0,
+          mostCommonType: '',
+          lastExpense: { date: '', type: '', description: '' },
+        };
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   listexpenses(page: number, limit: number) {
@@ -158,6 +219,7 @@ export class ListExpense {
     this.serviceExpense.update(id, expense).subscribe({
       next: () => {
         this.listexpenses(1, 10);
+        this.loadIndicators();
         this.showModal = false;
         this.selectedExpense = undefined;
         alertSuccess('Despesa atualizada com sucesso');

@@ -53,3 +53,14 @@ export interface MaintenanceIndicators {
   topVehicleByAmount: { plate: string; amount: number };
   lastMaintenance: { date: string; plate: string };
 }
+
+export interface ExpenseIndicators {
+  totalAmount: number;
+  totalCount: number;
+  mostCommonType?: string;
+  lastExpense?: {
+    date: string;
+    type: string;
+    description: string;
+  };
+}

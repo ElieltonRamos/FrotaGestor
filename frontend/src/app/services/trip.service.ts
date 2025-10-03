@@ -3,7 +3,7 @@ import { API_URL } from './api.url';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PaginatedResponse } from '../interfaces/paginator';
-import { Trip, TripStatus } from '../interfaces/trip';
+import { Trip, TripIndicators, TripStatus } from '../interfaces/trip';
 import { Message } from '../interfaces/user';
 
 @Injectable({
@@ -19,7 +19,7 @@ export class TripService {
   getAll(
     page: number = 1,
     limit: number = 10,
-    filters: any = {},
+    filters: Record<string, any> = {},
     sortKey: string = 'id',
     sortAsc: boolean = true
   ): Observable<PaginatedResponse<Trip>> {
@@ -29,28 +29,15 @@ export class TripService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    // filtros
-    if (filters.id) {
-      params = params.set('id', filters.id);
-    }
-    if (filters.vehiclePlate) {
-      params = params.set('vehiclePlate', filters.vehiclePlate);
-    }
-    if (filters.driverName) {
-      params = params.set('driverName', filters.driverName);
-    }
-    if (filters.status) {
-      params = params.set('status', filters.status);
-    }
-    if (filters.startDate) {
-      params = params.set('startDate', filters.startDate); // deve ser string ISO
-    }
-    if (filters.endDate) {
-      params = params.set('endDate', filters.endDate); // deve ser string ISO
-    }
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
 
     const url = `${API_URL}/trips?${params.toString()}`;
-    console.log(url)
+    console.log('🔎 URL chamada:', url);
+
     return this.http.get<PaginatedResponse<Trip>>(url);
   }
 
@@ -64,5 +51,18 @@ export class TripService {
 
   delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${API_URL}/trips/${id}`);
+  }
+
+  getIndicators(filters: Record<string, any> = {}): Observable<TripIndicators> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get<TripIndicators>(`${API_URL}/trips/indicators`, {
+      params,
+    });
   }
 }

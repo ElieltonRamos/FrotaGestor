@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { API_URL } from './api.url';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { Expense, MaintenanceIndicators, RefuelingIndicators } from '../interfaces/expense';
+import {
+  Expense,
+  ExpenseIndicators,
+  MaintenanceIndicators,
+  RefuelingIndicators,
+} from '../interfaces/expense';
 import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
@@ -67,13 +72,32 @@ export class ExpenseService {
     return this.http.get<RefuelingIndicators>(url);
   }
 
-  getIndicatorsMaintenance(filters: Record<string, any>): Observable<MaintenanceIndicators> {
+  getIndicatorsMaintenance(
+    filters: Record<string, any>
+  ): Observable<MaintenanceIndicators> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value);
       }
     });
-    return this.http.get<MaintenanceIndicators>(`${API_URL}/expenses/maintenance/indicators`, { params });
+    return this.http.get<MaintenanceIndicators>(
+      `${API_URL}/expenses/maintenance/indicators`,
+      { params }
+    );
+  }
+
+  getIndicatorsExpenses(
+    filters: Record<string, any> = {}
+  ): Observable<ExpenseIndicators> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    const url = `${API_URL}/expenses/indicators?${params.toString()}`;
+    return this.http.get<ExpenseIndicators>(url);
   }
 }

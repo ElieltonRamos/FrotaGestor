@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Vehicle } from '../../../interfaces/vehicle';
+import { Vehicle, VehicleIndicators } from '../../../interfaces/vehicle';
 import { VehicleService } from '../../../services/vehicle.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { Router } from '@angular/router';
@@ -15,7 +15,7 @@ import {
   BaseFilterComponent,
   FilterConfig,
 } from '../../../components/base-filter-component/base-filter-component';
-import { ModalEditComponent } from "../../../components/modal-edit-component/modal-edit-component";
+import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 
 @Component({
   selector: 'app-list-vehicle',
@@ -25,14 +25,17 @@ import { ModalEditComponent } from "../../../components/modal-edit-component/mod
     BaseListComponent,
     PaginatorComponent,
     BaseFilterComponent,
-    ModalEditComponent
-],
+    ModalEditComponent,
+  ],
   templateUrl: './list-vehicle.html',
 })
 export class ListVehicle {
   private serviceVehicle = inject(VehicleService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
+
+  indicators?: VehicleIndicators;
+  loadingIndicators = false;
 
   vehicleFields = [
     { name: 'plate', label: 'Placa', type: 'text' },
@@ -96,10 +99,10 @@ export class ListVehicle {
 
   ngOnInit() {
     this.listVehicles(1, 10);
+    this.loadIndicators();
   }
 
   listVehicles(page: number, limit: number) {
-    console.log('Listando veículos...', this.filter);
     this.serviceVehicle
       .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
       .subscribe({
@@ -112,12 +115,27 @@ export class ListVehicle {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.log('Erro ao carregar veículos:', err);
+          console.error('Erro ao carregar veículos:', err);
           this.vehicles = [];
           this.total = 0;
           this.totalPages = 0;
         },
       });
+  }
+
+  loadIndicators() {
+    this.loadingIndicators = true;
+    this.serviceVehicle.getIndicators().subscribe({
+      next: (res: VehicleIndicators) => {
+        this.indicators = res;
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar indicadores:', err);
+        this.loadingIndicators = false;
+      },
+    });
   }
 
   applyFilters() {
@@ -137,7 +155,13 @@ export class ListVehicle {
   }
 
   clearFilters() {
-    this.filter = { plate: '', model: '', brand: '', year: '', status: 'ATIVO' };
+    this.filter = {
+      plate: '',
+      model: '',
+      brand: '',
+      year: '',
+      status: 'ATIVO',
+    };
     this.applyFilters();
   }
 
@@ -161,6 +185,7 @@ export class ListVehicle {
     this.serviceVehicle.update(id!, vehicle).subscribe({
       next: () => {
         this.listVehicles(1, 10);
+        this.loadIndicators();
         this.showModal = false;
         this.selectedVehicle = undefined;
         alertSuccess('Veículo atualizado com Sucesso');

@@ -13,3 +13,13 @@ export enum VehicleStatus {
   INATIVO = 'INATIVO',
   MANUTENCAO = 'MANUTENCAO',
 }
+
+export interface VehicleIndicators {
+  total: number;
+  active: number;
+  maintenance: number;
+  lastVehicle?: {
+    plate: string;
+    date: string;
+  };
+}

@@ -1,13 +1,13 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Driver } from '../../../interfaces/driver';
+import { Driver, DriverIndicators } from '../../../interfaces/driver';
 import { DriverService } from '../../../services/driver.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { PaginatorComponent } from '../../../components/paginator/paginator.component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 import { Router } from '@angular/router';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { BaseListComponent, ColumnConfig } from '../../../components/base-list-component/base-list-component';
 import { BaseFilterComponent, FilterConfig } from '../../../components/base-filter-component/base-filter-component';
 
@@ -27,6 +27,10 @@ export class ListDriver {
   private serviceDriver = inject(DriverService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
+
+  // === Indicadores ===
+  indicators?: DriverIndicators;
+  loadingIndicators = false;
 
   driverFields = [
     { name: 'name', label: 'Nome', type: 'text' },
@@ -49,12 +53,7 @@ export class ListDriver {
     { key: 'cpf', label: 'CPF', sortable: true },
     { key: 'cnh', label: 'CNH', sortable: true },
     { key: 'cnhCategory', label: 'Categoria CNH', sortable: true },
-    {
-      key: 'cnhExpiration',
-      label: 'Validade CNH',
-      type: 'date',
-      sortable: true,
-    },
+    { key: 'cnhExpiration', label: 'Validade CNH', type: 'date', sortable: true },
     { key: 'status', label: 'Status', type: 'status', sortable: true },
   ];
 
@@ -90,6 +89,7 @@ export class ListDriver {
 
   ngOnInit() {
     this.listDrivers(1, 10);
+    this.loadIndicators();
   }
 
   listDrivers(page: number, limit: number) {
@@ -111,6 +111,21 @@ export class ListDriver {
           this.totalPages = 0;
         },
       });
+  }
+
+  loadIndicators() {
+    this.loadingIndicators = true;
+    this.serviceDriver.getIndicators().subscribe({
+      next: (res: DriverIndicators) => {
+        this.indicators = res;
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar indicadores:', err);
+        this.loadingIndicators = false;
+      },
+    });
   }
 
   applyFilters() {
@@ -155,6 +170,7 @@ export class ListDriver {
     this.serviceDriver.update(id!, driver).subscribe({
       next: () => {
         this.listDrivers(1, 10);
+        this.loadIndicators();
         this.showModal = false;
         this.selectedDriver = undefined;
         alertSuccess('Motorista atualizado com Sucesso');

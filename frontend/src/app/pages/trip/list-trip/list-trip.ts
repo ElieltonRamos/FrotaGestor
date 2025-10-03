@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Trip, TripStatus } from '../../../interfaces/trip';
+import { Trip, TripIndicators, TripStatus } from '../../../interfaces/trip';
 import { TripService } from '../../../services/trip.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { Router } from '@angular/router';
@@ -34,7 +34,6 @@ export class ListTrip {
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
 
-  // Configuração das colunas
   tripColumns: ColumnConfig<Trip>[] = [
     { key: 'id' as keyof Trip, label: 'ID', sortable: true },
     { key: 'vehiclePlate' as keyof Trip, label: 'Veículo', sortable: true },
@@ -66,7 +65,6 @@ export class ListTrip {
     },
   ];
 
-  // Configuração dos filtros
   tripFilters = [
     { key: 'id', label: 'ID', type: 'number', placeholder: 'ID...' },
     {
@@ -93,6 +91,8 @@ export class ListTrip {
       type: 'text',
       placeholder: 'Local de destino...',
     },
+    { key: 'dateStart', label: 'Data Inicial', type: 'date' },
+    { key: 'dateEnd', label: 'Data Final', type: 'date' },
     {
       key: 'status',
       label: 'Status',
@@ -113,7 +113,7 @@ export class ListTrip {
       name: 'status',
       label: 'Status',
       type: 'select',
-      options: ['PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA'],
+      options: Object.values(TripStatus),
     },
   ];
 
@@ -125,7 +125,6 @@ export class ListTrip {
   selectedTrip?: Trip;
   showModal = false;
 
-  // filtros
   filter = {
     id: '',
     vehiclePlate: '',
@@ -133,18 +132,60 @@ export class ListTrip {
     startLocation: '',
     endLocation: '',
     status: '',
+    dateStart: '',
+    dateEnd: '',
   };
 
-  // ordenação
   sortKey: keyof Trip = 'id';
   sortAsc = true;
 
+  indicators?: TripIndicators;
+  loadingIndicators = false;
+
   ngOnInit() {
     this.listTrips(1, 10);
+    this.loadIndicators();
+  }
+
+  loadIndicators() {
+    this.loadingIndicators = true;
+    let filterWithPeriod = { ...this.filter };
+
+    if (!this.filter.dateStart && !this.filter.dateEnd) {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      filterWithPeriod = {
+        ...this.filter,
+        dateStart: start.toISOString().split('T')[0],
+        dateEnd: end.toISOString().split('T')[0],
+      };
+    }
+
+    this.serviceTrip.getIndicators(filterWithPeriod).subscribe({
+      next: (res) => {
+        this.indicators = res;
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.indicators = {
+          totalTrips: 0,
+          inProgress: 0,
+          completed: 0,
+          canceled: 0,
+          totalDistance: 0,
+          avgDistance: 0,
+          lastTrip: { date: '', driverName: '', vehiclePlate: '' },
+        };
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   listTrips(page: number, limit: number) {
-    console.log('Listando viagens...', this.filter);
     this.serviceTrip
       .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
       .subscribe({
@@ -157,7 +198,6 @@ export class ListTrip {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.log('Erro ao carregar viagens:', err);
           this.trips = [];
           this.total = 0;
           this.totalPages = 0;
@@ -168,17 +208,8 @@ export class ListTrip {
   applyFilters() {
     this.page = 1;
     this.listTrips(this.page, this.limit);
+    this.loadIndicators();
     this.cdr.detectChanges();
-  }
-
-  sortBy(key: keyof Trip) {
-    if (this.sortKey === key) {
-      this.sortAsc = !this.sortAsc;
-    } else {
-      this.sortKey = key;
-      this.sortAsc = true;
-    }
-    this.listTrips(this.page, this.limit);
   }
 
   clearFilters() {
@@ -189,8 +220,20 @@ export class ListTrip {
       startLocation: '',
       endLocation: '',
       status: '',
+      dateStart: '',
+      dateEnd: '',
     };
     this.applyFilters();
+  }
+
+  sortBy(key: keyof Trip) {
+    if (this.sortKey === key) {
+      this.sortAsc = !this.sortAsc;
+    } else {
+      this.sortKey = key;
+      this.sortAsc = true;
+    }
+    this.listTrips(this.page, this.limit);
   }
 
   onPageChange(newPage: number) {
@@ -213,6 +256,7 @@ export class ListTrip {
     this.serviceTrip.update(id!, trip).subscribe({
       next: () => {
         this.listTrips(1, 10);
+        this.loadIndicators();
         this.showModal = false;
         this.selectedTrip = undefined;
         alertSuccess('Viagem atualizada com Sucesso');
