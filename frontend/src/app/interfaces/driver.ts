@@ -18,9 +18,30 @@ export interface DriverIndicators {
   withExpiredLicense: number;
   withExpiringLicense: number;
   mostCommonCategory?: string;
-  lastDriver?: {
+  lastDriver: {
     name: string;
     cpf: string;
     date: string;
   };
+}
+
+export interface DriverReport {
+  distributions: {
+    totalDrivers: number; // total de motoristas
+    cnhExpiringSoon: number; // CNHs vencendo nos próximos 30 dias
+    cnhExpired: number; // CNHs vencidas
+    byCategory: {
+      category: string; // B, C, D, E
+      count: number; // quantidade de motoristas
+    }[];
+  };
+  driversStats: {
+    driverName: string;
+    driverId: number;
+    totalTrips: number;
+    totalDistance: number; // km
+    totalCost: number; // R$
+    averageFuelConsumption?: number; // litros/km
+    lastTripDate?: string; // ISO string
+  }[];
 }

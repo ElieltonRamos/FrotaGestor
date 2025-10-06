@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { ReportVehicle } from "./report-vehicle/report-vehicle";
-import { Reportdriver } from "./report-driver/report-driver";
+import { ReportDriver } from "./report-driver/report-driver";
 
 @Component({
   selector: 'app-reports',
-  imports: [ReportVehicle, Reportdriver],
+  imports: [ReportVehicle, ReportDriver],
   templateUrl: './reports.html',
   styles: ``,
 })
