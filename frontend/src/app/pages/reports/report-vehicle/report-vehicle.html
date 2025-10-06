@@ -1,0 +1,201 @@
+<div class="p-6 space-y-10 bg-gray-50 min-h-screen">
+  <!-- Filtros -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">Filtros</h2>
+    <div class="bg-white border border-gray-200 shadow-md rounded-xl p-4">
+      <app-base-filter
+        [filtersConfig]="vehicleFilters"
+        [(filter)]="filter"
+        (apply)="applyFilters()"
+        (clear)="clearFilters()"
+      ></app-base-filter>
+    </div>
+  </section>
+
+  <!-- Indicadores -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">
+      Indicadores de Veículos
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Ativos -->
+      <div
+        class="bg-green-100 border border-green-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-green-700">Ativos</span>
+          <i data-lucide="check-circle" class="text-green-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-green-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.active }}
+          }
+        </div>
+      </div>
+
+      <!-- Em Manutenção -->
+      <div
+        class="bg-yellow-100 border border-yellow-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-yellow-700"
+            >Em Manutenção</span
+          >
+          <i data-lucide="wrench" class="text-yellow-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-yellow-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.maintenance }}
+          }
+        </div>
+      </div>
+
+      <!-- Último veículo cadastrado -->
+      <div
+        class="bg-purple-100 border border-purple-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02] col-span-1 sm:col-span-2 lg:col-span-2"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-purple-700"
+            >Último Cadastrado</span
+          >
+          <i data-lucide="clock" class="text-purple-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else if (indicators.lastVehicle) {
+          <div class="font-bold text-lg text-purple-800">
+            {{ indicators.lastVehicle.plate }}
+          </div>
+          <div class="text-sm text-purple-700">
+            {{ indicators.lastVehicle.date | date : "dd/MM/yyyy" }}
+          </div>
+          } @else {
+          <div class="text-sm text-purple-400">Nenhum dado</div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Distribuições -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-1">Distribuições</h2>
+    <p class="text-sm text-gray-500 mb-4">
+      Período: {{ filter.startDate | date : "dd/MM/yyyy" }} -
+      {{ filter.endDate | date : "dd/MM/yyyy" }}
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Gráfico: Veículos por Marca -->
+      <div
+        class="bg-orange-100 border border-orange-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-orange-700">Por Marca</span>
+          <i data-lucide="bar-chart-3" class="text-orange-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="brandChartData"
+            [options]="brandChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Distribuição por Ano (Gráfico de Barras) -->
+      <div
+        class="bg-cyan-100 border border-cyan-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-cyan-700">Por Ano</span>
+          <i data-lucide="calendar" class="text-cyan-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="yearChartData"
+            [options]="yearChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico: Veículos por Status -->
+      <div
+        class="bg-fuchsia-100 border border-fuchsia-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-fuchsia-700">Por Status</span>
+          <i data-lucide="pie-chart" class="text-fuchsia-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="statusChartData"
+            [options]="statusChartOptions"
+            [type]="'pie'"
+          ></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Uso e Consumo -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">Uso e Consumo</h2>
+    <p class="text-sm text-gray-500 mb-4">
+      Período: {{ filter.startDate | date : "dd/MM/yyyy" }} -
+      {{ filter.endDate | date : "dd/MM/yyyy" }}
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Gráfico: Consumo Médio -->
+      <div
+        class="bg-teal-100 border border-teal-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-teal-700">Consumo Médio</span>
+          <i data-lucide="trending-up" class="text-teal-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="fuelChartData"
+            [options]="fuelChartOptions"
+            [type]="'line'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Custos Totais -->
+      <div
+        class="bg-rose-100 border border-rose-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-semibold text-rose-700">Custos Totais</span>
+          <i data-lucide="dollar-sign" class="text-rose-500 w-5 h-5"></i>
+        </div>
+
+        <canvas
+          baseChart
+          [data]="totalCostChartData"
+          [options]="totalCostChartOptions"
+          [type]="'bar'"
+          class="w-full h-64"
+        ></canvas>
+      </div>
+    </div>
+  </section>
+</div>

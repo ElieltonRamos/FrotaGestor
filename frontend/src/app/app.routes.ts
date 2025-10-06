@@ -19,6 +19,7 @@ import { Maintenance } from './pages/maintenance/maintenance';
 import { DetailsMaintenance } from './pages/maintenance/details-maintenance/details-maintenance';
 import { Users } from './pages/users/users';
 import { DetailsUsers } from './pages/users/details-users/details-users';
+import { Reports } from './pages/reports/reports';
 
 export const routes: Routes = [
   {
@@ -104,6 +105,11 @@ export const routes: Routes = [
   {
     path: 'manutencoes/:id',
     component: DetailsMaintenance,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'relatorios',
+    component: Reports,
     canActivate: [authGuard],
   },
   { path: '**', component: NotFound },

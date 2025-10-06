@@ -1,0 +1,27 @@
+<div class="p-6">
+  <!-- Menus -->
+  <div class="flex gap-4 border-b mb-6">
+    <button
+      (click)="selectTab('reportVehicles')"
+      [class.border-b-2]="activeTab === 'reportVehicles'"
+      [class.text-blue-600]="activeTab === 'reportVehicles'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Veículos
+    </button>
+    <button
+      (click)="selectTab('reportsDrivers')"
+      [class.border-b-2]="activeTab === 'reportsDrivers'"
+      [class.text-blue-600]="activeTab === 'reportsDrivers'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Motoristas
+    </button>
+  </div>
+
+  @if (activeTab === 'reportVehicles') {
+  <app-report-vehicle />
+  } @if (activeTab === 'reportsDrivers') {
+  <app-report-driver />
+  }
+</div>

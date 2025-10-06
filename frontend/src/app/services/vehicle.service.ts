@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
-import { Vehicle, VehicleIndicators } from '../interfaces/vehicle';
+import {
+  Vehicle,
+  VehicleIndicators,
+  VehicleReport,
+} from '../interfaces/vehicle';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
 
@@ -35,10 +39,9 @@ export class VehicleService {
       }
     });
 
-    return this.http.get<PaginatedResponse<Vehicle>>(
-      `${API_URL}/vehicles`,
-      { params }
-    );
+    return this.http.get<PaginatedResponse<Vehicle>>(`${API_URL}/vehicles`, {
+      params,
+    });
   }
 
   getById(id: number | string): Observable<Vehicle> {
@@ -53,7 +56,21 @@ export class VehicleService {
     return this.http.delete<void>(`${API_URL}/vehicles/${id}`);
   }
 
-  getIndicators(filters: Record<string, any> = {}): Observable<VehicleIndicators> {
+  getIndicators(
+    filters: Record<string, any> = {}
+  ): Observable<VehicleIndicators> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+    return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, {
+      params,
+    });
+  }
+
+  getReport(filters: Record<string, any> = {}): Observable<VehicleReport> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -61,6 +78,8 @@ export class VehicleService {
       }
     });
 
-    return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, { params });
+    return this.http.get<VehicleReport>(`${API_URL}/vehicles/report`, {
+      params,
+    });
   }
 }
