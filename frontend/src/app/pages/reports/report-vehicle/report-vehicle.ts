@@ -20,7 +20,6 @@ export class ReportVehicle {
   private vehicleService = inject(VehicleService);
   private cdr = inject(ChangeDetectorRef);
 
-  /** Estado e filtros */
   loadingIndicators = false;
   filter: any = {};
   vehicleFilters: FilterConfig[] = [
@@ -37,55 +36,38 @@ export class ReportVehicle {
   vehicleReport: VehicleReport = {
     distributions: {
       byBrand: [
-        { brand: 'Toyota', count: 5 },
-        { brand: 'Ford', count: 4 },
-        { brand: 'Honda', count: 3 },
+        { brand: '', count: 0 },
+        { brand: '', count: 0 },
+        { brand: '', count: 0 },
       ],
       byYear: [
-        { year: 2022, count: 4 },
-        { year: 2021, count: 5 },
-        { year: 2020, count: 3 },
+        { year: 0, count: 0 },
+        { year: 0, count: 0 },
+        { year: 0, count: 0 },
       ],
       byStatus: [
-        { status: 'ATIVO', count: 12 },
-        { status: 'MANUTENCAO', count: 3 },
+        { status: 'ATIVO', count: 0 },
+        { status: 'MANUTENCAO', count: 0 },
       ],
     },
     usageStats: {
       totalDistanceByVehicle: [
         {
-          plate: 'ABC-1234',
-          totalKm: 12000,
-          totalTrips: 45,
-          topDriver: { name: 'João Silva', trips: 20 },
-          fuelCost: 4500,
-          maintenanceCost: 1200,
-          totalCost: 5700,
-          lastMaintenanceDate: '2025-09-20',
-          isInUse: true,
-        },
-        {
-          plate: 'DEF-5678',
-          totalKm: 8000,
-          totalTrips: 30,
-          topDriver: { name: 'Maria Souza', trips: 15 },
-          fuelCost: 3000,
-          maintenanceCost: 900,
-          totalCost: 3900,
-          lastMaintenanceDate: '2025-08-10',
+          plate: '',
+          totalKm: 0,
+          totalTrips: 0,
+          topDriver: { name: '', trips: 0 },
+          fuelCost: 0,
+          maintenanceCost: 0,
+          totalCost: 0,
+          lastMaintenanceDate: '',
           isInUse: false,
         },
       ],
       fuelConsumptionByVehicle: [
-        { plate: 'ABC-1234', litersPerKm: 0.12 },
-        { plate: 'DEF-5678', litersPerKm: 0.15 },
+        { plate: '', litersPerKm: 0 },
+        { plate: '', litersPerKm: 0 },
       ],
-    },
-    filters: {
-      brands: ['Toyota', 'Ford', 'Honda'],
-      models: ['Corolla', 'Focus', 'Civic'],
-      years: [2020, 2021, 2022],
-      status: ['ATIVO', 'MANUTENCAO'],
     },
   };
 
@@ -100,7 +82,7 @@ export class ReportVehicle {
     labels: ['ATIVO', 'MANUTENCAO'],
     datasets: [
       {
-        data: [12, 3],
+        data: [0, 0],
         backgroundColor: ['#34D399', '#FBBF24'],
       },
     ],
@@ -134,7 +116,6 @@ export class ReportVehicle {
     },
   };
 
-  // Gráfico de Veículos por Ano
   yearChartData: ChartData<'bar'> = {
     labels: [], // anos
     datasets: [
@@ -154,11 +135,11 @@ export class ReportVehicle {
     },
   };
 
-  // ngOnInit() {
-  //   this.initializeDefaultPeriod();
-  //   this.loadIndicators();
-  //   this.loadVehicleReport();
-  // }
+  ngOnInit() {
+    this.initializeDefaultPeriod();
+    this.loadIndicators();
+    this.loadVehicleReport();
+  }
 
   /** Define período padrão (mês atual) */
   private initializeDefaultPeriod() {
@@ -188,6 +169,7 @@ export class ReportVehicle {
     this.loadingIndicators = true;
     this.vehicleService.getIndicators(this.filter).subscribe({
       next: (res) => {
+        console.log(res, 'loadIndicators');
         this.indicators = res;
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -199,53 +181,98 @@ export class ReportVehicle {
   }
 
   loadVehicleReport() {
+    this.loadingIndicators = true;
     this.vehicleService.getReport(this.filter).subscribe({
       next: (res) => {
+        console.log(res, 'loadVehicleReport');
         this.vehicleReport = res;
         this.updateCharts();
+        this.loadingIndicators = false;
         this.cdr.detectChanges();
+      },
+      error: () => {
+        this.loadingIndicators = false;
       },
     });
   }
 
-  /** Atualiza gráficos */
   private updateCharts() {
     const v = this.vehicleReport.usageStats.totalDistanceByVehicle;
 
-    this.totalCostChartData.labels = v.map((x) => x.plate);
-    this.totalCostChartData.datasets[0].data = v.map((x) => x.fuelCost);
-    this.totalCostChartData.datasets[1].data = v.map((x) => x.maintenanceCost);
-    this.totalCostChartData.datasets[2].data = v.map((x) => x.totalCost);
-    this.yearChartData.labels = this.vehicleReport.distributions.byYear.map(
-      (y) => y.year.toString()
-    );
-    this.yearChartData.datasets[0].data =
-      this.vehicleReport.distributions.byYear.map((y) => y.count);
+    // Total de custos
+    this.totalCostChartData = {
+      labels: v.map((x) => x.plate),
+      datasets: [
+        {
+          label: 'Combustível (R$)',
+          data: v.map((x) => x.fuelCost),
+          backgroundColor: '#FCA5A5',
+        },
+        {
+          label: 'Manutenção (R$)',
+          data: v.map((x) => x.maintenanceCost),
+          backgroundColor: '#FB7185',
+        },
+        {
+          label: 'Total (R$)',
+          data: v.map((x) => x.totalCost),
+          backgroundColor: '#E11D48',
+        },
+      ],
+    };
 
-    this.brandChartData.labels = this.vehicleReport.distributions.byBrand.map(
-      (b) => b.brand
-    );
-    this.brandChartData.datasets[0].data =
-      this.vehicleReport.distributions.byBrand.map((b) => b.count);
+    // Ano
+    this.yearChartData = {
+      labels: this.vehicleReport.distributions.byYear.map((y) =>
+        y.year.toString()
+      ),
+      datasets: [
+        {
+          data: this.vehicleReport.distributions.byYear.map((y) => y.count),
+          label: 'Veículos',
+          backgroundColor: '#22D3EE',
+        },
+      ],
+    };
 
-    this.statusChartData.labels = this.vehicleReport.distributions.byStatus.map(
-      (s) => s.status
-    );
-    this.statusChartData.datasets[0].data =
-      this.vehicleReport.distributions.byStatus.map((s) => s.count);
-    this.statusChartData.datasets[0].backgroundColor = [
-      '#34D399',
-      '#FBBF24',
-      '#F472B6',
-    ];
+    // Marca
+    this.brandChartData = {
+      labels: this.vehicleReport.distributions.byBrand.map((b) => b.brand),
+      datasets: [
+        {
+          data: this.vehicleReport.distributions.byBrand.map((b) => b.count),
+          label: 'Veículos',
+          backgroundColor: '#3B82F6',
+        },
+      ],
+    };
 
-    this.fuelChartData.labels =
-      this.vehicleReport.usageStats.fuelConsumptionByVehicle.map(
+    // Status
+    this.statusChartData = {
+      labels: this.vehicleReport.distributions.byStatus.map((s) => s.status),
+      datasets: [
+        {
+          data: this.vehicleReport.distributions.byStatus.map((s) => s.count),
+          backgroundColor: ['#34D399', '#FBBF24', '#F472B6'],
+        },
+      ],
+    };
+
+    // Consumo de combustível
+    this.fuelChartData = {
+      labels: this.vehicleReport.usageStats.fuelConsumptionByVehicle.map(
         (v) => v.plate
-      );
-    this.fuelChartData.datasets[0].data =
-      this.vehicleReport.usageStats.fuelConsumptionByVehicle.map(
-        (v) => v.litersPerKm
-      );
+      ),
+      datasets: [
+        {
+          data: this.vehicleReport.usageStats.fuelConsumptionByVehicle.map(
+            (v) => v.litersPerKm
+          ),
+          label: 'L/km',
+          borderColor: '#14B8A6',
+          fill: false,
+        },
+      ],
+    };
   }
 }

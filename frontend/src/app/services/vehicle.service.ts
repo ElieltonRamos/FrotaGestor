@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { API_URL } from './api.url';
 import {
   Vehicle,
@@ -9,6 +9,87 @@ import {
 } from '../interfaces/vehicle';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
+
+const MOCK_INDICATORS: VehicleIndicators = {
+  active: 18,
+  maintenance: 5,
+  lastVehicle: { plate: 'XYZ-9999', date: '2025-10-01' },
+};
+
+const MOCK_REPORT: VehicleReport = {
+  distributions: {
+    byBrand: [
+      { brand: 'Toyota', count: 6 },
+      { brand: 'Ford', count: 5 },
+      { brand: 'Honda', count: 4 },
+      { brand: 'Chevrolet', count: 3 },
+    ],
+    byYear: [
+      { year: 2023, count: 4 },
+      { year: 2022, count: 5 },
+      { year: 2021, count: 4 },
+      { year: 2020, count: 5 },
+    ],
+    byStatus: [
+      { status: 'ATIVO', count: 18 },
+      { status: 'MANUTENCAO', count: 5 },
+    ],
+  },
+  usageStats: {
+    totalDistanceByVehicle: [
+      {
+        plate: 'ABC-1234',
+        totalKm: 12000,
+        totalTrips: 45,
+        topDriver: { name: 'João Silva', trips: 20 },
+        fuelCost: 4500,
+        maintenanceCost: 1200,
+        totalCost: 5700,
+        lastMaintenanceDate: '2025-09-20',
+        isInUse: true,
+      },
+      {
+        plate: 'DEF-5678',
+        totalKm: 8000,
+        totalTrips: 30,
+        topDriver: { name: 'Maria Souza', trips: 15 },
+        fuelCost: 3000,
+        maintenanceCost: 900,
+        totalCost: 3900,
+        lastMaintenanceDate: '2025-08-10',
+        isInUse: false,
+      },
+      {
+        plate: 'GHI-9012',
+        totalKm: 15000,
+        totalTrips: 50,
+        topDriver: { name: 'Carlos Lima', trips: 25 },
+        fuelCost: 6000,
+        maintenanceCost: 1500,
+        totalCost: 7500,
+        lastMaintenanceDate: '2025-09-15',
+        isInUse: true,
+      },
+      {
+        plate: 'JKL-3456',
+        totalKm: 5000,
+        totalTrips: 20,
+        topDriver: { name: 'Ana Paula', trips: 10 },
+        fuelCost: 2000,
+        maintenanceCost: 600,
+        totalCost: 2600,
+        lastMaintenanceDate: '2025-08-30',
+        isInUse: false,
+      },
+    ],
+    fuelConsumptionByVehicle: [
+      { plate: 'ABC-1234', litersPerKm: 0.12 },
+      { plate: 'DEF-5678', litersPerKm: 0.15 },
+      { plate: 'GHI-9012', litersPerKm: 0.11 },
+      { plate: 'JKL-3456', litersPerKm: 0.14 },
+    ],
+  }
+};
 
 @Injectable({
   providedIn: 'root',
@@ -57,29 +138,32 @@ export class VehicleService {
   }
 
   getIndicators(
-    filters: Record<string, any> = {}
+    filters: any = {}
   ): Observable<VehicleIndicators> {
-    let params = new HttpParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params = params.set(key, value);
-      }
-    });
-    return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, {
-      params,
-    });
+    // return do backend
+    // let params = new HttpParams();
+    // Object.entries(filters).forEach(([key, value]) => {
+    //   if (value !== undefined && value !== null && value !== '') {
+    //     params = params.set(key, value);
+    //   }
+    // });
+    // return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, { params });
+
+    // Mock
+    return of(MOCK_INDICATORS);
   }
 
-  getReport(filters: Record<string, any> = {}): Observable<VehicleReport> {
-    let params = new HttpParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params = params.set(key, value);
-      }
-    });
+  getReport(filters: any = {}): Observable<VehicleReport> {
+    // return do backend
+    // let params = new HttpParams();
+    // Object.entries(filters).forEach(([key, value]) => {
+    //   if (value !== undefined && value !== null && value !== '') {
+    //     params = params.set(key, value);
+    //   }
+    // });
+    // return this.http.get<VehicleReport>(`${API_URL}/vehicles/report`, { params });
 
-    return this.http.get<VehicleReport>(`${API_URL}/vehicles/report`, {
-      params,
-    });
+    // Mock
+    return of(MOCK_REPORT);
   }
 }

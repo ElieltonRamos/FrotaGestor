@@ -59,11 +59,4 @@ export interface VehicleReport {
       litersPerKm: number;
     }[];
   };
-
-  filters?: {
-    brands?: string[];
-    models?: string[];
-    years?: number[];
-    status?: ('ATIVO' | 'MANUTENCAO' | 'INATIVO')[];
-  };
 }
