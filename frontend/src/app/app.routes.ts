@@ -17,6 +17,8 @@ import { Refueling } from './pages/refueling/refueling';
 import { DetailsRefueling } from './pages/refueling/details-refueling/details-refueling';
 import { Maintenance } from './pages/maintenance/maintenance';
 import { DetailsMaintenance } from './pages/maintenance/details-maintenance/details-maintenance';
+import { Users } from './pages/users/users';
+import { DetailsUsers } from './pages/users/details-users/details-users';
 
 export const routes: Routes = [
   {
@@ -37,6 +39,16 @@ export const routes: Routes = [
   {
     path: 'veiculos/:id',
     component: DetailsVehicle,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'usuarios',
+    component: Users,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'usuarios/:id',
+    component: DetailsUsers,
     canActivate: [authGuard],
   },
   {

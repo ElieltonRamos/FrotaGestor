@@ -1,0 +1,20 @@
+<div
+  class="max-w-4xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
+>
+  <!-- Coluna principal -->
+  <div class="lg:col-span-2 flex flex-col justify-between">
+    <h2 class="text-2xl font-semibold mb-6">Cadastro de Usuário</h2>
+
+    <!-- Formulário dinâmico -->
+    <app-dynamic-form [fields]="userFields" (formSubmit)="saveUser($event)">
+    </app-dynamic-form>
+  </div>
+
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="create-user.png"
+      alt="Ilustração de cadastro de usuário"
+      class="max-h-64 opacity-90 custom-shadow-img"
+    />
+  </div>
+</div>

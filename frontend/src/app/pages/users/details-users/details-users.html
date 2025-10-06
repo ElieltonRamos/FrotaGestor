@@ -1,0 +1,66 @@
+<div
+  class="max-w-4xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
+>
+  <!-- Coluna principal -->
+  <div class="lg:col-span-2 flex flex-col justify-between min-h-[400px]">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6 gap-4">
+      <h2 class="text-xl font-semibold text-gray-800">Detalhes do Usuário</h2>
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+        (click)="goBack()"
+      >
+        Voltar
+      </button>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="flex-1">
+      @if (user) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >ID</label
+          >
+          <p class="text-gray-800 text-sm">{{ user.id }}</p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Usuário</label
+          >
+          <p class="text-gray-800 text-sm">{{ user.username }}</p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Função</label
+          >
+          <span
+            class="px-3 py-1 rounded-full text-xs font-medium"
+            [class.bg-blue-100]="user.role === 'ADMIN'"
+            [class.text-blue-700]="user.role === 'ADMIN'"
+            [class.bg-gray-100]="user.role === 'USER'"
+            [class.text-gray-700]="user.role === 'USER'"
+          >
+            {{ user.role }}
+          </span>
+        </div>
+      </div>
+      } @else {
+      <p class="text-gray-500 text-sm italic">Carregando usuário...</p>
+      }
+    </div>
+  </div>
+
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="details-user.png"
+      alt="Ilustração de usuário"
+      class="max-h-64 opacity-90 custom-shadow-img"
+    />
+  </div>
+</div>

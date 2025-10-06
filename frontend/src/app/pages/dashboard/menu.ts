@@ -16,5 +16,6 @@ export class Menu {
     { name: 'Despesas', icon: 'heroBarsArrowDownSolid', route: '/despesas' },
     { name: 'Abastecimento', icon: 'heroFireSolid', route: '/abastecimentos' },
     { name: 'Relatórios', icon: 'heroChartBarSolid', route: '/relatorios' },
+    { name: 'Usuarios', icon: 'heroUserSolid', route: '/usuarios' },
   ];
 }

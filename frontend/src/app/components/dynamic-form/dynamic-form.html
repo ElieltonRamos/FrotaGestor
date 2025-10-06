@@ -7,7 +7,7 @@
 
   <!-- Input Texto / Email / Number -->
   @if (field.type === 'text' || field.type === 'email' || field.type ===
-  'number') {
+  'number' || field.type === 'password') {
   <div>
     <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
     <input
