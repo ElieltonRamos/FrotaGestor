@@ -27,6 +27,15 @@
     >
       Relatório Viagens
     </button>
+
+    <button
+      (click)="selectTab('reportExpenses')"
+      [class.border-b-2]="activeTab === 'reportExpenses'"
+      [class.text-blue-600]="activeTab === 'reportExpenses'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Despesas
+    </button>
   </div>
 
   <!-- Conteúdo das abas -->
@@ -36,5 +45,7 @@
   <app-report-driver />
   } @else if (activeTab === 'reportTrips') {
   <app-report-trip />
+  } @else if (activeTab === 'reportExpenses') {
+  <app-report-expenses />
   }
 </div>

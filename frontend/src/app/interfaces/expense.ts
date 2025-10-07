@@ -64,3 +64,25 @@ export interface ExpenseIndicators {
     description: string;
   };
 }
+
+export interface ExpenseReport {
+  distributions: {
+    byType: { type: ExpenseType; totalAmount: number; totalCount: number }[]; // Gastos por tipo (combustível, manutenção, etc.)
+    byVehicle: {
+      vehiclePlate: string;
+      totalAmount: number;
+      totalCount: number;
+    }[]; // Gastos por veículo
+    byDriver: { driverName: string; totalAmount: number; totalCount: number }[]; // Gastos por motorista
+    byMonth: { month: string; totalAmount: number }[]; // Gastos por mês (para linha temporal)
+  };
+  summary: {
+    totalAmount: number; // Valor total gasto
+    totalCount: number; // Número total de despesas
+    avgExpenseAmount: number; // Média por despesa
+    topExpenseType?: { type: ExpenseType; totalAmount: number }; // Tipo mais caro
+    topVehicleByAmount?: { plate: string; amount: number }; // Veículo com maior gasto
+    topDriverByAmount?: { name: string; amount: number }; // Motorista com maior gasto
+    lastExpense?: { date: string; type: ExpenseType; amount: number }; // Última despesa registrada
+  };
+}
