@@ -9,19 +9,32 @@
     >
       Relatório Veículos
     </button>
+
     <button
-      (click)="selectTab('reportsDrivers')"
-      [class.border-b-2]="activeTab === 'reportsDrivers'"
-      [class.text-blue-600]="activeTab === 'reportsDrivers'"
+      (click)="selectTab('reportDrivers')"
+      [class.border-b-2]="activeTab === 'reportDrivers'"
+      [class.text-blue-600]="activeTab === 'reportDrivers'"
       class="pb-2 px-4 font-medium hover:text-blue-500"
     >
       Relatório Motoristas
     </button>
+
+    <button
+      (click)="selectTab('reportTrips')"
+      [class.border-b-2]="activeTab === 'reportTrips'"
+      [class.text-blue-600]="activeTab === 'reportTrips'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Viagens
+    </button>
   </div>
 
+  <!-- Conteúdo das abas -->
   @if (activeTab === 'reportVehicles') {
   <app-report-vehicle />
-  } @if (activeTab === 'reportsDrivers') {
+  } @else if (activeTab === 'reportDrivers') {
   <app-report-driver />
+  } @else if (activeTab === 'reportTrips') {
+  <app-report-trip />
   }
 </div>

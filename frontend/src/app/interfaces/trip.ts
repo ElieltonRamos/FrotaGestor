@@ -26,9 +26,22 @@ export interface TripIndicators {
   canceled: number;
   totalDistance: number;
   avgDistance: number;
-  lastTrip?: {
+  lastTrip: {
     date: string;
     driverName: string;
     vehiclePlate: string;
+  };
+}
+
+export interface TripReport {
+  distributions: {
+    byStatus: { status: TripStatus; count: number }[];
+    byVehicle: { vehiclePlate: string; count: number; totalCost: number }[];
+    byDriver: { driverName: string; count: number; totalCost: number }[];
+    byDestination: {
+      destination: string;
+      totalTrips: number;
+      totalCost: number;
+    }[];
   };
 }

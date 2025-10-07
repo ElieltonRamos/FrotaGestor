@@ -150,6 +150,7 @@ export class VehicleService {
     // return this.http.get<VehicleIndicators>(`${API_URL}/vehicles/indicators`, { params });
 
     // Mock
+    console.log('🧪 Retornando dados mockados de indicadores de veículos...');
     return of(MOCK_INDICATORS);
   }
 
@@ -164,6 +165,7 @@ export class VehicleService {
     // return this.http.get<VehicleReport>(`${API_URL}/vehicles/report`, { params });
 
     // Mock
+    console.log('🧪 Retornando dados mockados de relatório de veículos...');
     return of(MOCK_REPORT);
   }
 }

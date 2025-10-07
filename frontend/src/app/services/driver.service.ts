@@ -128,6 +128,7 @@ export class DriverService {
     });
 
     // Retornar mock para desenvolvimento
+    console.log('🧪 Retornando dados mockados de indicadores de motoristas...');
     return of(MOCK_INDICATORS);
 
     // Para backend real, descomente abaixo:
@@ -144,6 +145,7 @@ export class DriverService {
     });
 
     // Retornar mock para desenvolvimento
+    console.log('🧪 Retornando dados mockados de relatório de motoristas...');
     return of(MOCK_DRIVER_REPORT);
 
     // Para backend real, descomente abaixo:
