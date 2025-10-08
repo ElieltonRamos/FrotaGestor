@@ -1,5 +1,5 @@
-// export const API_URL = 'http://10.1.254.19:3001';
-export const API_URL = 'http://localhost:3001';
+export const API_URL = 'http://10.1.254.19:3001';
+// export const API_URL = 'http://localhost:3001';
 
 export function mapNetworkError(
   err: any,
