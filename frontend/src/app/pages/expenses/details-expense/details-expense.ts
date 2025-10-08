@@ -7,6 +7,7 @@ import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 
 @Component({
   selector: 'app-details-expense',
+  standalone: true,
   imports: [CommonModule, DatePipe],
   templateUrl: './details-expense.html',
   styles: ``,
@@ -61,8 +62,26 @@ export class DetailsExpense {
       error: (err) => {
         this.loading = false;
         this.cdr.detectChanges();
-        alertError(`Erro ao excluir a despesa. Tente novamente. ${err.error.message}`);
+        alertError(`Erro ao excluir a despesa. ${err.error.message || ''}`);
       },
     });
+  }
+
+  navigateToDriver() {
+    if (this.expense?.driverId) {
+      this.router.navigate(['/motoristas', this.expense.driverId]);
+    }
+  }
+
+  navigateToVehicle() {
+    if (this.expense?.vehicleId) {
+      this.router.navigate(['/veiculos', this.expense.vehicleId]);
+    }
+  }
+
+  navigateToTrip() {
+    if (this.expense?.tripId) {
+      this.router.navigate(['/viagens', this.expense.tripId]);
+    }
   }
 }

@@ -1,5 +1,4 @@
 <header class="bg-white shadow-md px-6 py-4 flex items-center justify-between">
-  <!-- Logo e sistema -->
   <div class="flex items-center space-x-3">
     <img src="FrotaGestor.png" alt="Logo Frota Gestor" class="h-15" />
     <div>
@@ -8,16 +7,22 @@
     </div>
   </div>
 
-  <!-- Usuário -->
   <div class="flex items-center space-x-4">
     <span class="text-gray-700 font-medium">Usuário: {{ user }}</span>
 
-    <!-- Botão voltar -->
     <button
       (click)="navMenu()"
       class="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer"
     >
       Menu
+    </button>
+
+    <button (click)="goBackHistory()" class="p-2 hover:bg-gray-200">
+      <ng-icon name="heroArrowLeftSolid" class="w-5 h-5"></ng-icon>
+    </button>
+
+    <button (click)="goForwardHistory()" class="p-2 hover:bg-gray-200">
+      <ng-icon name="heroArrowRightSolid" class="w-5 h-5"></ng-icon>
     </button>
 
     <button

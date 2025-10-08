@@ -179,6 +179,7 @@ export class VehicleService {
         color: '#10B981',
         title: 'Veículo 1',
         description: 'Veículo ativo próximo ao fallback.',
+        vehicleId: 1,
       },
       {
         lat: -14.9492,
@@ -186,6 +187,7 @@ export class VehicleService {
         iconUrl: 'assets/truck-icon.png',
         title: 'Caminhão A',
         description: 'Veículo em rota de entrega próxima.',
+        vehicleId: 2,
       },
       {
         lat: -14.9485,
@@ -193,6 +195,7 @@ export class VehicleService {
         color: '#3B82F6',
         title: 'Veículo 2',
         description: 'Outro veículo próximo ao fallback.',
+        vehicleId: 3,
       },
     ];
 

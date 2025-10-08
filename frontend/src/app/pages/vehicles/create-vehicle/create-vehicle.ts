@@ -1,5 +1,8 @@
 import { Component, inject } from '@angular/core';
-import { DynamicFormComponent, FormField } from '../../../components/dynamic-form/dynamic-form';
+import {
+  DynamicFormComponent,
+  FormField,
+} from '../../../components/dynamic-form/dynamic-form';
 import { VehicleService } from '../../../services/vehicle.service';
 import { Vehicle } from '../../../interfaces/vehicle';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
@@ -48,6 +51,19 @@ export class CreateVehicle {
       options: ['ATIVO', 'INATIVO', 'MANUTENCAO'],
       required: true,
     },
+    {
+      placeholder: 'Ícone no Mapa',
+      name: 'iconMapUrl',
+      label: 'Ícone no Mapa',
+      type: 'select',
+      options: [
+        'icon-car.png',
+        'icon-truck-box.png',
+        'icon-motocicle.png',
+        'icon-pickup.png',
+      ],
+      required: true,
+    },
   ];
 
   saveVehicle(data: Vehicle) {
@@ -56,7 +72,11 @@ export class CreateVehicle {
         alertSuccess(`Veículo cadastrado com sucesso`);
       },
       error: (e) => {
-        alertError(`Erro ao cadastrar veículo: ${e.error?.message || 'Erro desconhecido'}`);
+        alertError(
+          `Erro ao cadastrar veículo: ${
+            e.error?.message || 'Erro desconhecido'
+          }`
+        );
       },
     });
   }

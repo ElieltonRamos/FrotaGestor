@@ -5,6 +5,8 @@ import { API_URL } from './api.url';
 import { Driver, DriverIndicators, DriverReport } from '../interfaces/driver';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
+import { Expense } from '../interfaces/expense';
+import { Vehicle } from '../interfaces/vehicle';
 
 const MOCK_INDICATORS: DriverIndicators = {
   total: 15,
@@ -150,5 +152,57 @@ export class DriverService {
 
     // Para backend real, descomente abaixo:
     // return this.http.get<DriverReport>(`${this.API_URL}/drivers/report`, { params });
+  }
+
+  getVehiclesByDriver(
+    driverId: number,
+    page: number = 1,
+    limit: number = 5,
+    filters: Record<string, any> = {},
+    sortKey: string = 'id',
+    sortAsc: boolean = true
+  ): Observable<PaginatedResponse<Vehicle>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('sortBy', sortKey)
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get<PaginatedResponse<Vehicle>>(
+      `${API_URL}/drivers/${driverId}/vehicles`,
+      { params }
+    );
+  }
+
+  getExpensesByDriver(
+    driverId: number,
+    page: number = 1,
+    limit: number = 5,
+    filters: Record<string, any> = {},
+    sortKey: string = 'date',
+    sortAsc: boolean = false
+  ): Observable<PaginatedResponse<Expense>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('sortBy', sortKey)
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get<PaginatedResponse<Expense>>(
+      `${API_URL}/drivers/${driverId}/expenses`,
+      { params }
+    );
   }
 }

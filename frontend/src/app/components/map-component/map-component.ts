@@ -1,4 +1,12 @@
-import { Component, AfterViewInit, OnDestroy, Input } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  OnDestroy,
+  Input,
+  inject,
+  NgZone,
+} from '@angular/core';
+import { Router } from '@angular/router';
 import {
   Map,
   NavigationControl,
@@ -15,8 +23,17 @@ export interface CustomMarker {
   title?: string;
   description?: string;
   iconUrl?: string;
+  vehicleId?: number;
 }
 
+declare global {
+  interface Window {
+    angularComponentRef?: {
+      zone: any;
+      component: any;
+    };
+  }
+}
 @Component({
   selector: 'app-map',
   templateUrl: './map-component.html',
@@ -25,11 +42,17 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   private map!: Map;
   private fallbackCoords: [number, number] = [-42.840379, -14.948981];
   private userCoords: [number, number] = this.fallbackCoords;
+  private ngZone = inject(NgZone);
+  private router = inject(Router);
 
   @Input() markers: CustomMarker[] = [];
 
   async ngAfterViewInit(): Promise<void> {
     this.userCoords = await this.getUserLocation();
+    window.angularComponentRef = {
+      zone: this.ngZone,
+      component: this,
+    };
 
     this.map = new Map({
       container: 'map',
@@ -133,13 +156,24 @@ export class MapComponent implements AfterViewInit, OnDestroy {
         <p class="text-sm text-gray-600 mb-3">${
           markerData.description || 'Sem descrição disponível.'
         }</p>
-        <a href="https://www.google.com/maps/search/?api=1&query=${
-          markerData.lat
-        },${markerData.lng}"
-           target="_blank"
-           class="block text-center w-full bg-blue-500 text-white py-2 rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
-          Abrir no Google Maps
-        </a>
+        <div class="flex flex-col gap-2">
+          <a href="https://www.google.com/maps/search/?api=1&query=${
+            markerData.lat
+          },${markerData.lng}"
+             target="_blank"
+             class="block text-center w-full bg-blue-500 text-white py-2 rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
+            Abrir no Google Maps
+          </a>
+          ${
+            markerData.vehicleId
+              ? `<button
+                   onclick="window.angularComponentRef.zone.run(() => window.angularComponentRef.component.navigateToVehicle(${markerData.vehicleId}))"
+                   class="block text-center w-full bg-blue-500 text-white py-2 rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors duration-200">
+                   Detalhes do Veículo
+                 </button>`
+              : ''
+          }
+        </div>
       </div>
     `;
     const popup = new Popup({ offset: 25 }).setHTML(popupHtml);
@@ -165,6 +199,11 @@ export class MapComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    delete window.angularComponentRef;
     this.map.remove();
+  }
+
+  navigateToVehicle(vehicleId: number) {
+    this.router.navigate(['/veiculos', vehicleId]);
   }
 }

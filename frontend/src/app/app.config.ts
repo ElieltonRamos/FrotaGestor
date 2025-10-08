@@ -15,7 +15,24 @@ import { routes } from './app.routes';
 import { jwtInterceptor } from './guards/jwt-interceptor';
 
 import { NgIconsModule } from '@ng-icons/core';
-import { heroTruckSolid, heroUserSolid, heroWrenchSolid, heroCogSolid, heroFireSolid, heroChartBarSolid, heroMapSolid, heroWrenchScrewdriverSolid, heroUserGroupSolid, heroBarsArrowDownSolid, heroEyeSlashSolid, heroEyeSolid, heroLockClosedSolid, heroExclamationCircleSolid} from '@ng-icons/heroicons/solid';
+import {
+  heroTruckSolid,
+  heroUserSolid,
+  heroWrenchSolid,
+  heroCogSolid,
+  heroFireSolid,
+  heroChartBarSolid,
+  heroMapSolid,
+  heroWrenchScrewdriverSolid,
+  heroUserGroupSolid,
+  heroBarsArrowDownSolid,
+  heroEyeSlashSolid,
+  heroEyeSolid,
+  heroLockClosedSolid,
+  heroExclamationCircleSolid,
+  heroArrowRightSolid,
+  heroArrowLeftSolid,
+} from '@ng-icons/heroicons/solid';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -40,6 +57,8 @@ export const appConfig: ApplicationConfig = {
         heroLockClosedSolid,
         heroExclamationCircleSolid,
         heroChartBarSolid,
+        heroArrowLeftSolid,
+        heroArrowRightSolid,
       })
     ),
   ],

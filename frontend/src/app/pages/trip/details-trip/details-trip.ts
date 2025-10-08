@@ -7,6 +7,7 @@ import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 
 @Component({
   selector: 'app-details-trip',
+  standalone: true,
   imports: [CommonModule, DatePipe],
   templateUrl: './details-trip.html',
   styles: ``,
@@ -63,7 +64,7 @@ export class DetailsTrip {
         error: (err) => {
           this.loading = false;
           this.cdr.detectChanges();
-          alertError(`Erro ao iniciar a viagem. ${err.error.message}`);
+          alertError(`Erro ao iniciar a viagem. ${err.error.message || ''}`);
         },
       });
   }
@@ -83,7 +84,7 @@ export class DetailsTrip {
         error: (err) => {
           this.loading = false;
           this.cdr.detectChanges();
-          alertError(`Erro ao concluir a viagem. ${err.error.message}`);
+          alertError(`Erro ao concluir a viagem. ${err.error.message || ''}`);
         },
       });
   }
@@ -103,8 +104,26 @@ export class DetailsTrip {
         error: (err) => {
           this.loading = false;
           this.cdr.detectChanges();
-          alertError(`Erro ao cancelar a viagem. ${err.error.message}`);
+          alertError(`Erro ao cancelar a viagem. ${err.error.message || ''}`);
         },
       });
+  }
+
+  navigateToTrip() {
+    if (this.trip?.id) {
+      this.router.navigate(['/viagens', this.trip.id]);
+    }
+  }
+
+  navigateToVehicle() {
+    if (this.trip?.vehicleId) {
+      this.router.navigate(['/veiculos', this.trip.vehicleId]);
+    }
+  }
+
+  navigateToDriver() {
+    if (this.trip?.driverId) {
+      this.router.navigate(['/motoristas', this.trip.driverId]);
+    }
   }
 }

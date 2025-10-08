@@ -62,7 +62,18 @@
           >
             Veículo
           </label>
-          <p class="text-gray-800 text-sm">{{ expense.vehiclePlate || "-" }}</p>
+          <p class="text-gray-800 text-sm">
+            @if (expense.vehicleId) {
+            <a
+              class="cursor-pointer hover:underline"
+              (click)="navigateToVehicle()"
+            >
+              {{ expense.vehiclePlate || "-" }}
+            </a>
+            } @else {
+            {{ expense.vehiclePlate || "-" }}
+            }
+          </p>
         </div>
 
         <div>
@@ -71,7 +82,18 @@
           >
             Motorista
           </label>
-          <p class="text-gray-800 text-sm">{{ expense.driverName || "-" }}</p>
+          <p class="text-gray-800 text-sm">
+            @if (expense.driverId) {
+            <a
+              class="cursor-pointer hover:underline"
+              (click)="navigateToDriver()"
+            >
+              {{ expense.driverName || "-" }}
+            </a>
+            } @else {
+            {{ expense.driverName || "-" }}
+            }
+          </p>
         </div>
 
         <div>
@@ -80,7 +102,18 @@
           >
             Viagem
           </label>
-          <p class="text-gray-800 text-sm">{{ expense.tripId || "-" }}</p>
+          <p class="text-gray-800 text-sm">
+            @if (expense.tripId) {
+            <a
+              class="cursor-pointer hover:underline"
+              (click)="navigateToTrip()"
+            >
+              {{ expense.tripId || "-" }}
+            </a>
+            } @else {
+            {{ expense.tripId || "-" }}
+            }
+          </p>
         </div>
 
         <div>

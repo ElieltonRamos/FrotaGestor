@@ -14,7 +14,7 @@
       [type]="field.type"
       [formControlName]="field.name"
       [placeholder]="field.placeholder"
-      class="input"
+      class="input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
 
     <!-- Validação -->
@@ -29,7 +29,11 @@
   @if (field.type === 'date') {
   <div>
     <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
-    <input type="date" [formControlName]="field.name" class="input" />
+    <input
+      type="date"
+      [formControlName]="field.name"
+      class="input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
 
     <!-- Validação -->
     @if (form.get(field.name)?.hasError('required') &&
@@ -38,12 +42,16 @@
     }
   </div>
   }
-  
+
   <!-- Input Data/Hora -->
   @if (field.type === 'datetime-local') {
   <div>
     <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
-    <input type="datetime-local" [formControlName]="field.name" class="input" />
+    <input
+      type="datetime-local"
+      [formControlName]="field.name"
+      class="input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
 
     <!-- Validação -->
     @if (form.get(field.name)?.hasError('required') &&
@@ -53,16 +61,38 @@
   </div>
   }
 
-  <!-- Select -->
+  <!-- Select / Icon Selector -->
   @if (field.type === 'select') {
   <div>
     <label class="block mb-1 text-sm font-medium">{{ field.label }}</label>
-    <select [formControlName]="field.name" class="input">
+
+    <!-- Exibe <select> para selects normais -->
+    @if (field.name !== 'iconMapUrl') {
+    <select
+      [formControlName]="field.name"
+      class="input w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
       <option value="">-- Selecione --</option>
       @for (opt of field.options; track opt) {
       <option [value]="opt">{{ opt }}</option>
       }
     </select>
+    }
+
+    <!-- Exibe ícones se for 'iconMapUrl' -->
+    @if (field.name === 'iconMapUrl' && field.options) {
+    <div class="mt-2 flex flex-wrap gap-4">
+      @for (opt of field.options; track opt) {
+      <div
+        class="w-12 h-12 border-2 rounded-lg cursor-pointer hover:border-blue-500 transition"
+        [class.border-blue-500]="form.get(field.name)?.value === opt"
+        (click)="selectOption(field.name, opt)"
+      >
+        <img [src]="opt" class="w-full h-full object-contain" [alt]="opt" />
+      </div>
+      }
+    </div>
+    }
 
     <!-- Validação -->
     @if (form.get(field.name)?.hasError('required') &&

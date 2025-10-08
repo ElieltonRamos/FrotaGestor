@@ -8,16 +8,17 @@ import {
 } from '@angular/forms';
 
 export interface FormField {
-  name: string; // nome do campo (para o formControlName)
-  label: string; // texto que aparece no formulário
-  type: string; // text, email, number, date, select, etc
-  placeholder?: string; // placeholder
-  options?: string[]; // se for select/radio
-  required?: boolean; // validação
+  name: string;
+  label: string;
+  type: string;
+  placeholder?: string;
+  options?: string[];
+  required?: boolean;
 }
 
 @Component({
   selector: 'app-dynamic-form',
+  standalone: true,
   imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './dynamic-form.html',
 })
@@ -27,6 +28,7 @@ export class DynamicFormComponent {
   @Output() formChange = new EventEmitter<any>();
 
   form!: FormGroup;
+  dropdownOpen: { [key: string]: boolean } = {};
 
   constructor(private fb: FormBuilder) {}
 
@@ -34,6 +36,7 @@ export class DynamicFormComponent {
     const group: any = {};
     this.fields.forEach((field) => {
       group[field.name] = field.required ? [null, Validators.required] : [null];
+      this.dropdownOpen[field.name] = false; // Initialize dropdown state
     });
     this.form = this.fb.group(group);
     this.form.valueChanges.subscribe((value) => {
@@ -45,8 +48,20 @@ export class DynamicFormComponent {
     if (this.form.valid) {
       this.formSubmit.emit(this.form.value);
       this.form.reset();
+      Object.keys(this.dropdownOpen).forEach((key) => {
+        this.dropdownOpen[key] = false;
+      });
     } else {
       this.form.markAllAsTouched();
     }
+  }
+
+  toggleDropdown(fieldName: string) {
+    this.dropdownOpen[fieldName] = !this.dropdownOpen[fieldName];
+  }
+
+  selectOption(fieldName: string, option: string) {
+    this.form.get(fieldName)?.setValue(option);
+    this.dropdownOpen[fieldName] = false;
   }
 }

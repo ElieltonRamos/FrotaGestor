@@ -6,6 +6,7 @@ export interface Vehicle {
   brand?: string | null;
   year?: number | null;
   status: VehicleStatus;
+  iconMapUrl: string;
 }
 
 export enum VehicleStatus {
