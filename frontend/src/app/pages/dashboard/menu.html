@@ -1,15 +1,23 @@
-<section>
+<section class="p-4">
   <h2 class="text-xl font-semibold m-4 text-gray-700">Módulos</h2>
-
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
     @for (item of menus; track $index) {
     <a
       [routerLink]="item.route"
-      class="flex items-center space-x-2 p-2 rounded hover:bg-gray-100 transition text-gray-800 no-underline"
+      class="flex items-center space-x-2 p-2 rounded hover:bg-gray-300 transition text-gray-800 no-underline"
     >
       <ng-icon [name]="item.icon" class="text-3xl text-gray-600"></ng-icon>
       <span>{{ item.name }}</span>
     </a>
     }
+  </div>
+  <div class="mt-8">
+    <h3
+      class="text-lg font-extrabold text-gray-700 mb-2 flex items-center gap-2 justify-center"
+    >
+      <ng-icon name="heroMapSolid" class="text-blue-500 text-xl"></ng-icon>
+      Localização dos Veiculos Cadastrados
+    </h3>
+    <app-map [markers]="markers" />
   </div>
 </section>

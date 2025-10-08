@@ -9,6 +9,7 @@ import {
 } from '../interfaces/vehicle';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
+import { CustomMarker } from '../components/map-component/map-component';
 
 const MOCK_INDICATORS: VehicleIndicators = {
   active: 18,
@@ -88,7 +89,7 @@ const MOCK_REPORT: VehicleReport = {
       { plate: 'GHI-9012', litersPerKm: 0.11 },
       { plate: 'JKL-3456', litersPerKm: 0.14 },
     ],
-  }
+  },
 };
 
 @Injectable({
@@ -137,9 +138,7 @@ export class VehicleService {
     return this.http.delete<void>(`${API_URL}/vehicles/${id}`);
   }
 
-  getIndicators(
-    filters: any = {}
-  ): Observable<VehicleIndicators> {
+  getIndicators(filters: any = {}): Observable<VehicleIndicators> {
     // return do backend
     // let params = new HttpParams();
     // Object.entries(filters).forEach(([key, value]) => {
@@ -167,5 +166,37 @@ export class VehicleService {
     // Mock
     console.log('🧪 Retornando dados mockados de relatório de veículos...');
     return of(MOCK_REPORT);
+  }
+
+  getLocationsVehicles(): Observable<CustomMarker[]> {
+    const MOCK_LOCATIONS: CustomMarker[] = [
+      {
+        lat: -14.9495,
+        lng: -42.841,
+        color: '#10B981',
+        title: 'Veículo 1',
+        description: 'Veículo ativo próximo ao fallback.',
+      },
+      {
+        lat: -14.9492,
+        lng: -42.8395,
+        iconUrl: 'assets/truck-icon.png',
+        title: 'Caminhão A',
+        description: 'Veículo em rota de entrega próxima.',
+      },
+      {
+        lat: -14.9485,
+        lng: -42.8408,
+        color: '#3B82F6',
+        title: 'Veículo 2',
+        description: 'Outro veículo próximo ao fallback.',
+      },
+    ];
+
+    // Caso queira consumir backend, descomente abaixo e ajuste endpoint:
+    // return this.http.get<CustomMarker[]>(`${API_URL}/vehicles/locations`);
+
+    console.log('🧪 Retornando dados mockados de localização de veículos...');
+    return of(MOCK_LOCATIONS);
   }
 }
