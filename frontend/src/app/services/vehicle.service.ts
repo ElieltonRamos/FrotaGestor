@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { delay, Observable, of } from 'rxjs';
 import { API_URL } from './api.url';
 import {
   Vehicle,
@@ -10,6 +10,9 @@ import {
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
 import { CustomMarker } from '../components/map-component/map-component';
+import { Driver } from '../interfaces/driver';
+import { Trip } from '../interfaces/trip';
+import { Expense } from '../interfaces/expense';
 
 const MOCK_INDICATORS: VehicleIndicators = {
   active: 18,
@@ -198,5 +201,48 @@ export class VehicleService {
 
     console.log('🧪 Retornando dados mockados de localização de veículos...');
     return of(MOCK_LOCATIONS);
+  }
+
+  getTripsByVehicle(
+    vehicleId: number,
+    page: number = 1,
+    limit: number = 10,
+    sortKey: string = 'id',
+    sortAsc: boolean = true
+  ): Observable<PaginatedResponse<Trip>> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('limit', limit)
+      .set('sortBy', sortKey)
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    return this.http.get<PaginatedResponse<Trip>>(
+      `${API_URL}/vehicles/${vehicleId}/trips`,
+      { params }
+    );
+  }
+
+  /** 🔹 Lista as despesas relacionadas a um veículo */
+  getExpensesByVehicle(
+    vehicleId: number,
+    page: number = 1,
+    limit: number = 10,
+    sortKey: string = 'id',
+    sortAsc: boolean = true
+  ): Observable<PaginatedResponse<Expense>> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('limit', limit)
+      .set('sortBy', sortKey)
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    return this.http.get<PaginatedResponse<Expense>>(
+      `${API_URL}/vehicles/${vehicleId}/expenses`,
+      { params }
+    );
+  }
+
+  getTopDriverByVehicle(vehicleId: number) {
+    return this.http.get<Driver>(`${API_URL}/vehicles/${vehicleId}/top-driver`);
   }
 }

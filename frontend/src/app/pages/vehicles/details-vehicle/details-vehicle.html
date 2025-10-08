@@ -1,98 +1,181 @@
 <div
-  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200"
 >
-  <!-- Coluna principal -->
-  <div class="lg:col-span-2 flex flex-col">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-6 gap-4">
-      <h2 class="text-xl font-semibold text-gray-800">Detalhes do Veículo</h2>
-      <button
-        class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
-        (click)="goBack()"
-      >
-        Voltar
-      </button>
+  <!-- Cabeçalho e detalhes -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 flex flex-col">
+      <div class="flex items-center justify-between mb-6 gap-4">
+        <h2 class="text-xl font-semibold text-gray-800">Detalhes do Veículo</h2>
+        <button
+          class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+          (click)="goBack()"
+        >
+          Voltar
+        </button>
+      </div>
+
+      @if (vehicle) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Placa</label
+          >
+          <p class="text-gray-800 text-sm">{{ vehicle.plate }}</p>
+        </div>
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Modelo</label
+          >
+          <p class="text-gray-800 text-sm">{{ vehicle.model }}</p>
+        </div>
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Marca</label
+          >
+          <p class="text-gray-800 text-sm">{{ vehicle.brand || "-" }}</p>
+        </div>
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Ano</label
+          >
+          <p class="text-gray-800 text-sm">{{ vehicle.year || "-" }}</p>
+        </div>
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Status</label
+          >
+          <span
+            class="px-3 py-1 rounded-full text-xs font-medium"
+            [class.bg-green-100]="vehicle.status === 'ATIVO'"
+            [class.text-green-700]="vehicle.status === 'ATIVO'"
+            [class.bg-red-100]="vehicle.status === 'INATIVO'"
+            [class.text-red-700]="vehicle.status === 'INATIVO'"
+            [class.bg-yellow-100]="vehicle.status === 'MANUTENCAO'"
+            [class.text-yellow-700]="vehicle.status === 'MANUTENCAO'"
+          >
+            {{ vehicle.status }}
+          </span>
+        </div>
+      </div>
+      } @else {
+      <p class="text-gray-500 text-sm italic">Carregando veículo...</p>
+      }
+
+      <!-- Rodapé com botões -->
+      @if(vehicle && vehicle.status === 'ATIVO') {
+      <div class="flex justify-end mt-2">
+        <button
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
+          (click)="disableVehicle()"
+          [disabled]="loading"
+        >
+          @if(loading) { Aguardando... } @else { Desabilitar Veículo }
+        </button>
+      </div>
+      } @if(vehicle && vehicle.status === 'INATIVO') {
+      <div class="flex justify-end mt-2">
+        <button
+          class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
+          (click)="activateVehicle()"
+          [disabled]="loading"
+        >
+          @if(loading) { Aguardando... } @else { Ativar Veículo }
+        </button>
+      </div>
+      }
     </div>
 
-    <!-- Conteúdo -->
-    @if (vehicle) {
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div class="hidden lg:flex items-center justify-center">
+      <img
+        src="vehicle-details.png"
+        alt="Ilustração de veículo"
+        class="max-h-64 opacity-90"
+        style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
+      />
+    </div>
+  </div>
+
+  <!-- Motorista mais frequente -->
+  <div class="mt-10 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Motorista que mais utilizou
+    </h3>
+    @if(topDriver) {
+    <div
+      class="flex items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100"
+    >
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Placa
-        </label>
-        <p class="text-gray-800 text-sm">{{ vehicle.plate }}</p>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Modelo
-        </label>
-        <p class="text-gray-800 text-sm">{{ vehicle.model }}</p>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Marca
-        </label>
-        <p class="text-gray-800 text-sm">{{ vehicle.brand || "-" }}</p>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Ano
-        </label>
-        <p class="text-gray-800 text-sm">{{ vehicle.year || "-" }}</p>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">
-          Status
-        </label>
-        <span
-          class="px-3 py-1 rounded-full text-xs font-medium"
-          [class.bg-green-100]="vehicle.status === 'ATIVO'"
-          [class.text-green-700]="vehicle.status === 'ATIVO'"
-          [class.bg-red-100]="vehicle.status === 'INATIVO'"
-          [class.text-red-700]="vehicle.status === 'INATIVO'"
-          [class.bg-yellow-100]="vehicle.status === 'MANUTENCAO'"
-          [class.text-yellow-700]="vehicle.status === 'MANUTENCAO'"
-        >
-          {{ vehicle.status }}
-        </span>
+        <p class="text-sm font-medium text-gray-800">{{ topDriver.name }}</p>
       </div>
     </div>
     } @else {
-    <p class="text-gray-500 text-sm italic">Carregando veículo...</p>
-    }
-
-    <!-- Rodapé com botões -->
-    @if(vehicle && vehicle.status === 'ATIVO') {
-    <div class="flex justify-end mt-2">
-      <button
-        class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
-        (click)="disableVehicle()"
-        [disabled]="loading"
-      >
-        @if(loading) { Aguardando... } @else { Desabilitar Veículo }
-      </button>
-    </div>
-    } @if(vehicle && vehicle.status === 'INATIVO') {
-    <div class="flex justify-end mt-2">
-      <button
-        class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
-        (click)="activateVehicle()"
-        [disabled]="loading"
-      >
-        @if(loading) { Aguardando... } @else { Ativar Veículo }
-      </button>
-    </div>
+    <p class="text-gray-500 text-sm italic">Nenhum motorista encontrado.</p>
     }
   </div>
 
-  <!-- Coluna lateral com imagem ilustrativa -->
-  <div class="hidden lg:flex items-center justify-center">
-    <img
-      src="vehicle-details.png"
-      alt="Ilustração de veículo"
-      class="max-h-64 opacity-90"
-      style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
-    />
+  <!-- Viagens relacionadas -->
+  <div class="mt-10 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Viagens relacionadas
+    </h3>
+
+    <div class="flex-1 overflow-y-auto">
+      <app-base-list
+        [columns]="tripsColumns"
+        [data]="trips"
+        (rowClick)="onTripSelect($event)"
+        [showActions]="false"
+      ></app-base-list>
+    </div>
+
+    <!-- Paginação -->
+    <div class="border-t border-gray-200 pt-3 flex justify-end">
+      <app-paginator
+        [totalItems]="tripsTotal"
+        [itemsPerPage]="tripsLimit"
+        [totalPages]="tripsTotalPages"
+        [page]="tripsPage"
+        (pageChanged)="onTripsPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+
+  <div class="mt-10 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Despesas relacionadas
+    </h3>
+
+    <div class="flex-1 overflow-y-auto">
+      <app-base-list
+        [columns]="expensesColumns"
+        [data]="expenses"
+        (rowClick)="onExpenseSelect($event)"
+        [showActions]="false"
+      ></app-base-list>
+    </div>
+
+    <!-- Paginação -->
+    <div class="border-t border-gray-200 pt-3 flex justify-end">
+      <app-paginator
+        [totalItems]="expensesTotal"
+        [itemsPerPage]="expensesLimit"
+        [totalPages]="expensesTotalPages"
+        [page]="expensesPage"
+        (pageChanged)="onExpensesPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+
+  <!-- Mapa -->
+  <div class="mt-12 border-t border-gray-200 pt-8">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Localização no mapa
+    </h3>
+    <app-map />
   </div>
 </div>

@@ -57,23 +57,23 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     this.addRecenterButton();
   }
 
-  /** Botão de recentralizar mapa na posição do usuário */
   private addRecenterButton(): void {
-    const button = document.createElement('button');
-    button.innerHTML = '📍';
-    button.title = 'Recentralizar';
-    button.className =
-      'absolute top-4 left-4 z-50 bg-white p-1 rounded-full shadow-lg hover:bg-blue-500 hover:text-white transition';
+    const img = document.createElement('img');
+    img.src = 'btn-recenter-map.png';
+    img.alt = 'Recentralizar mapa';
+    img.title = 'Recentralizar';
+    img.className =
+      'absolute top-4 left-4 z-50 cursor-pointer shadow-lg transition transform hover:scale-105 bg-gray-100 rounded-full';
 
-    button.onclick = () => {
+    img.style.width = '40px';
+    img.onclick = () => {
       this.map.flyTo({ center: this.userCoords, zoom: 14 });
     };
 
-    // Insere no container do mapa
     const container = document.getElementById('map');
     if (container) {
-      container.appendChild(button);
-      container.style.position = 'relative'; // garante que o botão fique sobre o mapa
+      container.appendChild(img);
+      container.style.position = 'relative';
     }
   }
 
