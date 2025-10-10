@@ -9,6 +9,7 @@ import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import io.ktor.util.reflect.TypeInfo
 import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.sql.SortOrder
 import kotlin.system.measureTimeMillis
@@ -131,33 +132,153 @@ class VehicleController(private val vehicleService: VehicleService) {
         }
     }
 
-    suspend fun getReport(call: ApplicationCall) {
+    suspend fun getTripsByVehicle(call: ApplicationCall) {
         try {
+            val vehicleId = call.parameters["id"]?.toIntOrNull()
             val startDateParam = call.request.queryParameters["startDate"]
             val endDateParam = call.request.queryParameters["endDate"]
-            val startDate = startDateParam?.let {
-                try { LocalDate.parse(it) } catch (_: Exception) { null }
-            }
-            val endDate = endDateParam?.let {
-                try { LocalDate.parse(it) } catch (_: Exception) { null }
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+
+            if (vehicleId == null || startDateParam == null || endDateParam == null) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetros obrigatórios: id, startDate, endDate")
+                )
+                return
             }
 
-            var serviceResult: ServiceResponse<VehicleReport>
-            val timeMillis = measureTimeMillis {
-                serviceResult = vehicleService.getReport(startDate, endDate)
+            val startDate = try {
+                LocalDate.parse(startDateParam)
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de startDate. Use YYYY-MM-DD.")
+                )
+                return
             }
 
-            println("⏱ Vehicle report service execution time: ${timeMillis}ms")
+            val endDate = try {
+                LocalDate.parse(endDateParam)
+            } catch (e: Exception) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de endDate. Use YYYY-MM-DD.")
+                )
+                return
+            }
+
+            val serviceResult = vehicleService.getTripsByVehicle(
+                vehicleId = vehicleId,
+                startDate = startDate,
+                endDate = endDate,
+                page = page,
+                limit = limit
+            )
 
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
-            println("❌ Error in getReport vehicle route: ${e.stackTraceToString()}")
+            println("Error in getTripsByVehicle route: ${e.message}")
             call.respond(
                 HttpStatusCode.InternalServerError,
-                mapOf("message" to "Erro interno ao gerar relatório de veículos.")
+                mapOf("message" to internalMsgError)
             )
         }
     }
 
+    suspend fun getExpensesByVehicle(call: ApplicationCall) {
+        try {
+            val vehicleId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+                )
 
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+
+            if (startDateParam == null || endDateParam == null) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetros obrigatórios: startDate e endDate")
+                )
+            }
+
+            val startDate = try { LocalDate.parse(startDateParam) } catch (_: Exception) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de startDate. Use YYYY-MM-DD")
+                )
+            }
+
+            val endDate = try { LocalDate.parse(endDateParam) } catch (_: Exception) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de endDate. Use YYYY-MM-DD")
+                )
+            }
+
+            val serviceResult = vehicleService.getExpensesByVehicle(
+                vehicleId = vehicleId,
+                startDate = startDate,
+                endDate = endDate,
+                page = page,
+                limit = limit
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getExpensesByVehicle route: ${e.message}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to internalMsgError)
+            )
+        }
+    }
+
+    suspend fun getTopDriver(call: ApplicationCall) {
+        try {
+            val vehicleId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+                )
+
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+
+            if (startDateParam == null || endDateParam == null) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetros obrigatórios: startDate e endDate")
+                )
+            }
+
+            val startDate = try { LocalDate.parse(startDateParam) } catch (_: Exception) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de startDate. Use YYYY-MM-DD")
+                )
+            }
+
+            val endDate = try { LocalDate.parse(endDateParam) } catch (_: Exception) {
+                return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Formato inválido de endDate. Use YYYY-MM-DD")
+                )
+            }
+
+            val serviceResult = vehicleService.getTopDriverByVehicle(vehicleId, startDate, endDate)
+            call.respond(serviceResult.status, serviceResult.data)
+
+        } catch (e: Exception) {
+            println("Error in getTopDriver route: ${e.message}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to internalMsgError)
+            )
+        }
+    }
 }
