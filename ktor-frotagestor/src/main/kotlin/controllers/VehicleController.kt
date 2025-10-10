@@ -1,6 +1,8 @@
 package com.frotagestor.controllers
 
 import com.frotagestor.database.models.VehiclesTable
+import com.frotagestor.interfaces.ServiceResponse
+import com.frotagestor.interfaces.VehicleReport
 import com.frotagestor.interfaces.VehicleStatus
 import com.frotagestor.services.VehicleService
 import com.frotagestor.plugins.RawBodyKey
@@ -9,6 +11,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.sql.SortOrder
+import kotlin.system.measureTimeMillis
 
 class VehicleController(private val vehicleService: VehicleService) {
     private val internalMsgError = "Internal server error"
@@ -138,7 +141,14 @@ class VehicleController(private val vehicleService: VehicleService) {
             val endDate = endDateParam?.let {
                 try { LocalDate.parse(it) } catch (_: Exception) { null }
             }
-            val serviceResult = vehicleService.getReport(startDate, endDate)
+
+            var serviceResult: ServiceResponse<VehicleReport>
+            val timeMillis = measureTimeMillis {
+                serviceResult = vehicleService.getReport(startDate, endDate)
+            }
+
+            println("⏱ Vehicle report service execution time: ${timeMillis}ms")
+
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("❌ Error in getReport vehicle route: ${e.stackTraceToString()}")
@@ -148,5 +158,6 @@ class VehicleController(private val vehicleService: VehicleService) {
             )
         }
     }
+
 
 }

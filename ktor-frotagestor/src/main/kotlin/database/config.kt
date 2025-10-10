@@ -4,6 +4,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object DatabaseFactory {
@@ -37,13 +39,17 @@ object DatabaseFactory {
             println("✅ Conexão com o banco estabelecida com sucesso.")
         } catch (e: Exception) {
             println("❌ Erro ao conectar no banco de dados: ${e.message}")
-            throw e
+            error("Falha ao inicializar o banco de dados")
         }
+
     }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         try {
-            newSuspendedTransaction(Dispatchers.IO) { block() }
+            newSuspendedTransaction(Dispatchers.IO) {
+                addLogger(StdOutSqlLogger)
+                block()
+            }
         } catch (e: Exception) {
             // logar / mapear erro
             throw e
