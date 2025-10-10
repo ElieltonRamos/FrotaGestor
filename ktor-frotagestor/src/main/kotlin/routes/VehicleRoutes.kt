@@ -12,6 +12,8 @@ fun Route.vehicleRoutes() {
         route("vehicles") {
             get { controller.getAll(call) }
             post { controller.create(call) }
+            get("report") { controller.getReport(call) }
+            get("indicators") { controller.getIndicators(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.softDelete(call) }

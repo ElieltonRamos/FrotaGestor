@@ -7,6 +7,7 @@ import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.sql.SortOrder
 
 class VehicleController(private val vehicleService: VehicleService) {
@@ -71,7 +72,6 @@ class VehicleController(private val vehicleService: VehicleService) {
                 SortOrder.ASC
             }
 
-            // 📌 Chama o service
             val serviceResult = vehicleService.getAllVehicles(
                 page = page,
                 limit = limit,
@@ -117,4 +117,36 @@ class VehicleController(private val vehicleService: VehicleService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
+    suspend fun getIndicators(call: ApplicationCall) {
+        try {
+            val serviceResult = vehicleService.getIndicators()
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getIndicators vehicle route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getReport(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+            val startDate = startDateParam?.let {
+                try { LocalDate.parse(it) } catch (_: Exception) { null }
+            }
+            val endDate = endDateParam?.let {
+                try { LocalDate.parse(it) } catch (_: Exception) { null }
+            }
+            val serviceResult = vehicleService.getReport(startDate, endDate)
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getReport vehicle route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar relatório de veículos.")
+            )
+        }
+    }
+
 }
