@@ -20,7 +20,7 @@ object DatabaseFactory {
                 password = System.getenv("DB_PASS") ?: "root"
 
 //                jdbcUrl = System.getenv("DB_URL")
-//                    ?: "jdbc:mysql://10.1.254.19:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
+//                    ?: "jdbc:mysql://10.1.254.54:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
 //                driverClassName = "com.mysql.cj.jdbc.Driver"
 //                username = System.getenv("DB_USER") ?: "eliel"
 //                password = System.getenv("DB_PASS") ?: "elielton"

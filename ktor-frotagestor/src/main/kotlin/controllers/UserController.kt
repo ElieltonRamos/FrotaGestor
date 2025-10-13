@@ -112,4 +112,14 @@ class UserController(private val userService: UserService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
+    suspend fun getIndicators(call: ApplicationCall) {
+        try {
+            val serviceResult = userService.getIndicatorsUsers()
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getIndicators user route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
 }

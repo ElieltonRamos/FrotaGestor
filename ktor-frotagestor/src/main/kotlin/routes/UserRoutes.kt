@@ -14,6 +14,7 @@ fun Route.userRoutes() {
         authenticate("auth-jwt") {
             get { controller.getAll(call) }
             post { controller.create(call) }
+            get("indicators") { controller.getIndicators(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.delete(call) }

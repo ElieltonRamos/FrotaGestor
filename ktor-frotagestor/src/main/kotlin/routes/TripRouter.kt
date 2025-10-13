@@ -12,6 +12,7 @@ fun Route.tripRoutes() {
         route("trips") {
             get { controller.getAll(call) }
             post { controller.create(call) }
+            get("indicators") { controller.getTripIndicators(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.delete(call) }

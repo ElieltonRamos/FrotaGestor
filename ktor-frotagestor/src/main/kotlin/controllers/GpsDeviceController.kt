@@ -1,15 +1,10 @@
 package com.frotagestor.controllers
 
-import com.frotagestor.interfaces.PaginatedResponse
-import com.frotagestor.interfaces.ServiceResponse
-import com.frotagestor.interfaces.GpsDevice
-import com.frotagestor.interfaces.Message
 import com.frotagestor.plugins.RawBodyKey
 import com.frotagestor.services.GpsDeviceService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
-import org.jetbrains.exposed.sql.SortOrder
 
 class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
 

@@ -3,6 +3,8 @@ package com.frotagestor.controllers
 import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.TripsTable
 import com.frotagestor.database.models.VehiclesTable
+import com.frotagestor.interfaces.ServiceResponse
+import com.frotagestor.interfaces.TripIndicators
 import com.frotagestor.interfaces.TripStatus
 import com.frotagestor.services.TripService
 import com.frotagestor.plugins.RawBodyKey
@@ -11,6 +13,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import org.jetbrains.exposed.sql.SortOrder
 import kotlinx.datetime.LocalDateTime
+import kotlin.system.measureTimeMillis
 
 class TripController(private val tripService: TripService) {
     private val internalMsgError = "Internal server error"
@@ -130,6 +133,28 @@ class TripController(private val tripService: TripService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in delete trip route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getTripIndicators(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+            val startDate = startDateParam?.let {
+                runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull()
+            }
+            val endDate = endDateParam?.let {
+                runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull()
+            }
+            var serviceResult: ServiceResponse<TripIndicators>
+            val timeMillis = measureTimeMillis {
+                serviceResult = tripService.getTripIndicators(startDate = startDate, endDate = endDate)
+            }
+            println("⏱ Trip Indicators service execution time: ${timeMillis}ms")
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getTripIndicators route: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }

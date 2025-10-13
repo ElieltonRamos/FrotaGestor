@@ -29,3 +29,11 @@ data class User(
     val password: String? = null,
     val role: String = ""
 )
+
+@Serializable
+data class UserIndicators(
+    val totalUsers: Int,
+    val admins: Int,
+    val regulars: Int,
+    val lastUser: User? = null
+)

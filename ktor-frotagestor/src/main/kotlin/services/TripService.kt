@@ -9,9 +9,18 @@ import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateTrip
 import com.frotagestor.validations.validatePartialTrip
 import io.ktor.http.HttpStatusCode
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 
 class TripService {
 
@@ -221,6 +230,99 @@ class TripService {
         return ServiceResponse(
             status = HttpStatusCode.OK,
             data = Message("Viagem removida com sucesso")
+        )
+    }
+
+    suspend fun getTripIndicators(
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): ServiceResponse<TripIndicators> = DatabaseFactory.dbQuery {
+
+        // Define intervalo de datas (mês atual, se não for informado)
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val start = startDate ?: LocalDate(now.year, now.month, 1)
+        val end = endDate ?: LocalDate(now.year, now.month, now.month.maxLength())
+        val timeZone = TimeZone.currentSystemDefault()
+
+        val startDateTime = start.atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
+        val endDateTime = end.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
+
+        // Query SQL única com agregações e última viagem
+        val sql = """
+        SELECT
+            COUNT(t.id) AS total_trips,
+            SUM(CASE WHEN t.status = 'PLANEJADA' THEN 1 ELSE 0 END) AS planned,
+            SUM(CASE WHEN t.status = 'EM_ANDAMENTO' THEN 1 ELSE 0 END) AS in_progress,
+            SUM(CASE WHEN t.status = 'CONCLUIDA' THEN 1 ELSE 0 END) AS completed,
+            SUM(CASE WHEN t.status = 'CANCELADA' THEN 1 ELSE 0 END) AS canceled,
+            COALESCE(SUM(t.distance_km), 0) AS total_distance,
+            COALESCE(AVG(t.distance_km), 0) AS avg_distance,
+            MAX(t.start_time) AS last_trip_date,
+            (
+                SELECT d.name
+                FROM trips t2
+                JOIN drivers d ON t2.driver_id = d.id
+                WHERE t2.start_time = MAX(t.start_time)
+                LIMIT 1
+            ) AS last_driver_name,
+            (
+                SELECT v.plate
+                FROM trips t3
+                JOIN vehicles v ON t3.vehicle_id = v.id
+                WHERE t3.start_time = MAX(t.start_time)
+                LIMIT 1
+            ) AS last_vehicle_plate
+        FROM trips t
+        WHERE t.start_time BETWEEN '$startDateTime' AND '$endDateTime';
+    """.trimIndent()
+
+        var totalTrips = 0
+        var planned = 0
+        var inProgress = 0
+        var completed = 0
+        var canceled = 0
+        var totalDistance = 0.0
+        var avgDistance = 0.0
+        var lastTrip: LastTrip? = null
+
+        transaction {
+            exec(sql) { rs ->
+                if (rs.next()) {
+                    totalTrips = rs.getInt("total_trips")
+                    planned = rs.getInt("planned")
+                    inProgress = rs.getInt("in_progress")
+                    completed = rs.getInt("completed")
+                    canceled = rs.getInt("canceled")
+                    totalDistance = rs.getDouble("total_distance")
+                    avgDistance = rs.getDouble("avg_distance")
+
+                    val date = rs.getString("last_trip_date")
+                    val driver = rs.getString("last_driver_name")
+                    val plate = rs.getString("last_vehicle_plate")
+
+                    if (date != null && driver != null && plate != null) {
+                        lastTrip = LastTrip(
+                            date = date,
+                            driverName = driver,
+                            vehiclePlate = plate
+                        )
+                    }
+                }
+            }
+        }
+
+        ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = TripIndicators(
+                totalTrips = totalTrips,
+                planned = planned,
+                inProgress = inProgress,
+                completed = completed,
+                canceled = canceled,
+                totalDistance = totalDistance,
+                avgDistance = avgDistance,
+                lastTrip = lastTrip
+            )
         )
     }
 }

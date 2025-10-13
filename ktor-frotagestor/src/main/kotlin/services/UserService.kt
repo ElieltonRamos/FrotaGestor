@@ -9,6 +9,7 @@ import com.frotagestor.interfaces.PaginatedResponse
 import com.frotagestor.plugins.JwtConfig
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.User
+import com.frotagestor.interfaces.UserIndicators
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateLogin
 import com.frotagestor.validations.validatePartialUser
@@ -252,4 +253,59 @@ class UserService {
             )
         }
     }
+
+    suspend fun getIndicatorsUsers(): ServiceResponse<UserIndicators> {
+        return DatabaseFactory.dbQuery {
+            // Query única com subconsultas agregadas e último usuário
+            val query = """
+            SELECT 
+                COUNT(*) AS total_users,
+                SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins,
+                SUM(CASE WHEN role != 'admin' THEN 1 ELSE 0 END) AS regulars,
+                id AS last_user_id,
+                username AS last_username,
+                role AS last_role
+            FROM users
+            ORDER BY id DESC
+            LIMIT 1;
+        """.trimIndent()
+
+            val result = org.jetbrains.exposed.sql.transactions.TransactionManager.current()
+                .exec(query) { rs ->
+                    if (rs.next()) {
+                        val totalUsers = rs.getInt("total_users")
+                        val admins = rs.getInt("admins")
+                        val regulars = rs.getInt("regulars")
+
+                        val lastUserId = rs.getInt("last_user_id")
+                        val lastUsername = rs.getString("last_username")
+                        val lastRole = rs.getString("last_role")
+
+                        UserIndicators(
+                            totalUsers = totalUsers,
+                            admins = admins,
+                            regulars = regulars,
+                            lastUser = User(
+                                id = lastUserId,
+                                username = lastUsername,
+                                role = lastRole
+                            )
+                        )
+                    } else null
+                }
+
+            if (result == null) {
+                ServiceResponse(
+                    status = HttpStatusCode.NoContent,
+                    data = UserIndicators(0, 0, 0, null)
+                )
+            } else {
+                ServiceResponse(
+                    status = HttpStatusCode.OK,
+                    data = result
+                )
+            }
+        }
+    }
+
 }
