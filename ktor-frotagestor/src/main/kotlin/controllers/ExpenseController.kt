@@ -3,6 +3,10 @@ package com.frotagestor.controllers
 import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.ExpensesTable
 import com.frotagestor.database.models.VehiclesTable
+import com.frotagestor.interfaces.ExpenseIndicators
+import com.frotagestor.interfaces.MaintenanceIndicators
+import com.frotagestor.interfaces.RefuelingIndicators
+import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.services.ExpenseService
 import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
@@ -10,6 +14,7 @@ import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import org.jetbrains.exposed.sql.SortOrder
 import kotlinx.datetime.LocalDate
+import kotlin.system.measureTimeMillis
 
 class ExpenseController(private val expenseService: ExpenseService) {
     private val internalMsgError = "Internal server error"
@@ -160,6 +165,93 @@ class ExpenseController(private val expenseService: ExpenseService) {
         } catch (e: Exception) {
             println("Error in delete expense route: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getRefuelingIndicators(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+
+            val startDate = startDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            val endDate = endDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            var serviceResult: ServiceResponse<RefuelingIndicators>
+            val timeMillis = measureTimeMillis {
+                serviceResult = expenseService.getRefuelingIndicators(startDate, endDate)
+            }
+            println("⏱ Refueling Indicators service execution time: ${timeMillis}ms")
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getRefuelingIndicators route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar indicadores de abastecimento.")
+            )
+        }
+    }
+
+    suspend fun getMaintenanceIndicators(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+
+            val startDate = startDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            val endDate = endDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            var serviceResult: ServiceResponse<MaintenanceIndicators>
+            val timeMillis = measureTimeMillis {
+                serviceResult = expenseService.getMaintenanceIndicators(startDate, endDate)
+            }
+            println("⏱ Maintenance Indicators service execution time: ${timeMillis}ms")
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getMaintenanceIndicators route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar indicadores de manutenção.")
+            )
+        }
+    }
+
+    suspend fun getExpenseIndicators(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+
+            val startDate = startDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            val endDate = endDateParam?.let {
+                runCatching { LocalDate.parse(it) }.getOrNull()
+            }
+
+            var serviceResult: ServiceResponse<ExpenseIndicators>
+            val timeMillis = measureTimeMillis {
+                serviceResult = expenseService.getExpenseIndicators(startDate, endDate)
+            }
+            println("⏱ Expense Indicators service execution time: ${timeMillis}ms")
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getExpenseIndicators route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar indicadores de despesas.")
+            )
         }
     }
 }

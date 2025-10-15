@@ -11,6 +11,8 @@ fun Route.reportsRoutes() {
     authenticate("auth-jwt") {
         route("reports") {
             get("vehicles") { controller.getReportVehicles(call) }
+            get("trips") { controller.getTripReport(call) }
+            get("expenses") { controller.getReportExpenses(call) }
         }
     }
 }

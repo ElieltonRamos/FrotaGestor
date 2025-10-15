@@ -15,6 +15,9 @@ fun Route.expenseRoutes() {
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.delete(call) }
+            get("refueling-indicators") { controller.getRefuelingIndicators(call) }
+            get("maintenance-indicators") { controller.getMaintenanceIndicators(call) }
+            get("expense-indicators") { controller.getExpenseIndicators(call) }
         }
     }
 }
