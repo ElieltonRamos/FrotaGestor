@@ -13,6 +13,7 @@ fun Route.reportsRoutes() {
             get("vehicles") { controller.getReportVehicles(call) }
             get("trips") { controller.getTripReport(call) }
             get("expenses") { controller.getReportExpenses(call) }
+            get("drivers") { controller.getReportDriver(call) }
         }
     }
 }

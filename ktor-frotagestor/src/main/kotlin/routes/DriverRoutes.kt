@@ -12,9 +12,12 @@ fun Route.driverRoutes() {
         route("drivers") {
             get { controller.getAll(call) }
             post { controller.create(call) }
+            get("indicators") { controller.getIndicators(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.softDelete(call) }
+            get("{id}/vehicles") { controller.getVehiclesByDriver(call) }
+            get("{id}/expenses") { controller.getExpensesByDriver(call) }
         }
     }
 }

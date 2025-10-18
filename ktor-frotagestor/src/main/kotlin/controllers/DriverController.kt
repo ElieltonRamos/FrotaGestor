@@ -133,4 +133,97 @@ class DriverController(private val driverService: DriverService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
+    suspend fun getIndicators(call: ApplicationCall) {
+        try {
+            val serviceResult = driverService.getDriversIndicators()
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in get indicators driver route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getVehiclesByDriver(call: ApplicationCall) {
+        try {
+            val driverId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+
+            // 📌 Query params básicos de paginação/ordenação
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 5
+            val sortBy = call.request.queryParameters["sortBy"] ?: "id"
+            val orderParam = call.request.queryParameters["order"] ?: "asc"
+
+            // 📌 Filtros dinâmicos
+            val filters = mutableMapOf<String, Any>()
+            call.request.queryParameters.entries().forEach { (key, values) ->
+                if (key !in listOf("page", "limit", "sortBy", "order") && values.isNotEmpty()) {
+                    val value = values.first()
+                    when (key.lowercase()) {
+                        "year" -> value.toIntOrNull()?.let { filters[key] = it }
+                        "plate", "model", "brand", "status" -> if (value.isNotBlank()) filters[key] = value
+                    }
+                }
+            }
+
+            val sortOrder = if (orderParam.equals("desc", ignoreCase = true)) SortOrder.DESC else SortOrder.ASC
+
+            val serviceResult = driverService.getVehiclesByDriver(
+                driverId = driverId,
+                page = page,
+                limit = limit,
+                sortBy = sortBy,
+                sortOrder = sortOrder,
+                filters = filters
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getVehiclesByDriver route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getExpensesByDriver(call: ApplicationCall) {
+        try {
+            val driverId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+
+            // 📌 Query params básicos de paginação/ordenação
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 5
+            val sortBy = call.request.queryParameters["sortBy"] ?: "date"
+            val orderParam = call.request.queryParameters["order"] ?: "desc"
+
+            // 📌 Filtros dinâmicos
+            val filters = mutableMapOf<String, Any>()
+            call.request.queryParameters.entries().forEach { (key, values) ->
+                if (key !in listOf("page", "limit", "sortBy", "order") && values.isNotEmpty()) {
+                    val value = values.first()
+                    when (key.lowercase()) {
+                        "amount", "liters" -> value.toDoubleOrNull()?.let { filters[key] = it }
+                        "vehicle_id" -> value.toIntOrNull()?.let { filters[key] = it }
+                        "type", "date" -> if (value.isNotBlank()) filters[key] = value
+                    }
+                }
+            }
+
+            val sortOrder = if (orderParam.equals("desc", ignoreCase = true)) SortOrder.DESC else SortOrder.ASC
+
+            val serviceResult = driverService.getExpensesByDriver(
+                driverId = driverId,
+                page = page,
+                limit = limit,
+                sortBy = sortBy,
+                sortOrder = sortOrder,
+                filters = filters
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getExpensesByDriver route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
 }

@@ -4,6 +4,8 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.DestinationDistribution
 import com.frotagestor.interfaces.DriverDistribution
+import com.frotagestor.interfaces.DriverIndicators
+import com.frotagestor.interfaces.DriverReport
 import com.frotagestor.interfaces.ExpenseReport
 import com.frotagestor.interfaces.LastTrip
 import com.frotagestor.interfaces.Message
@@ -419,6 +421,121 @@ class ReportsService {
                     topDriverByAmount = topDriverByAmount,
                     lastExpense = lastExpense
                 )
+            )
+        )
+    }
+
+    suspend fun getDriverReport(
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): ServiceResponse<DriverReport> = DatabaseFactory.dbQuery {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val start = startDate ?: LocalDate(now.year, now.month, 1)
+        val end = endDate ?: LocalDate(now.year, now.month, now.month.maxLength())
+        val timeZone = TimeZone.currentSystemDefault()
+        val startDateTime = start.atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
+        val endDateTime = end.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
+        val thirtyDaysFromNow = now.plus(DatePeriod(days = 30))
+
+        val sql = """
+        SELECT
+            d.id AS driver_id,
+            d.name AS driver_name,
+            COUNT(DISTINCT t.id) AS total_trips,
+            COALESCE(SUM(t.distance_km), 0) AS total_distance,
+            COALESCE(SUM(e.amount), 0) AS total_cost,
+            COALESCE(SUM(e.liters), 0) AS total_liters,
+            MAX(t.end_time) AS last_trip_date,
+            (SELECT COUNT(*) 
+             FROM drivers d2 
+             WHERE d2.deleted_at IS NULL AND d2.status = 'ATIVO') AS total_drivers,
+            (SELECT COUNT(*) 
+             FROM drivers d3 
+             WHERE d3.cnh_expiration < '$now' AND d3.deleted_at IS NULL AND d3.status = 'ATIVO') AS cnh_expired,
+            (SELECT COUNT(*) 
+             FROM drivers d4 
+             WHERE d4.cnh_expiration BETWEEN '$now' AND '$thirtyDaysFromNow' 
+             AND d4.deleted_at IS NULL AND d4.status = 'ATIVO') AS cnh_expiring_soon,
+            (SELECT d5.cnh_category 
+             FROM drivers d5 
+             WHERE d5.cnh_category IS NOT NULL AND d5.deleted_at IS NULL AND d5.status = 'ATIVO'
+             GROUP BY d5.cnh_category 
+             ORDER BY COUNT(*) DESC LIMIT 1) AS most_common_category
+        FROM drivers d
+        LEFT JOIN trips t ON d.id = t.driver_id AND t.start_time BETWEEN '$startDateTime' AND '$endDateTime'
+        LEFT JOIN expenses e ON d.id = e.driver_id AND e.date BETWEEN '$startDateTime' AND '$endDateTime'
+        WHERE d.deleted_at IS NULL AND d.status = 'ATIVO'
+        GROUP BY d.id, d.name
+    """.trimIndent()
+
+        // Mapas para agrupar resultados
+        val driversStats = mutableListOf<DriverReport.DriverStats>()
+        val categoryMap = mutableMapOf<String, Int>()
+        var totalDrivers = 0
+        var cnhExpired = 0
+        var cnhExpiringSoon = 0
+        var mostCommonCategory: String? = null
+
+        transaction {
+            exec(sql) { rs ->
+                while (rs.next()) {
+                    val driverId = rs.getInt("driver_id")
+                    val driverName = rs.getString("driver_name") ?: "Desconhecido"
+                    val totalTrips = rs.getInt("total_trips")
+                    val totalDistance = rs.getDouble("total_distance")
+                    val totalCost = rs.getDouble("total_cost")
+                    val totalLiters = rs.getDouble("total_liters")
+                    val lastTripDate = rs.getString("last_trip_date")
+                    val averageFuelConsumption = if (totalDistance > 0) totalLiters / totalDistance else null
+
+                    // Adiciona às estatísticas de motoristas
+                    driversStats.add(
+                        DriverReport.DriverStats(
+                            driverName = driverName,
+                            driverId = driverId,
+                            totalTrips = totalTrips,
+                            totalDistance = totalDistance,
+                            totalCost = totalCost,
+                            averageFuelConsumption = averageFuelConsumption,
+                            lastTripDate = lastTripDate
+                        )
+                    )
+
+                    // Acumula dados de distribuição por categoria
+                    val category = rs.getString("most_common_category")
+                    if (category != null) {
+                        categoryMap[category] = (categoryMap[category] ?: 0) + 1
+                    }
+
+                    // Dados de distribuição geral (capturados uma vez)
+                    if (totalDrivers == 0) {
+                        totalDrivers = rs.getInt("total_drivers")
+                        cnhExpired = rs.getInt("cnh_expired")
+                        cnhExpiringSoon = rs.getInt("cnh_expiring_soon")
+                        mostCommonCategory = rs.getString("most_common_category")
+                    }
+                }
+            }
+        }
+
+        // Converte o mapa de categorias para lista
+        val byCategory = categoryMap.map { (category, count) ->
+            DriverReport.Distributions.ByCategory(
+                category = category,
+                count = count
+            )
+        }
+
+        ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = DriverReport(
+                distributions = DriverReport.Distributions(
+                    totalDrivers = totalDrivers,
+                    cnhExpiringSoon = cnhExpiringSoon,
+                    cnhExpired = cnhExpired,
+                    byCategory = byCategory
+                ),
+                driversStats = driversStats
             )
         )
     }
