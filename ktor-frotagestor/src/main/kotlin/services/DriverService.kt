@@ -207,8 +207,6 @@ class DriverService {
         }
     }
 
-
-
     suspend fun findDriverById(id: Int): ServiceResponse<Any> {
         val driver = DatabaseFactory.dbQuery {
             DriversTable

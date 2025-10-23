@@ -52,6 +52,15 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+            "port": 4200,
+            "allowedHosts": [
+              "localhost",
+              "127.0.0.1",
+              "app.portfoliostudio.cfd"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "frontend:build:production"
@@ -75,9 +84,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.css"
-            ]
+            "styles": ["src/styles.css"]
           }
         }
       }
