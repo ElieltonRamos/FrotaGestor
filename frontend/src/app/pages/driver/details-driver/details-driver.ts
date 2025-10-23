@@ -67,7 +67,7 @@ export class DetailsDriver {
         this.driver = res;
         this.loading = false;
         this.cdr.detectChanges();
-        this.loadVehicles(id);
+        // this.loadVehicles(id);
         this.loadExpenses(id);
       },
       error: () => {

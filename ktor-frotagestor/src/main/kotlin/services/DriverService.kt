@@ -20,6 +20,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
@@ -474,7 +475,6 @@ class DriverService {
         sortOrder: SortOrder = SortOrder.DESC,
         filters: Map<String, Any> = emptyMap()
     ): ServiceResponse<PaginatedResponse<Expense>> = DatabaseFactory.dbQuery {
-        // Monta a query SQL
         val sortColumn = when (sortBy.lowercase()) {
             "type" -> "e.type"
             "amount" -> "e.amount"
@@ -485,64 +485,44 @@ class DriverService {
         }
         val orderDirection = if (sortOrder == SortOrder.ASC) "ASC" else "DESC"
 
-        // Construção dos filtros dinâmicos
-        val filterConditions = mutableListOf<String>()
-        filters.forEach { (key, value) ->
+        val filterConditions = filters.mapNotNull { (key, value) ->
             when (key.lowercase()) {
-                "type" -> if (value is String && value.isNotBlank()) {
-                    filterConditions.add("e.type LIKE '%$value%'")
-                }
-                "amount" -> if (value is Double) {
-                    filterConditions.add("e.amount = $value")
-                }
-                "liters" -> if (value is Double) {
-                    filterConditions.add("e.liters = $value")
-                }
-                "date" -> if (value is String && value.isNotBlank()) {
-                    runCatching { kotlinx.datetime.LocalDateTime.parse(value) }.getOrNull()?.let {
-                        filterConditions.add("e.date = '$value'")
+                "type" -> (value as? String)?.takeIf { it.isNotBlank() }?.let { "e.type LIKE '%$it%'" }
+                "amount" -> (value as? Double)?.let { "e.amount = $it" }
+                "liters" -> (value as? Double)?.let { "e.liters = $it" }
+                "date" -> (value as? String)?.takeIf { it.isNotBlank() }?.let {
+                    runCatching { kotlinx.datetime.LocalDateTime.parse(it) }.getOrNull()?.let { _ ->
+                        "e.date = '$it'"
                     }
                 }
-                "vehicle_id" -> if (value is Int) {
-                    filterConditions.add("e.vehicle_id = $value")
-                }
+                "vehicle_id" -> (value as? Int)?.let { "e.vehicle_id = $it" }
+                else -> null
             }
         }
+
         val filterClause = if (filterConditions.isNotEmpty()) {
             "AND ${filterConditions.joinToString(" AND ")}"
-        } else {
-            ""
-        }
+        } else ""
 
+        // SQL principal
         val sql = """
-            SELECT 
-                e.id,
-                e.type,
-                e.amount,
-                e.liters,
-                e.date,
-                e.vehicle_id,
-                e.driver_id,
-                e.created_at,
-                e.updated_at,
-                e.deleted_at,
-                (SELECT COUNT(*) 
-                 FROM expenses e2 
-                 WHERE e2.driver_id = $driverId 
-                 AND e2.deleted_at IS NULL $filterClause) AS total_count
-            FROM expenses e
-            WHERE e.driver_id = $driverId 
-            AND e.deleted_at IS NULL
-            AND EXISTS (
-                SELECT 1 
-                FROM drivers d 
-                WHERE d.id = $driverId 
-                AND d.deleted_at IS NULL
-            )
-            $filterClause
-            ORDER BY $sortColumn $orderDirection
-            LIMIT $limit OFFSET ${(page - 1) * limit}
-        """.trimIndent()
+        SELECT 
+            e.id,
+            e.type,
+            e.amount,
+            e.liters,
+            e.date,
+            e.vehicle_id,
+            e.driver_id,
+            (SELECT COUNT(*) 
+             FROM expenses e2 
+             WHERE e2.driver_id = $driverId $filterClause) AS total_count
+        FROM expenses e
+        WHERE e.driver_id = $driverId
+        $filterClause
+        ORDER BY $sortColumn $orderDirection
+        LIMIT $limit OFFSET ${(page - 1) * limit}
+    """.trimIndent()
 
         var results = emptyList<Expense>()
         var total = 0
@@ -557,7 +537,7 @@ class DriverService {
                             type = rs.getString("type"),
                             amount = rs.getDouble("amount"),
                             liters = rs.getDouble("liters")?.takeIf { !it.isNaN() },
-                            date = rs.getTimestamp("date").toLocalDateTime() as LocalDate,
+                            date = rs.getTimestamp("date").toLocalDateTime().toLocalDate().toKotlinLocalDate(),
                             vehicleId = rs.getInt("vehicle_id").takeIf { !rs.wasNull() },
                             driverId = rs.getInt("driver_id").takeIf { !rs.wasNull() },
                         )
@@ -568,7 +548,7 @@ class DriverService {
             }
         }
 
-        // Verifica se o motorista existe (se total_count é 0, pode ser porque o motorista não existe)
+        // Verifica se o motorista existe (caso total seja 0)
         if (total == 0 && results.isEmpty()) {
             val driverExists = transaction {
                 DriversTable.selectAll()

@@ -8,70 +8,6 @@ import { Message } from '../interfaces/user';
 import { Expense } from '../interfaces/expense';
 import { Vehicle } from '../interfaces/vehicle';
 
-const MOCK_INDICATORS: DriverIndicators = {
-  total: 15,
-  withExpiredLicense: 2,
-  withExpiringLicense: 3,
-  mostCommonCategory: 'AB',
-  lastDriver: {
-    name: 'Carlos Pereira',
-    cpf: '123.456.789-00',
-    date: '2025-10-05',
-  },
-};
-
-export const MOCK_DRIVER_REPORT: DriverReport = {
-  distributions: {
-    totalDrivers: 12,
-    cnhExpiringSoon: 2,
-    cnhExpired: 1,
-    byCategory: [
-      { category: 'AB', count: 6 },
-      { category: 'C', count: 3 },
-      { category: 'D', count: 2 },
-      { category: 'E', count: 1 },
-    ],
-  },
-  driversStats: [
-    {
-      driverId: 1,
-      driverName: 'João Silva',
-      totalTrips: 25,
-      totalDistance: 1200, // km
-      totalCost: 1500, // R$
-      averageFuelConsumption: 0.12, // L/km
-      lastTripDate: '2025-10-05T14:30:00Z',
-    },
-    {
-      driverId: 2,
-      driverName: 'Maria Souza',
-      totalTrips: 18,
-      totalDistance: 900,
-      totalCost: 1100,
-      averageFuelConsumption: 0.15,
-      lastTripDate: '2025-10-04T09:20:00Z',
-    },
-    {
-      driverId: 3,
-      driverName: 'Carlos Oliveira',
-      totalTrips: 12,
-      totalDistance: 600,
-      totalCost: 700,
-      averageFuelConsumption: 0.14,
-      lastTripDate: '2025-10-03T16:45:00Z',
-    },
-    {
-      driverId: 4,
-      driverName: 'Ana Lima',
-      totalTrips: 30,
-      totalDistance: 1500,
-      totalCost: 1800,
-      averageFuelConsumption: 0.11,
-      lastTripDate: '2025-10-05T12:15:00Z',
-    },
-  ],
-};
-
 @Injectable({
   providedIn: 'root',
 })
@@ -129,15 +65,9 @@ export class DriverService {
       }
     });
 
-    // Retornar mock para desenvolvimento
-    console.log('🧪 Retornando dados mockados de indicadores de motoristas...');
-    return of(MOCK_INDICATORS);
-
-    // Para backend real, descomente abaixo:
-    // return this.http.get<DriverIndicators>(`${this.API_URL}/drivers/indicators`, { params });
+    return this.http.get<DriverIndicators>(`${API_URL}/drivers/indicators`, { params });
   }
 
-  /** GET Driver Report */
   getReportDriver(filters: Record<string, any> = {}): Observable<DriverReport> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
@@ -146,12 +76,7 @@ export class DriverService {
       }
     });
 
-    // Retornar mock para desenvolvimento
-    console.log('🧪 Retornando dados mockados de relatório de motoristas...');
-    return of(MOCK_DRIVER_REPORT);
-
-    // Para backend real, descomente abaixo:
-    // return this.http.get<DriverReport>(`${this.API_URL}/drivers/report`, { params });
+    return this.http.get<DriverReport>(`${API_URL}/drivers/report`, { params });
   }
 
   getVehiclesByDriver(
@@ -168,7 +93,9 @@ export class DriverService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
+    console.log(filters, 'filtros')
     Object.entries(filters).forEach(([key, value]) => {
+      console.log(key, value, 'filtros')
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value);
       }
@@ -194,6 +121,7 @@ export class DriverService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
+    console.log(filters, 'filtros')
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value);
