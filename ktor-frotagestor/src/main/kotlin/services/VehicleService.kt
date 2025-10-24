@@ -317,12 +317,25 @@ class VehicleService {
 
     suspend fun getExpensesByVehicle(
         vehicleId: Int,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
         page: Int = 1,
         limit: Int = 10
     ): ServiceResponse<PaginatedResponse<Expense>> {
         return DatabaseFactory.dbQuery {
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+            val firstDayOfMonth = LocalDate(today.year, today.month, 1)
+            val lastDayOfMonth = LocalDate(
+                today.year,
+                today.month,
+                when (today.month) {
+                    Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                    Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+                    else -> 31
+                }
+            )
+            val effectiveStart = startDate ?: firstDayOfMonth
+            val effectiveEnd = endDate ?: lastDayOfMonth
             val query = ExpensesTable
                 .join(VehiclesTable, JoinType.INNER) { ExpensesTable.vehicleId eq VehiclesTable.id }
                 .join(DriversTable, JoinType.LEFT) { ExpensesTable.driverId eq DriversTable.id }
@@ -341,11 +354,7 @@ class VehicleService {
                     VehiclesTable.plate,
                     DriversTable.name
                 )
-                .where {
-                    (ExpensesTable.vehicleId eq vehicleId) and
-                            (ExpensesTable.date greaterEq startDate) and
-                            (ExpensesTable.date lessEq endDate)
-                }
+                .where { (ExpensesTable.vehicleId eq vehicleId) and (ExpensesTable.date greaterEq effectiveStart) and (ExpensesTable.date lessEq effectiveEnd) }
 
             val total = query.count()
             val results = query
@@ -382,7 +391,6 @@ class VehicleService {
         }
     }
 
-
     suspend fun getTopDriverByVehicle(
         vehicleId: Int,
         startDate: LocalDate?,
@@ -392,7 +400,6 @@ class VehicleService {
             try {
                 val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-                // Calcula o primeiro e último dia do mês atual
                 val firstDayOfMonth = LocalDate(today.year, today.month, 1)
                 val lastDayOfMonth = LocalDate(
                     today.year,

@@ -171,7 +171,6 @@ export class ReportDriver implements OnInit {
     this.loadingIndicators = true;
     this.driverService.getIndicators(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadIndicators');
         this.indicators = res;
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -186,7 +185,6 @@ export class ReportDriver implements OnInit {
     this.loadingIndicators = true;
     this.driverService.getReportDriver(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadDriverReport');
         this.driverReport = res;
         this.updateCharts();
         this.loadingIndicators = false;

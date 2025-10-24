@@ -191,7 +191,6 @@ export class ReportTrip implements OnInit {
     this.loadingIndicators = true;
     this.tripService.getIndicators(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadIndicators');
         this.indicators = res;
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -206,7 +205,6 @@ export class ReportTrip implements OnInit {
     this.loadingIndicators = true;
     this.tripService.getReport(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadTripReport');
         this.tripReport = res;
         this.updateCharts();
         this.loadingIndicators = false;

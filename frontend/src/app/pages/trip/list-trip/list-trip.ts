@@ -91,8 +91,8 @@ export class ListTrip {
       type: 'text',
       placeholder: 'Local de destino...',
     },
-    { key: 'dateStart', label: 'Data Inicial', type: 'date' },
-    { key: 'dateEnd', label: 'Data Final', type: 'date' },
+    { key: 'startDate', label: 'Data Inicial', type: 'date' },
+    { key: 'endDate', label: 'Data Final', type: 'date' },
     {
       key: 'status',
       label: 'Status',
@@ -132,8 +132,8 @@ export class ListTrip {
     startLocation: '',
     endLocation: '',
     status: '',
-    dateStart: '',
-    dateEnd: '',
+    startDate: '',
+    endDate: '',
   };
 
   sortKey: keyof Trip = 'id';
@@ -151,15 +151,15 @@ export class ListTrip {
     this.loadingIndicators = true;
     let filterWithPeriod = { ...this.filter };
 
-    if (!this.filter.dateStart && !this.filter.dateEnd) {
+    if (!this.filter.startDate && !this.filter.endDate) {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
       filterWithPeriod = {
         ...this.filter,
-        dateStart: start.toISOString().split('T')[0],
-        dateEnd: end.toISOString().split('T')[0],
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
       };
     }
 
@@ -220,8 +220,8 @@ export class ListTrip {
       startLocation: '',
       endLocation: '',
       status: '',
-      dateStart: '',
-      dateEnd: '',
+      startDate: '',
+      endDate: '',
     };
     this.applyFilters();
   }

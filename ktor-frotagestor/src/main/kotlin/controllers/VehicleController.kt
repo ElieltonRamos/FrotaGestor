@@ -198,31 +198,26 @@ class VehicleController(private val vehicleService: VehicleService) {
                     mapOf("message" to "Parâmetro 'id' inválido ou ausente")
                 )
 
-            val startDateParam = call.request.queryParameters["startDate"]
-            val endDateParam = call.request.queryParameters["endDate"]
-            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
-
-            if (startDateParam == null || endDateParam == null) {
-                return call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("message" to "Parâmetros obrigatórios: startDate e endDate")
-                )
-            }
-
-            val startDate = try { LocalDate.parse(startDateParam) } catch (_: Exception) {
+            val startDate: LocalDate? = try {
+                call.request.queryParameters["startDate"]?.let { LocalDate.parse(it) }
+            } catch (_: Exception) {
                 return call.respond(
                     HttpStatusCode.BadRequest,
                     mapOf("message" to "Formato inválido de startDate. Use YYYY-MM-DD")
                 )
             }
 
-            val endDate = try { LocalDate.parse(endDateParam) } catch (_: Exception) {
+            val endDate: LocalDate? = try {
+                call.request.queryParameters["endDate"]?.let { LocalDate.parse(it) }
+            } catch (_: Exception) {
                 return call.respond(
                     HttpStatusCode.BadRequest,
                     mapOf("message" to "Formato inválido de endDate. Use YYYY-MM-DD")
                 )
             }
+
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
 
             val serviceResult = vehicleService.getExpensesByVehicle(
                 vehicleId = vehicleId,
@@ -233,6 +228,7 @@ class VehicleController(private val vehicleService: VehicleService) {
             )
 
             call.respond(serviceResult.status, serviceResult.data)
+
         } catch (e: Exception) {
             println("Error in getExpensesByVehicle route: ${e.message}")
             call.respond(

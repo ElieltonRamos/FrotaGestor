@@ -105,7 +105,6 @@ export class ListDriver {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.log('Erro ao carregar motoristas:', err);
           this.drivers = [];
           this.total = 0;
           this.totalPages = 0;

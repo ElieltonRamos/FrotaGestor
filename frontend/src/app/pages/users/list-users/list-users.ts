@@ -160,7 +160,6 @@ export class ListUsers {
   }
 
   onSaveModal(user: User) {
-    console.log(user);
     const id = user.id;
 
     if (user.password === '') {

@@ -26,7 +26,7 @@ data class PartialExpense(
     val vehicleId: Int? = null,
     val driverId: Int? = null,
     val tripId: Int? = null,
-    val date: LocalDate? = null,
+    val date: String? = null,
     val type: String? = null,
     val description: String? = null,
     val amount: Double? = null,

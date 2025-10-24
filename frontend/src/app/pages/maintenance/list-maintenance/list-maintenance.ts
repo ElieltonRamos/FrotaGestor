@@ -72,8 +72,8 @@ export class ListMaintenance {
       type: 'text',
       placeholder: 'Placa...',
     },
-    { key: 'dateStart', label: 'Data Inicial', type: 'date' },
-    { key: 'dateEnd', label: 'Data Final', type: 'date' },
+    { key: 'startDate', label: 'Data Inicial', type: 'date' },
+    { key: 'endDate', label: 'Data Final', type: 'date' },
   ];
 
   maintenances: Expense[] = [];
@@ -84,7 +84,7 @@ export class ListMaintenance {
   selectedMaintenance?: Expense;
   showModal = false;
 
-  filter: Partial<Expense & { dateStart?: string; dateEnd?: string }> = {
+  filter: Partial<Expense & { startDate?: string; endDate?: string }> = {
     type: ExpenseType.MANUTENCAO,
   };
 
@@ -93,7 +93,6 @@ export class ListMaintenance {
 
   ngOnInit() {
     this.listMaintenances(1, 10);
-    this.loadIndicators();
   }
 
   listMaintenances(page: number, limit: number) {
@@ -106,13 +105,10 @@ export class ListMaintenance {
           this.page = res.page;
           this.limit = res.limit;
           this.totalPages = res.totalPages;
+          this.loadIndicators();
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.log(
-            'Erro ao carregar Manutenções:',
-            err?.error?.message || err
-          );
           this.maintenances = [];
           this.total = 0;
           this.totalPages = 0;
@@ -125,15 +121,15 @@ export class ListMaintenance {
 
     let filterWithPeriod = { ...this.filter };
 
-    if (!this.filter.dateStart && !this.filter.dateEnd) {
+    if (!this.filter.startDate && !this.filter.endDate) {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
       filterWithPeriod = {
         ...this.filter,
-        dateStart: start.toISOString().split('T')[0],
-        dateEnd: end.toISOString().split('T')[0],
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
       };
     }
 
@@ -195,6 +191,7 @@ export class ListMaintenance {
     const id = maintenance.id || 0;
     delete maintenance.id;
     delete maintenance.vehiclePlate;
+    delete maintenance.driverName;
     maintenance.type = ExpenseType.MANUTENCAO;
 
     this.serviceExpense.update(id, maintenance).subscribe({

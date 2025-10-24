@@ -64,7 +64,6 @@ export class CreateDriverComponent {
   ];
 
   saveDriver(data: Driver) {
-    console.log(data, 'data')
     this.driverServeice.create(data).subscribe({
       next: (res) => {
         alertSuccess(`Motorista Cadastrado`)

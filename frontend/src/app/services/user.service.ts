@@ -85,8 +85,6 @@ export class UserService {
     });
 
     const url = `${this.apiUrl}/users?${params.toString()}`;
-    console.log('🔎 URL chamada:', url);
-
     return this.client.get<PaginatedResponse<User>>(url);
   }
 

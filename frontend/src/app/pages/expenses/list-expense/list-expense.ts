@@ -85,8 +85,8 @@ export class ListExpense {
       type: 'text',
       placeholder: 'Placa...',
     },
-    { key: 'dateStart', label: 'Data Inicial', type: 'date' },
-    { key: 'dateEnd', label: 'Data Final', type: 'date' },
+    { key: 'startDate', label: 'Data Inicial', type: 'date' },
+    { key: 'endDate', label: 'Data Final', type: 'date' },
   ];
 
   expenses: Expense[] = [];
@@ -97,11 +97,11 @@ export class ListExpense {
   selectedExpense?: Expense;
   showModal = false;
 
-  filter: Partial<Expense & { dateStart?: string; dateEnd?: string }> = {
+  filter: Partial<Expense & { startDate?: string; endDate?: string }> = {
     description: '',
     type: undefined,
-    dateStart: '',
-    dateEnd: '',
+    startDate: '',
+    endDate: '',
   };
 
   // ordenação
@@ -119,15 +119,15 @@ export class ListExpense {
     this.loadingIndicators = true;
     let filterWithPeriod = { ...this.filter };
 
-    if (!this.filter.dateStart && !this.filter.dateEnd) {
+    if (!this.filter.startDate && !this.filter.endDate) {
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
       filterWithPeriod = {
         ...this.filter,
-        dateStart: start.toISOString().split('T')[0],
-        dateEnd: end.toISOString().split('T')[0],
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
       };
     }
 
@@ -163,7 +163,6 @@ export class ListExpense {
           this.cdr.detectChanges();
         },
         error: (err) => {
-          console.log('Erro ao carregar Despesas:', err.error.message);
           this.expenses = [];
           this.total = 0;
           this.totalPages = 0;
@@ -191,8 +190,8 @@ export class ListExpense {
     this.filter = {
       description: '',
       type: undefined,
-      dateStart: '',
-      dateEnd: '',
+      startDate: '',
+      endDate: '',
     };
     this.applyFilters();
   }

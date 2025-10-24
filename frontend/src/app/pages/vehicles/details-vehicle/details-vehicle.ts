@@ -47,7 +47,7 @@ export class DetailsVehicle {
     { key: 'date', label: 'Data', sortable: true },
     { key: 'description', label: 'Descrição' },
     { key: 'amount', label: 'Valor', sortable: true },
-    { key: 'category', label: 'Categoria' },
+    { key: 'type', label: 'Categoria' },
   ];
   expensesPage = 1;
   expensesLimit = 5;
@@ -69,7 +69,7 @@ export class DetailsVehicle {
         this.cdr.detectChanges();
         this.loadTopDriver(id);
         this.loadTrips(id);
-        // this.loadExpenses(id);
+        this.loadExpenses(id);
       },
       error: () => {
         this.loading = false;
@@ -124,7 +124,7 @@ export class DetailsVehicle {
           this.expensesTotalPages = res.totalPages;
           this.cdr.detectChanges();
         },
-        error: () => {
+        error: (e) => {
           this.expenses = [];
           this.expensesTotal = 0;
         },
@@ -136,7 +136,6 @@ export class DetailsVehicle {
     if (this.vehicle?.id) this.loadExpenses(this.vehicle.id);
   }
 
-  // 🔹 Interações
   onTripSelect(trip: any) {
     this.router.navigate(['/viagens', trip.id]);
   }

@@ -169,7 +169,6 @@ export class ReportVehicle {
     this.loadingIndicators = true;
     this.vehicleService.getIndicators(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadIndicators');
         this.indicators = res;
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -184,7 +183,6 @@ export class ReportVehicle {
     this.loadingIndicators = true;
     this.vehicleService.getReport(this.filter).subscribe({
       next: (res) => {
-        console.log(res, 'loadVehicleReport');
         this.vehicleReport = res;
         this.updateCharts();
         this.loadingIndicators = false;

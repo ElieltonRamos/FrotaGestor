@@ -19,6 +19,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import kotlin.let
 
 class ExpenseService {
 
@@ -79,11 +80,10 @@ class ExpenseService {
                 updatedExpense.vehicleId?.let { v -> it[vehicleId] = v }
                 updatedExpense.driverId?.let { d -> it[driverId] = d }
                 updatedExpense.tripId?.let { t -> it[tripId] = t }
-                updatedExpense.date?.let { dt -> it[date] = dt }
+                updatedExpense.date?.let { dt -> it[date] = LocalDate.parse(dt) }
                 updatedExpense.type?.let { tp -> it[type] = tp }
                 updatedExpense.description?.let { desc -> it[description] = desc }
                 updatedExpense.amount?.let { am -> it[amount] = am.toBigDecimal() }
-                // 🔹 novos campos de abastecimento
                 updatedExpense.liters?.let { l -> it[liters] = l.toBigDecimal() }
                 updatedExpense.pricePerLiter?.let { ppl -> it[pricePerLiter] = ppl.toBigDecimal() }
                 updatedExpense.odometer?.let { odo -> it[odometer] = odo }
