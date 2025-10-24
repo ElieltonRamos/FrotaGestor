@@ -9,7 +9,6 @@ import {
 } from '../interfaces/vehicle';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
-import { CustomMarker } from '../components/map-component/map-component';
 import { Driver } from '../interfaces/driver';
 import { Trip } from '../interfaces/trip';
 import { Expense } from '../interfaces/expense';
@@ -77,11 +76,7 @@ export class VehicleService {
         params = params.set(key, value);
       }
     });
-    return this.http.get<VehicleReport>(`${API_URL}/vehicles/report`, { params });
-  }
-
-  getLocationsVehicles(): Observable<CustomMarker[]> {
-    return this.http.get<CustomMarker[]>(`${API_URL}/vehicles/locations`);
+    return this.http.get<VehicleReport>(`${API_URL}/reports/vehicles`, { params });
   }
 
   getTripsByVehicle(

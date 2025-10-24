@@ -106,7 +106,7 @@ export class ExpenseService {
         params = params.set(key, value);
       }
     });
-    return this.http.get<ExpenseReport>(`${API_URL}/report/expenses`, {
+    return this.http.get<ExpenseReport>(`${API_URL}/reports/expenses`, {
       params,
     });
   }

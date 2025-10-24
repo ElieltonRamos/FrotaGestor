@@ -438,35 +438,36 @@ class ReportsService {
         val thirtyDaysFromNow = now.plus(DatePeriod(days = 30))
 
         val sql = """
-        SELECT
-            d.id AS driver_id,
-            d.name AS driver_name,
-            COUNT(DISTINCT t.id) AS total_trips,
-            COALESCE(SUM(t.distance_km), 0) AS total_distance,
-            COALESCE(SUM(e.amount), 0) AS total_cost,
-            COALESCE(SUM(e.liters), 0) AS total_liters,
-            MAX(t.end_time) AS last_trip_date,
-            (SELECT COUNT(*) 
-             FROM drivers d2 
-             WHERE d2.deleted_at IS NULL AND d2.status = 'ATIVO') AS total_drivers,
-            (SELECT COUNT(*) 
-             FROM drivers d3 
-             WHERE d3.cnh_expiration < '$now' AND d3.deleted_at IS NULL AND d3.status = 'ATIVO') AS cnh_expired,
-            (SELECT COUNT(*) 
-             FROM drivers d4 
-             WHERE d4.cnh_expiration BETWEEN '$now' AND '$thirtyDaysFromNow' 
-             AND d4.deleted_at IS NULL AND d4.status = 'ATIVO') AS cnh_expiring_soon,
-            (SELECT d5.cnh_category 
-             FROM drivers d5 
-             WHERE d5.cnh_category IS NOT NULL AND d5.deleted_at IS NULL AND d5.status = 'ATIVO'
-             GROUP BY d5.cnh_category 
-             ORDER BY COUNT(*) DESC LIMIT 1) AS most_common_category
-        FROM drivers d
-        LEFT JOIN trips t ON d.id = t.driver_id AND t.start_time BETWEEN '$startDateTime' AND '$endDateTime'
-        LEFT JOIN expenses e ON d.id = e.driver_id AND e.date BETWEEN '$startDateTime' AND '$endDateTime'
-        WHERE d.deleted_at IS NULL AND d.status = 'ATIVO'
-        GROUP BY d.id, d.name
-    """.trimIndent()
+    SELECT
+        d.id AS driver_id,
+        d.name AS driver_name,
+        d.cnh_category AS driver_category, -- Include individual driver's cnh_category
+        COUNT(DISTINCT t.id) AS total_trips,
+        COALESCE(SUM(t.distance_km), 0) AS total_distance,
+        COALESCE(SUM(e.amount), 0) AS total_cost,
+        COALESCE(SUM(e.liters), 0) AS total_liters,
+        MAX(t.end_time) AS last_trip_date,
+        (SELECT COUNT(*) 
+         FROM drivers d2 
+         WHERE d2.deleted_at IS NULL AND d2.status = 'ATIVO') AS total_drivers,
+        (SELECT COUNT(*) 
+         FROM drivers d3 
+         WHERE d3.cnh_expiration < '$now' AND d3.deleted_at IS NULL AND d3.status = 'ATIVO') AS cnh_expired,
+        (SELECT COUNT(*) 
+         FROM drivers d4 
+         WHERE d4.cnh_expiration BETWEEN '$now' AND '$thirtyDaysFromNow' 
+         AND d4.deleted_at IS NULL AND d4.status = 'ATIVO') AS cnh_expiring_soon,
+        (SELECT d5.cnh_category 
+         FROM drivers d5 
+         WHERE d5.cnh_category IS NOT NULL AND d5.deleted_at IS NULL AND d5.status = 'ATIVO'
+         GROUP BY d5.cnh_category 
+         ORDER BY COUNT(*) DESC LIMIT 1) AS most_common_category
+    FROM drivers d
+    LEFT JOIN trips t ON d.id = t.driver_id AND t.start_time BETWEEN '$startDateTime' AND '$endDateTime'
+    LEFT JOIN expenses e ON d.id = e.driver_id AND e.date BETWEEN '$startDateTime' AND '$endDateTime'
+    WHERE d.deleted_at IS NULL AND d.status = 'ATIVO'
+    GROUP BY d.id, d.name, d.cnh_category
+""".trimIndent()
 
         // Mapas para agrupar resultados
         val driversStats = mutableListOf<DriverReport.DriverStats>()
@@ -502,7 +503,7 @@ class ReportsService {
                     )
 
                     // Acumula dados de distribuição por categoria
-                    val category = rs.getString("most_common_category")
+                    val category = rs.getString("driver_category")
                     if (category != null) {
                         categoryMap[category] = (categoryMap[category] ?: 0) + 1
                     }

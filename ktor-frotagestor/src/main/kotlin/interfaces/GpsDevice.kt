@@ -1,6 +1,8 @@
 package com.frotagestor.interfaces
 import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class GpsDevice(
     val id: Int,                  // ID do dispositivo
     val vehicleId: Int,           // Veículo vinculado
@@ -15,6 +17,7 @@ data class GpsDevice(
     val ignition: Boolean = false  // Ignição ligada/desligada
 )
 
+@Serializable
 data class PartialGpsDevice(
     val vehicleId: Int? = null,
     val imei: String? = null,

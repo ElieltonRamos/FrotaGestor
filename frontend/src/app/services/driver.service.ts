@@ -76,7 +76,7 @@ export class DriverService {
       }
     });
 
-    return this.http.get<DriverReport>(`${API_URL}/drivers/report`, { params });
+    return this.http.get<DriverReport>(`${API_URL}/reports/drivers`, { params });
   }
 
   getVehiclesByDriver(

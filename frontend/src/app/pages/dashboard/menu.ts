@@ -1,11 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
-import {
-  CustomMarker,
-  MapComponent,
-} from '../../components/map-component/map-component';
-import { VehicleService } from '../../services/vehicle.service';
+import { MapComponent } from '../../components/map-component/map-component';
+import { GpsDeviceService } from '../../services/gps-device.service';
+import { GpsDevice } from '../../interfaces/gpsDevice';
+import { alertError } from '../../utils/custom-alerts';
 
 @Component({
   selector: 'app-menu',
@@ -13,7 +12,7 @@ import { VehicleService } from '../../services/vehicle.service';
   templateUrl: './menu.html',
 })
 export class Menu {
-  private vehicleService = inject(VehicleService);
+  private gpsDeviceService = inject(GpsDeviceService);
 
   menus = [
     { name: 'Veículos', icon: 'heroTruckSolid', route: '/veiculos' },
@@ -30,11 +29,16 @@ export class Menu {
     { name: 'Usuarios', icon: 'heroUserSolid', route: '/usuarios' },
   ];
 
-  markers: CustomMarker[] = [];
+  markers: GpsDevice[] = [];
 
   ngOnInit(): void {
-    this.vehicleService.getLocationsVehicles().subscribe({
-      next: (markers) => (this.markers = markers),
+    this.gpsDeviceService.getAll().subscribe({
+      next: (response) => {
+        this.markers = response.data;
+      },
+      error: (err) => {
+        alertError(`Erro ao buscar Dispositivos GPS ${err.error.message}`)
+      },
     });
   }
 }

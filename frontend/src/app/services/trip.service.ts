@@ -77,7 +77,7 @@ export class TripService {
       }
     });
 
-    return this.http.get<TripReport>(`${API_URL}/report/trips`, {
+    return this.http.get<TripReport>(`${API_URL}/reports/trips`, {
       params,
     });
   }

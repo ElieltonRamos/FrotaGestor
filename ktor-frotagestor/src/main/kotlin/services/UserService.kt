@@ -256,45 +256,47 @@ class UserService {
 
     suspend fun getIndicatorsUsers(): ServiceResponse<UserIndicators> {
         return DatabaseFactory.dbQuery {
-            // Query única com subconsultas agregadas e último usuário
-            val query = """
+            val aggregateQuery = """
             SELECT 
                 COUNT(*) AS total_users,
                 SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins,
-                SUM(CASE WHEN role != 'admin' THEN 1 ELSE 0 END) AS regulars,
+                SUM(CASE WHEN role != 'admin' THEN 1 ELSE 0 END) AS regulars
+            FROM users
+        """.trimIndent()
+
+            val lastUserQuery = """
+            SELECT 
                 id AS last_user_id,
                 username AS last_username,
                 role AS last_role
             FROM users
             ORDER BY id DESC
-            LIMIT 1;
+            LIMIT 1
         """.trimIndent()
 
-            val result = org.jetbrains.exposed.sql.transactions.TransactionManager.current()
-                .exec(query) { rs ->
+            val aggregateResult = org.jetbrains.exposed.sql.transactions.TransactionManager.current()
+                .exec(aggregateQuery) { rs ->
                     if (rs.next()) {
-                        val totalUsers = rs.getInt("total_users")
-                        val admins = rs.getInt("admins")
-                        val regulars = rs.getInt("regulars")
-
-                        val lastUserId = rs.getInt("last_user_id")
-                        val lastUsername = rs.getString("last_username")
-                        val lastRole = rs.getString("last_role")
-
-                        UserIndicators(
-                            totalUsers = totalUsers,
-                            admins = admins,
-                            regulars = regulars,
-                            lastUser = User(
-                                id = lastUserId,
-                                username = lastUsername,
-                                role = lastRole
-                            )
+                        Triple(
+                            rs.getInt("total_users"),
+                            rs.getInt("admins"),
+                            rs.getInt("regulars")
                         )
                     } else null
                 }
 
-            if (result == null) {
+            val lastUserResult = org.jetbrains.exposed.sql.transactions.TransactionManager.current()
+                .exec(lastUserQuery) { rs ->
+                    if (rs.next()) {
+                        User(
+                            id = rs.getInt("last_user_id"),
+                            username = rs.getString("last_username"),
+                            role = rs.getString("last_role")
+                        )
+                    } else null
+                }
+
+            if (aggregateResult == null) {
                 ServiceResponse(
                     status = HttpStatusCode.NoContent,
                     data = UserIndicators(0, 0, 0, null)
@@ -302,10 +304,14 @@ class UserService {
             } else {
                 ServiceResponse(
                     status = HttpStatusCode.OK,
-                    data = result
+                    data = UserIndicators(
+                        totalUsers = aggregateResult.first,
+                        admins = aggregateResult.second,
+                        regulars = aggregateResult.third,
+                        lastUser = lastUserResult
+                    )
                 )
             }
         }
     }
-
 }
