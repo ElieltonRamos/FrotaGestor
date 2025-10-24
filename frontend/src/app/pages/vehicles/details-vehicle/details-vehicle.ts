@@ -32,9 +32,9 @@ export class DetailsVehicle {
 
   trips: Trip[] = [];
   tripsColumns: ColumnConfig<any>[] = [
-    { key: 'date', label: 'Data', sortable: true },
-    { key: 'origin', label: 'Origem' },
-    { key: 'destination', label: 'Destino' },
+    { key: 'startTime', label: 'Data de Inicio', sortable: true },
+    { key: 'startLocation', label: 'Origem' },
+    { key: 'endLocation', label: 'Destino' },
     { key: 'driverName', label: 'Motorista' },
   ];
   tripsPage = 1;
@@ -69,7 +69,7 @@ export class DetailsVehicle {
         this.cdr.detectChanges();
         this.loadTopDriver(id);
         this.loadTrips(id);
-        this.loadExpenses(id);
+        // this.loadExpenses(id);
       },
       error: () => {
         this.loading = false;

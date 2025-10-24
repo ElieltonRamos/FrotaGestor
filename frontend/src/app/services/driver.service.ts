@@ -93,9 +93,7 @@ export class DriverService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    console.log(filters, 'filtros')
     Object.entries(filters).forEach(([key, value]) => {
-      console.log(key, value, 'filtros')
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value);
       }
@@ -121,7 +119,6 @@ export class DriverService {
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    console.log(filters, 'filtros')
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value);

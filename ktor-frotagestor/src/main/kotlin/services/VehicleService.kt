@@ -17,6 +17,7 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.*
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.Month
 import kotlinx.datetime.plus
 import org.jetbrains.exposed.sql.selectAll
 
@@ -240,15 +241,33 @@ class VehicleService {
 
     suspend fun getTripsByVehicle(
         vehicleId: Int,
-        startDate: LocalDate,
-        endDate: LocalDate,
+        startDate: LocalDate?,
+        endDate: LocalDate?,
         page: Int = 1,
         limit: Int = 10
     ): ServiceResponse<PaginatedResponse<Trip>> {
         return DatabaseFactory.dbQuery {
-            val startDateTime = startDate.atStartOfDayIn(TimeZone.currentSystemDefault())
+            val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+            // Calcula o primeiro e último dia do mês atual manualmente
+            val firstDayOfMonth = LocalDate(today.year, today.month, 1)
+            val lastDayOfMonth = LocalDate(
+                today.year,
+                today.month,
+                when (today.month) {
+                    Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                    Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+                    else -> 31
+                }
+            )
+
+            // Se não vierem as datas, usa o mês atual
+            val effectiveStart = startDate ?: firstDayOfMonth
+            val effectiveEnd = endDate ?: lastDayOfMonth
+
+            val startDateTime = effectiveStart.atStartOfDayIn(TimeZone.currentSystemDefault())
                 .toLocalDateTime(TimeZone.currentSystemDefault())
-            val endDateTime = endDate.plus(DatePeriod(days = 1))
+            val endDateTime = effectiveEnd.plus(DatePeriod(days = 1))
                 .atStartOfDayIn(TimeZone.currentSystemDefault())
                 .toLocalDateTime(TimeZone.currentSystemDefault())
 
@@ -366,16 +385,34 @@ class VehicleService {
 
     suspend fun getTopDriverByVehicle(
         vehicleId: Int,
-        startDate: LocalDate,
-        endDate: LocalDate
+        startDate: LocalDate?,
+        endDate: LocalDate?
     ): ServiceResponse<Any> {
         return DatabaseFactory.dbQuery {
             try {
-                val startDateTime = startDate.atStartOfDayIn(TimeZone.currentSystemDefault())
-                val endDateTime = endDate.plus(DatePeriod(days = 1))
+                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+                // Calcula o primeiro e último dia do mês atual
+                val firstDayOfMonth = LocalDate(today.year, today.month, 1)
+                val lastDayOfMonth = LocalDate(
+                    today.year,
+                    today.month,
+                    when (today.month) {
+                        Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                        Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+                        else -> 31
+                    }
+                )
+
+                // Usa as datas informadas ou o mês atual como padrão
+                val effectiveStart = startDate ?: firstDayOfMonth
+                val effectiveEnd = endDate ?: lastDayOfMonth
+
+                val startDateTime = effectiveStart.atStartOfDayIn(TimeZone.currentSystemDefault())
+                val endDateTime = effectiveEnd.plus(DatePeriod(days = 1))
                     .atStartOfDayIn(TimeZone.currentSystemDefault())
 
-                // Query única: busca o motorista que mais usou o veículo
+                // Query: motorista que mais usou o veículo no período
                 val result = (TripsTable innerJoin DriversTable)
                     .select(
                         DriversTable.id,
@@ -427,7 +464,9 @@ class VehicleService {
 
                 ServiceResponse(
                     status = HttpStatusCode.OK,
-                    data = result ?: mapOf("message" to "Nenhum motorista encontrado para este veículo no período ou veículo não existe")
+                    data = result ?: mapOf(
+                        "message" to "Nenhum motorista encontrado para este veículo no período ou veículo não existe"
+                    )
                 )
             } catch (e: Exception) {
                 println("Error in getTopDriverByVehicle: ${e.message}")

@@ -514,6 +514,7 @@ class DriverService {
             e.date,
             e.vehicle_id,
             e.driver_id,
+            e.description,
             (SELECT COUNT(*) 
              FROM expenses e2 
              WHERE e2.driver_id = $driverId $filterClause) AS total_count
@@ -539,6 +540,7 @@ class DriverService {
                             liters = rs.getDouble("liters")?.takeIf { !it.isNaN() },
                             date = rs.getTimestamp("date").toLocalDateTime().toLocalDate().toKotlinLocalDate(),
                             vehicleId = rs.getInt("vehicle_id").takeIf { !rs.wasNull() },
+                            description = rs.getString("description"),
                             driverId = rs.getInt("driver_id").takeIf { !rs.wasNull() },
                         )
                     )

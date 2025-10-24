@@ -44,7 +44,7 @@ export class DetailsDriver {
     { key: 'date', label: 'Data', sortable: true },
     { key: 'description', label: 'Descrição' },
     { key: 'amount', label: 'Valor', sortable: true },
-    { key: 'category', label: 'Categoria' },
+    { key: 'type', label: 'Tipo' },
   ];
   expensesPage = 1;
   expensesLimit = 5;
@@ -67,7 +67,7 @@ export class DetailsDriver {
         this.driver = res;
         this.loading = false;
         this.cdr.detectChanges();
-        // this.loadVehicles(id);
+        this.loadVehicles(id);
         this.loadExpenses(id);
       },
       error: () => {
