@@ -8,7 +8,7 @@ import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GpsDeviceService {
   constructor(private http: HttpClient) {}
@@ -40,10 +40,19 @@ export class GpsDeviceService {
       }
     });
 
-    return this.http.get<PaginatedResponse<GpsDevice>>(`${API_URL}/gps-devices`, { params });
+    return this.http.get<PaginatedResponse<GpsDevice>>(
+      `${API_URL}/gps-devices`,
+      { params }
+    );
   }
 
   getById(id: number): Observable<GpsDevice> {
     return this.http.get<GpsDevice>(`${API_URL}/gps-devices/${id}`);
+  }
+
+  getGpsDeviceByVehicle(vehicleId: number) {
+    return this.http.get<GpsDevice>(
+      `${API_URL}/gps-devices/vehicle/${vehicleId}`
+    );
   }
 }

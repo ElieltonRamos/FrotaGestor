@@ -13,6 +13,8 @@ import { CommonModule } from '@angular/common';
 import { Driver } from '../../../interfaces/driver';
 import { Trip } from '../../../interfaces/trip';
 import { Expense } from '../../../interfaces/expense';
+import { GpsDevice } from '../../../interfaces/gpsDevice';
+import { GpsDeviceService } from '../../../services/gps-device.service';
 
 @Component({
   selector: 'app-details-vehicle',
@@ -25,10 +27,12 @@ export class DetailsVehicle {
   private serviceVehicle = inject(VehicleService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private gpsDevice = inject(GpsDeviceService)
 
   vehicle?: Vehicle;
   loading = false;
   topDriver?: Driver;
+  markers: GpsDevice[] = [];
 
   trips: Trip[] = [];
   tripsColumns: ColumnConfig<any>[] = [
@@ -56,6 +60,7 @@ export class DetailsVehicle {
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.loadGpsDevice(id)
     if (id) this.loadVehicle(id);
     else this.router.navigate(['/veiculos']);
   }
@@ -85,6 +90,17 @@ export class DetailsVehicle {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  loadGpsDevice(vehicleId: number) {
+    this.gpsDevice.getGpsDeviceByVehicle(vehicleId).subscribe({
+      next: (res) => {
+        this.markers = [res]
+      },
+      error: (e) => {
+        alertError(`Nao foi possivel encontrar dispositivo GPS vinculado a esse veiculo ${e.error.message}`)
+      }
+    })
   }
 
   // 🔹 Viagens

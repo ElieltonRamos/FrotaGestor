@@ -28,7 +28,6 @@ CREATE TABLE vehicles (
     brand VARCHAR(100),                                                        -- Marca/fabricante do veículo
     year INT,                                                                  -- Ano de fabricação
     status ENUM('ATIVO', 'INATIVO', 'MANUTENCAO') DEFAULT 'ATIVO',          -- Situação do veículo
-    icon_map_url VARCHAR(255),
     deleted_at DATETIME NULL
 );
 

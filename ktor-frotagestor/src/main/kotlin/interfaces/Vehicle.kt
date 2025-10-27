@@ -9,7 +9,6 @@ data class Vehicle(
     val model: String,
     val brand: String? = null,
     val year: Int? = null,
-    val iconMapUrl: String,
     val status: VehicleStatus = VehicleStatus.ATIVO
 )
 
@@ -27,7 +26,6 @@ data class PartialVehicle(
     val model: String? = null,
     val brand: String? = null,
     val year: Int? = null,
-    val iconMapUrl: String? = null,
     val status: VehicleStatus = VehicleStatus.ATIVO
 )
 

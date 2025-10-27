@@ -7,6 +7,9 @@ import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.*
 import kotlin.let
 
@@ -16,29 +19,49 @@ class GpsDeviceService {
         val newDevice = validateGpsDevice(req).getOrReturn { msg ->
             return ServiceResponse(HttpStatusCode.BadRequest, Message(msg))
         }
-
-        val existingDevice = DatabaseFactory.dbQuery {
-            GpsDevicesTable.selectAll()
-                .where { GpsDevicesTable.imei eq newDevice.imei }
-                .singleOrNull()
+        if (newDevice.imei.isNullOrBlank()) {
+            return ServiceResponse(HttpStatusCode.BadRequest, Message("O campo IMEI é obrigatório"))
         }
-
+        val existingDevice = DatabaseFactory.dbQuery {
+            GpsDevicesTable.selectAll().where { GpsDevicesTable.imei eq newDevice.imei!! }.singleOrNull()
+        }
         if (existingDevice != null) {
             return ServiceResponse(HttpStatusCode.Conflict, Message("Dispositivo já cadastrado!"))
         }
+        if (newDevice.vehicleId != null) {
+            val existingDeviceForVehicle = DatabaseFactory.dbQuery {
+                GpsDevicesTable.selectAll()
+                    .where { GpsDevicesTable.vehicleId eq newDevice.vehicleId }
+                    .singleOrNull()
+            }
+            if (existingDeviceForVehicle != null) {
+                return ServiceResponse(HttpStatusCode.Conflict, Message("Já existe um dispositivo vinculado a este veículo!"))
+            }
+        }
+        val deviceWithDefaults = newDevice.copy(
+            vehicleId = newDevice.vehicleId ?: 0,
+            latitude = newDevice.latitude ?: 0.0,
+            longitude = newDevice.longitude ?: 0.0,
+            speed = newDevice.speed ?: 0.0,
+            heading = newDevice.heading ?: 0.0,
+            dateTime = newDevice.dateTime ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
+            iconMapUrl = newDevice.iconMapUrl ?: null,
+            title = newDevice.title ?: null,
+            ignition = newDevice.ignition ?: false
+        )
 
         DatabaseFactory.dbQuery {
-            GpsDevicesTable.insert {
-                it[vehicleId] = newDevice.vehicleId
-                it[imei] = newDevice.imei
-                it[latitude] = (newDevice.latitude).toBigDecimal()
-                it[longitude] = (newDevice.longitude).toBigDecimal()
-                it[speed] = (newDevice.speed).toBigDecimal()
-                it[heading] = (newDevice.heading).toBigDecimal()
-                it[dateTime] = newDevice.dateTime
-                it[iconMapUrl] = newDevice.iconMapUrl
-                it[title] = newDevice.title
-                it[ignition] = newDevice.ignition
+            GpsDevicesTable.insert { row ->
+                deviceWithDefaults.vehicleId?.let { row[vehicleId] = it }
+                deviceWithDefaults.imei?.let { row[imei] = it }
+                deviceWithDefaults.latitude?.let { row[latitude] = it.toBigDecimal() }
+                deviceWithDefaults.longitude?.let { row[longitude] = it.toBigDecimal() }
+                deviceWithDefaults.speed?.let { row[speed] = it.toBigDecimal() }
+                deviceWithDefaults.heading?.let { row[heading] = it.toBigDecimal() }
+                deviceWithDefaults.dateTime?.let { row[dateTime] = it }
+                deviceWithDefaults.iconMapUrl?.let { row[iconMapUrl] = it }
+                deviceWithDefaults.title?.let { row[title] = it }
+                deviceWithDefaults.ignition?.let { row[ignition] = it }
             }
         }
 
@@ -79,11 +102,13 @@ class GpsDeviceService {
     suspend fun getAllGpsDevices(
         page: Int = 1,
         limit: Int = 10,
-        vehicleIdFilter: Int? = null
+        vehicleIdFilter: Int? = null,
+        imeiFilter: String? = null
     ): ServiceResponse<PaginatedResponse<GpsDevice>> {
         return DatabaseFactory.dbQuery {
             val query = GpsDevicesTable.selectAll().apply {
                 vehicleIdFilter?.let { andWhere { GpsDevicesTable.vehicleId eq it } }
+                imeiFilter?.let { andWhere { GpsDevicesTable.imei eq it } }
             }
 
             val total = query.count()
@@ -142,6 +167,32 @@ class GpsDeviceService {
 
         return if (device == null) {
             ServiceResponse(HttpStatusCode.NotFound, mapOf("message" to "Dispositivo GPS não encontrado"))
+        } else {
+            ServiceResponse(HttpStatusCode.OK, device)
+        }
+    }
+
+    suspend fun findGpsDeviceByVehicleId(vehicleId: Int): ServiceResponse<Any> {
+        val device = DatabaseFactory.dbQuery {
+            GpsDevicesTable.selectAll().where { GpsDevicesTable.vehicleId eq vehicleId }.singleOrNull()?.let {
+                GpsDevice(
+                    id = it[GpsDevicesTable.id],
+                    vehicleId = it[GpsDevicesTable.vehicleId],
+                    imei = it[GpsDevicesTable.imei],
+                    latitude = it[GpsDevicesTable.latitude].toDouble(),
+                    longitude = it[GpsDevicesTable.longitude].toDouble(),
+                    dateTime = it[GpsDevicesTable.dateTime],
+                    speed = it[GpsDevicesTable.speed].toDouble(),
+                    heading = it[GpsDevicesTable.heading].toDouble(),
+                    iconMapUrl = it[GpsDevicesTable.iconMapUrl],
+                    title = it[GpsDevicesTable.title],
+                    ignition = it[GpsDevicesTable.ignition]
+                )
+            }
+        }
+
+        return if (device == null) {
+            ServiceResponse(HttpStatusCode.NotFound, mapOf("message" to "Dispositivo GPS não encontrado para o veículo informado"))
         } else {
             ServiceResponse(HttpStatusCode.OK, device)
         }

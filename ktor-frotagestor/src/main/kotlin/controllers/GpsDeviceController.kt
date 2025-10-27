@@ -40,11 +40,13 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
             val vehicleIdFilter = call.request.queryParameters["vehicleId"]?.toIntOrNull()
+            val imeiFilter = call.request.queryParameters["imei"]
 
             val serviceResult = gpsDeviceService.getAllGpsDevices(
                 page = page,
                 limit = limit,
-                vehicleIdFilter = vehicleIdFilter
+                vehicleIdFilter = vehicleIdFilter,
+                imeiFilter = imeiFilter
             )
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
@@ -62,6 +64,18 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getById GPS device route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun findGpsDeviceByVehicleId(call: ApplicationCall) {
+        try {
+            val id = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+            val serviceResult = gpsDeviceService.findGpsDeviceByVehicleId(id)
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in findGpsDeviceByVehicleId gps device route: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }

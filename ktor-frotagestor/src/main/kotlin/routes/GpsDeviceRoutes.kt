@@ -14,6 +14,7 @@ fun Route.gpsDeviceRoutes() {
             post { controller.create(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
+            get("vehicle/{id}") { controller.findGpsDeviceByVehicleId(call) }
         }
     }
 }

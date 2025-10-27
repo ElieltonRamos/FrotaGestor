@@ -11,3 +11,11 @@ export interface GpsDevice {
   title?: string | null;     // Modelo + placa
   ignition?: boolean;        // Ignição ligada/desligada
 }
+
+export interface GpsDeviceIndicators {
+  active: number;         // Número de dispositivos ativos
+  lastDevice?: {         // Último dispositivo cadastrado
+    imei: string;        // IMEI do último dispositivo
+    dateTime: string;    // Data e hora do último cadastro (ISO string)
+  };
+}

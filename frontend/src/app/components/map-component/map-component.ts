@@ -3,6 +3,8 @@ import {
   AfterViewInit,
   OnDestroy,
   Input,
+  OnChanges,
+  SimpleChanges,
   inject,
   NgZone,
 } from '@angular/core';
@@ -25,12 +27,23 @@ declare global {
     };
   }
 }
+
 @Component({
   selector: 'app-map',
   templateUrl: './map-component.html',
+  styles: [
+    `
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    `,
+  ],
 })
-export class MapComponent implements AfterViewInit, OnDestroy {
+export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
   private map!: Map;
+  private gpsMarkers: Marker[] = []; // Array para marcadores GPS
+  private userMarker: Marker | null = null; // Marcador do usuário
   private fallbackCoords: [number, number] = [-42.840379, -14.948981];
   private userCoords: [number, number] = this.fallbackCoords;
   private ngZone = inject(NgZone);
@@ -38,8 +51,14 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
   @Input() markers: GpsDevice[] = [];
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['markers'] && this.map) {
+      this.updateMarkers();
+    }
+  }
+
   async ngAfterViewInit(): Promise<void> {
-    this.userCoords = await this.getUserLocation();
+    // this.userCoords = await this.getUserLocation();
     window.angularComponentRef = {
       zone: this.ngZone,
       component: this,
@@ -55,20 +74,44 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
     this.map.addControl(new NavigationControl(), 'top-right');
 
+    // Adicionar marcador do usuário
     this.addUserMarker(this.userCoords);
 
+    // Adicionar marcadores GPS iniciais, se existirem
     if (this.markers.length > 0) {
-      const bounds = new LngLatBounds();
-      this.markers.forEach((m) => {
-        this.addMarker(m);
-        bounds.extend([m.longitude, m.latitude]);
-      });
-      bounds.extend(this.userCoords);
-      this.map.fitBounds(bounds, { padding: 60, maxZoom: 14 });
+      this.updateMarkers();
     }
 
-    // Adiciona botão de recentralizar
+    // Adicionar botão de recentralizar
     this.addRecenterButton();
+  }
+
+  private updateMarkers(): void {
+    // Limpar apenas os marcadores GPS
+    this.gpsMarkers.forEach((marker) => marker.remove());
+    this.gpsMarkers = [];
+
+    // Adicionar novos marcadores GPS
+    const bounds = new LngLatBounds();
+    this.markers.forEach((m) => {
+      if (m.latitude && m.longitude) {
+        const marker = this.addMarker(m);
+        this.gpsMarkers.push(marker);
+        bounds.extend([m.longitude, m.latitude]);
+      } else {
+        console.warn('Invalid marker coordinates:', m);
+      }
+    });
+
+    // Incluir coordenadas do usuário nos limites
+    bounds.extend(this.userCoords);
+
+    // Ajustar o mapa para os limites, se houver marcadores GPS
+    if (this.markers.length > 0 || this.userMarker) {
+      this.ngZone.run(() => {
+        this.map.fitBounds(bounds, { padding: 60, maxZoom: 14 });
+      });
+    }
   }
 
   private addRecenterButton(): void {
@@ -78,10 +121,12 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     img.title = 'Recentralizar';
     img.className =
       'absolute top-4 left-4 z-50 cursor-pointer shadow-lg transition transform hover:scale-105 bg-gray-100 rounded-full';
-
     img.style.width = '40px';
+
     img.onclick = () => {
-      this.map.flyTo({ center: this.userCoords, zoom: 14 });
+      this.ngZone.run(() => {
+        this.map.flyTo({ center: this.userCoords, zoom: 14 });
+      });
     };
 
     const container = document.getElementById('map');
@@ -115,13 +160,13 @@ export class MapComponent implements AfterViewInit, OnDestroy {
       </div>
     `);
 
-    new Marker({ element: el })
+    this.userMarker = new Marker({ element: el })
       .setLngLat(coords)
       .setPopup(popup)
       .addTo(this.map);
   }
 
-  private addMarker(markerData: GpsDevice): void {
+  private addMarker(markerData: GpsDevice): Marker {
     const el = document.createElement('div');
     el.className = 'custom-marker';
 
@@ -169,10 +214,12 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     `;
     const popup = new Popup({ offset: 25 }).setHTML(popupHtml);
 
-    new Marker({ element: el })
+    const marker = new Marker({ element: el })
       .setLngLat([markerData.longitude, markerData.latitude])
       .setPopup(popup)
       .addTo(this.map);
+
+    return marker;
   }
 
   private getUserLocation(): Promise<[number, number]> {
@@ -191,10 +238,16 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     delete window.angularComponentRef;
+    if (this.userMarker) {
+      this.userMarker.remove();
+    }
+    this.gpsMarkers.forEach((marker) => marker.remove());
     this.map.remove();
   }
 
   navigateToVehicle(vehicleId: number) {
-    this.router.navigate(['/veiculos', vehicleId]);
+    this.ngZone.run(() => {
+      this.router.navigate(['/veiculos', vehicleId]);
+    });
   }
 }

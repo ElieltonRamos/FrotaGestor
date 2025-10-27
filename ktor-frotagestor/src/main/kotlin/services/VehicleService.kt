@@ -158,7 +158,6 @@ class VehicleService {
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
-                        iconMapUrl = it[VehiclesTable.iconMapUrl]
                     )
                 }
 
@@ -186,7 +185,6 @@ class VehicleService {
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
-                        iconMapUrl = it[VehiclesTable.iconMapUrl]
                     )
                 }
         }
@@ -224,7 +222,6 @@ class VehicleService {
                     brand = it[VehiclesTable.brand],
                     year = it[VehiclesTable.year],
                     status = it[VehiclesTable.status],
-                    iconMapUrl = it[VehiclesTable.iconMapUrl]
                 )
             }
 

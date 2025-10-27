@@ -1,0 +1,136 @@
+<div
+  class="max-w-6xl mx-auto mt-8 p-6 bg-white shadow-lg rounded-xl border border-gray-200"
+>
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-semibold text-gray-900">
+      Detalhes do Dispositivo GPS
+    </h2>
+    <button
+      type="button"
+      class="px-3 py-1.5 rounded bg-gray-600 text-white text-xs hover:bg-gray-700"
+      (click)="goBack()"
+    >
+      Voltar
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="!gpsDevice" class="text-center text-gray-600">
+    Carregando detalhes do dispositivo...
+  </div>
+
+  <!-- Device Details -->
+  <div
+    *ngIf="gpsDevice"
+    class="p-6 bg-gray-50 rounded-lg border border-gray-100"
+  >
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left Column: Device Information -->
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Informações do Dispositivo
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <span class="text-sm font-semibold text-gray-600">IMEI:</span>
+            <span class="text-sm text-gray-900">{{ gpsDevice.imei }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Veículo:</span>
+            <span class="text-sm text-gray-900">
+              {{
+                selectedVehicle
+                  ? selectedVehicle.model + " " + selectedVehicle.plate
+                  : "N/A"
+              }}
+            </span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Latitude:</span>
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.latitude || "N/A"
+            }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Longitude:</span>
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.longitude || "N/A"
+            }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Data/Hora:</span>
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.dateTime ? (gpsDevice.dateTime | date : "short") : "N/A"
+            }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Velocidade:</span>
+            <span class="text-sm text-gray-900"
+              >{{ gpsDevice.speed || "N/A" }} km/h</span
+            >
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Direção:</span>
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.heading || "N/A"
+            }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600">Ignição:</span>
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.ignition || "N/A"
+            }}</span>
+          </div>
+          <div>
+            <span class="text-sm font-semibold text-gray-600"
+              >Ícone no Mapa:</span
+            >
+            <span class="text-sm text-gray-900">{{
+              gpsDevice.iconMapUrl || "N/A"
+            }}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="mt-4 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+          (click)="onEdit()"
+        >
+          Editar Dispositivo
+        </button>
+      </div>
+
+      <!-- Right Column: Map Placeholder -->
+      <div class="flex items-center justify-center">
+        <div
+          class="bg-gray-200 h-64 w-full rounded-lg flex items-center justify-center"
+        >
+          <span class="text-gray-500"
+            >Mapa com localização do dispositivo (Placeholder)</span
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <app-modal-edit-component
+    [title]="'Editar Dispositivo GPS'"
+    [show]="showModal"
+    [entity]="gpsDevice"
+    [fields]="gpsDeviceFields"
+    (close)="onCloseModal()"
+    (save)="onSaveModal($event)"
+  ></app-modal-edit-component>
+
+  <!-- Vehicle Selection Modal -->
+  <app-select-modal
+    [show]="showVehicleModal"
+    title="Selecionar Veículo"
+    [columns]="vehicleColumns"
+    [filtersConfig]="vehicleFilters"
+    [dataFetcher]="vehicleFetcher"
+    (select)="onVehicleSelect($event)"
+    (close)="showVehicleModal = false"
+  ></app-select-modal>
+</div>

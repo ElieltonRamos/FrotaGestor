@@ -50,20 +50,7 @@ export class CreateVehicle {
       type: 'select',
       options: ['ATIVO', 'INATIVO', 'MANUTENCAO'],
       required: true,
-    },
-    {
-      placeholder: 'Ícone no Mapa',
-      name: 'iconMapUrl',
-      label: 'Ícone no Mapa',
-      type: 'select',
-      options: [
-        'icon-car.png',
-        'icon-truck-box.png',
-        'icon-motocicle.png',
-        'icon-pickup.png',
-      ],
-      required: true,
-    },
+    }
   ];
 
   saveVehicle(data: Vehicle) {

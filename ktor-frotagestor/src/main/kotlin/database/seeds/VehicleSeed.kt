@@ -27,7 +27,6 @@ object VehicleSeed {
                         it[VehiclesTable.model] = model
                         it[VehiclesTable.brand] = listOf("Ford", "Honda", "Chevrolet", "Toyota").random()
                         it[VehiclesTable.year] = (2015..2022).random()
-                        it[VehiclesTable.iconMapUrl] = listOf("icon-car.png", "icon-truck-box.png", "icon-motocicle.png", "icon-pickup.png").random()
                         it[VehiclesTable.status] = status
                     }
                 } else {

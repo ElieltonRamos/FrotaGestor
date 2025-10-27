@@ -1,38 +1,25 @@
 package com.frotagestor.validations
 
-import com.frotagestor.interfaces.GpsDevice
 import com.frotagestor.interfaces.PartialGpsDevice
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-fun validateGpsDevice(rawBody: String): ValidationResult<GpsDevice> {
+fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
     if (rawBody.isBlank()) {
         return ValidationResult.Error("Body da requisição está vazio")
     }
 
-    val gpsDevice: GpsDevice = try {
-        Json.decodeFromString<GpsDevice>(rawBody)
+    val gpsDevice: PartialGpsDevice = try {
+        Json.decodeFromString<PartialGpsDevice>(rawBody)
     } catch (e: SerializationException) {
         return ValidationResult.Error("JSON inválido")
     }
 
-    val missingFields = mutableListOf<String>()
-    if (gpsDevice.vehicleId <= 0) missingFields.add("vehicleId")
-    if (gpsDevice.imei.isBlank()) missingFields.add("imei")
-    if (gpsDevice.latitude == null) missingFields.add("latitude")
-    if (gpsDevice.longitude == null) missingFields.add("longitude")
-    if (gpsDevice.dateTime == null) missingFields.add("dateTime")
-
-    return if (missingFields.isNotEmpty()) {
-        val msg = if (missingFields.size == 1) {
-            "O campo ${missingFields.first()} é obrigatório"
-        } else {
-            "Os campos ${missingFields.joinToString(", ")} são obrigatórios"
-        }
-        ValidationResult.Error(msg)
-    } else {
-        ValidationResult.Success(gpsDevice)
+    if (gpsDevice.imei.isNullOrBlank()) {
+        return ValidationResult.Error("O campo IMEI é obrigatório")
     }
+
+    return ValidationResult.Success(gpsDevice)
 }
 
 fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {

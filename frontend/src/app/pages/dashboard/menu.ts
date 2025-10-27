@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NgIcon } from '@ng-icons/core';
 import { MapComponent } from '../../components/map-component/map-component';
@@ -13,9 +13,11 @@ import { alertError } from '../../utils/custom-alerts';
 })
 export class Menu {
   private gpsDeviceService = inject(GpsDeviceService);
+  private cdr = inject(ChangeDetectorRef);
 
   menus = [
     { name: 'Veículos', icon: 'heroTruckSolid', route: '/veiculos' },
+    { name: 'Dispositivos', icon: 'heroDeviceTabletSolid' , route: '/dispositivos'},
     { name: 'Viagens', icon: 'heroMapSolid', route: '/viagens' },
     { name: 'Motoristas', icon: 'heroUserGroupSolid', route: '/motoristas' },
     {
@@ -35,6 +37,7 @@ export class Menu {
     this.gpsDeviceService.getAll().subscribe({
       next: (response) => {
         this.markers = response.data;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         alertError(`Erro ao buscar Dispositivos GPS ${err.error.message}`)

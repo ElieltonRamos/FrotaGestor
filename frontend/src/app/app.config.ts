@@ -32,6 +32,7 @@ import {
   heroExclamationCircleSolid,
   heroArrowRightSolid,
   heroArrowLeftSolid,
+  heroDeviceTabletSolid,
 } from '@ng-icons/heroicons/solid';
 
 export const appConfig: ApplicationConfig = {
@@ -59,6 +60,7 @@ export const appConfig: ApplicationConfig = {
         heroChartBarSolid,
         heroArrowLeftSolid,
         heroArrowRightSolid,
+        heroDeviceTabletSolid
       })
     ),
   ],

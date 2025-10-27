@@ -20,6 +20,8 @@ import { DetailsMaintenance } from './pages/maintenance/details-maintenance/deta
 import { Users } from './pages/users/users';
 import { DetailsUsers } from './pages/users/details-users/details-users';
 import { Reports } from './pages/reports/reports';
+import { GpsDevices } from './pages/gps-devices/gps-devices';
+import { GpsDetails } from './pages/gps-devices/details-gps-device/details-gps-device';
 
 export const routes: Routes = [
   {
@@ -111,6 +113,16 @@ export const routes: Routes = [
     path: 'relatorios',
     component: Reports,
     canActivate: [authGuard],
+  },
+  {
+    path: 'dispositivos',
+    component: GpsDevices,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'dispositivos/:id',
+    component: GpsDetails,
+    canActivate: [authGuard]
   },
   { path: '**', component: NotFound },
 ];

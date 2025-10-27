@@ -425,7 +425,6 @@ class DriverService {
                             brand = rs.getString("brand"),
                             year = rs.getInt("year"),
                             status = status,
-                            iconMapUrl = rs.getString("icon_map_url"),
                         )
                     )
                     total = rs.getInt("total_count")
