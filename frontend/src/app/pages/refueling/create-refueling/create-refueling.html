@@ -1,0 +1,100 @@
+<div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <h2 class="text-2xl font-semibold mb-4">Registro de Abastecimento</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1"
+          >Veículo</label
+        >
+        <div class="flex gap-2">
+          <input
+            type="text"
+            class="border border-gray-300 rounded-lg px-3 py-1.5 w-full text-sm bg-gray-100"
+            [value]="
+              selectedVehicle
+                ? selectedVehicle.model + ' (' + selectedVehicle.plate + ')'
+                : ''
+            "
+            readonly
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+            (click)="showVehicleModal = true"
+          >
+            Selecionar
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1"
+          >Motorista</label
+        >
+        <div class="flex gap-2">
+          <input
+            type="text"
+            class="border border-gray-300 rounded-lg px-3 py-1.5 w-full text-sm bg-gray-100"
+            [value]="selectedDriver ? selectedDriver.name : ''"
+            readonly
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+            (click)="showDriverModal = true"
+          >
+            Selecionar
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1"
+          >Viagem</label
+        >
+        <div class="flex gap-2">
+          <input
+            type="text"
+            class="border border-gray-300 rounded-lg px-3 py-1.5 w-full text-sm bg-gray-100"
+            [value]="
+              selectedTrip
+                ? selectedTrip.startLocation + ' → ' + selectedTrip.endLocation
+                : ''
+            "
+            readonly
+          />
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+            (click)="showTripModal = true"
+          >
+            Selecionar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <app-dynamic-form
+      [fields]="refuelingFields"
+      (formSubmit)="saveRefueling($event)"
+      (formChange)="onFormChange($event)"
+    />
+
+    <div class="mt-2 flex justify-start">
+      <span class="text-xs text-slate-500">
+        Preço por Litro (calculado):
+        <span class="font-semibold text-blue-600">
+          {{ pricePerLiter | number : "1.2-2" }} R$/L
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="refueling.png"
+      alt="Abastecimento"
+      class="max-h-64 opacity-90 rounded-lg custom-shadow-img"
+    />
+  </div>
+</div>

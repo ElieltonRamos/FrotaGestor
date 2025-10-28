@@ -1,0 +1,67 @@
+<div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-200 text-gray-700 uppercase text-xs font-semibold">
+      <tr>
+        @for (col of columns; track col.key) {
+        <th
+          class="px-4 py-3 cursor-pointer select-none"
+          (click)="col.sortable && onSort(col.key)"
+        >
+          {{ col.label }}
+          @if (sortKey === col.key) {
+          {{ sortAsc ? "▲" : "▼" }}
+          }
+        </th>
+        } @if (showActions) {
+        <th class="px-4 py-3 text-center">Ações</th>
+        }
+      </tr>
+    </thead>
+
+    <tbody class="divide-y divide-gray-100">
+      @for (item of data; track item.id) {
+      <tr
+        (click)="!showActions && onRowClick(item)"
+        class="hover:bg-gray-50 odd:bg-white even:bg-gray-50"
+      >
+        @for (col of columns; track col.key) {
+        <td class="px-4 py-3">
+          @if (col.type === 'date') {
+          {{ formatDate(item[col.key]) | date : "dd/MM/yyyy" }}
+          } @else if (col.type === 'status') {
+          <span
+            class="px-2 py-1 text-xs rounded-full"
+            [class.bg-green-100]="item[col.key] === 'ATIVO'"
+            [class.text-green-700]="item[col.key] === 'ATIVO'"
+            [class.bg-red-100]="item[col.key] === 'INATIVO'"
+            [class.text-red-700]="item[col.key] === 'INATIVO'"
+            [class.bg-yellow-100]="item[col.key] === 'MANUTENCAO'"
+            [class.text-yellow-700]="item[col.key] === 'MANUTENCAO'"
+          >
+            {{ item[col.key] }}
+          </span>
+          } @else {
+          {{ item[col.key] }}
+          }
+        </td>
+        } @if (showActions) {
+        <td class="px-4 py-3 text-center space-x-2">
+          <button
+            class="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+            (click)="onEdit(item)"
+          >
+            Editar
+          </button>
+          <button
+            class="px-3 py-1 text-xs font-medium text-white bg-gray-600 rounded hover:bg-gray-700"
+            (click)="onDetails(item.id)"
+          >
+            Detalhes
+          </button>
+        </td>
+        }
+      </tr>
+      }
+    </tbody>
+  </table>
+</div>

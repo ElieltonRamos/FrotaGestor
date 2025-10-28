@@ -1,0 +1,51 @@
+<div class="p-6">
+  <!-- Menus -->
+  <div class="flex gap-4 border-b mb-6">
+    <button
+      (click)="selectTab('reportVehicles')"
+      [class.border-b-2]="activeTab === 'reportVehicles'"
+      [class.text-blue-600]="activeTab === 'reportVehicles'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Veículos
+    </button>
+
+    <button
+      (click)="selectTab('reportDrivers')"
+      [class.border-b-2]="activeTab === 'reportDrivers'"
+      [class.text-blue-600]="activeTab === 'reportDrivers'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Motoristas
+    </button>
+
+    <button
+      (click)="selectTab('reportTrips')"
+      [class.border-b-2]="activeTab === 'reportTrips'"
+      [class.text-blue-600]="activeTab === 'reportTrips'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Viagens
+    </button>
+
+    <button
+      (click)="selectTab('reportExpenses')"
+      [class.border-b-2]="activeTab === 'reportExpenses'"
+      [class.text-blue-600]="activeTab === 'reportExpenses'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Despesas
+    </button>
+  </div>
+
+  <!-- Conteúdo das abas -->
+  @if (activeTab === 'reportVehicles') {
+  <app-report-vehicle />
+  } @else if (activeTab === 'reportDrivers') {
+  <app-report-driver />
+  } @else if (activeTab === 'reportTrips') {
+  <app-report-trip />
+  } @else if (activeTab === 'reportExpenses') {
+  <app-report-expenses />
+  }
+</div>

@@ -1,0 +1,281 @@
+<div class="p-6 space-y-10 bg-gray-50 min-h-screen">
+  <!-- Filtros -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">Filtros</h2>
+    <div class="bg-white border border-gray-200 shadow-md rounded-xl p-4">
+      <app-base-filter
+        [filtersConfig]="tripFilters"
+        [(filter)]="filter"
+        (apply)="applyFilters()"
+        (clear)="clearFilters()"
+      ></app-base-filter>
+    </div>
+  </section>
+
+  <!-- Indicadores -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-4">
+      Indicadores de Viagens
+    </h2>
+    <p class="text-sm text-gray-500 mb-4">
+      Período: {{ filter.startDate | date : "dd/MM/yyyy" }} -
+      {{ filter.endDate | date : "dd/MM/yyyy" }}
+    </p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total de Viagens -->
+      <div
+        class="bg-blue-100 border border-blue-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-blue-700"
+            >Total de Viagens</span
+          >
+          <i data-lucide="map" class="text-blue-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-blue-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.totalTrips }}
+          }
+        </div>
+      </div>
+
+      <!-- Em Andamento -->
+      <div
+        class="bg-yellow-100 border border-yellow-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-yellow-700"
+            >Em Andamento</span
+          >
+          <i data-lucide="truck" class="text-yellow-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-yellow-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.inProgress }}
+          }
+        </div>
+      </div>
+
+      <!-- Concluídas -->
+      <div
+        class="bg-green-100 border border-green-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-green-700">Concluídas</span>
+          <i data-lucide="check-circle" class="text-green-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-green-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.completed }}
+          }
+        </div>
+      </div>
+
+      <!-- Canceladas -->
+      <div
+        class="bg-red-100 border border-red-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-red-700">Canceladas</span>
+          <i data-lucide="x-circle" class="text-red-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-red-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-red-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.canceled }}
+          }
+        </div>
+      </div>
+
+      <!-- Distância Total -->
+      <div
+        class="bg-teal-100 border border-teal-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-teal-700"
+            >Distância Total (km)</span
+          >
+          <i data-lucide="route" class="text-teal-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-teal-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-teal-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.totalDistance | number : "1.0-2" }}
+          }
+        </div>
+      </div>
+
+      <!-- Distância Média -->
+      <div
+        class="bg-orange-100 border border-orange-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02]"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-orange-700"
+            >Distância Média (km)</span
+          >
+          <i data-lucide="ruler" class="text-orange-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 text-3xl font-bold text-orange-800">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else {
+          {{ indicators.avgDistance | number : "1.0-2" }}
+          }
+        </div>
+      </div>
+
+      <!-- Última Viagem -->
+      <div
+        class="bg-purple-100 border border-purple-300 shadow-md rounded-xl p-5 flex flex-col justify-between hover:shadow-lg transition-transform hover:scale-[1.02] col-span-1 sm:col-span-2 lg:col-span-2"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-purple-700"
+            >Última Viagem</span
+          >
+          <i data-lucide="clock" class="text-purple-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3">
+          @if (loadingIndicators) {
+          <div
+            class="w-6 h-6 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto"
+          ></div>
+          } @else if (indicators.lastTrip) {
+          <div class="font-bold text-lg text-purple-800">
+            {{ indicators.lastTrip.driverName }} ({{
+              indicators.lastTrip.vehiclePlate
+            }})
+          </div>
+          <div class="text-sm text-purple-700">
+            {{ indicators.lastTrip.date | date : "dd/MM/yyyy" }}
+          </div>
+          } @else {
+          <div class="text-sm text-purple-400">Nenhum dado</div>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Distribuições -->
+  <section>
+    <h2 class="text-xl font-semibold text-gray-700 mb-1">Distribuições</h2>
+    <p class="text-sm text-gray-500 mb-4">
+      Período: {{ filter.startDate | date : "dd/MM/yyyy" }} -
+      {{ filter.endDate | date : "dd/MM/yyyy" }}
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Gráfico: Viagens por Status -->
+      <div
+        class="bg-fuchsia-100 border border-fuchsia-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-fuchsia-700">Por Status</span>
+          <i data-lucide="pie-chart" class="text-fuchsia-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="statusChartData"
+            [options]="statusChartOptions"
+            [type]="'pie'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico: Viagens por Veículo -->
+      <div
+        class="bg-orange-100 border border-orange-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-orange-700">Por Veículo</span>
+          <i data-lucide="truck" class="text-orange-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="vehicleChartData"
+            [options]="vehicleChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico: Viagens por Motorista -->
+      <div
+        class="bg-teal-100 border border-teal-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-teal-700">Por Motorista</span>
+          <i data-lucide="user" class="text-teal-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="driverChartData"
+            [options]="driverChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico: Viagens por Destino -->
+      <div
+        class="bg-rose-100 border border-rose-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-rose-700">Por Destino</span>
+          <i data-lucide="map-pin" class="text-rose-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="destinationChartData"
+            [options]="destinationChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico: Custo por Destino -->
+      <div
+        class="bg-cyan-100 border border-cyan-300 shadow-md rounded-xl p-5 hover:shadow-lg transition"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-semibold text-cyan-700"
+            >Custo por Destino</span
+          >
+          <i data-lucide="dollar-sign" class="text-cyan-500 w-5 h-5"></i>
+        </div>
+        <div class="mt-3 h-64">
+          <canvas
+            baseChart
+            [data]="destinationCostChartData"
+            [options]="destinationCostChartOptions"
+            [type]="'bar'"
+          ></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

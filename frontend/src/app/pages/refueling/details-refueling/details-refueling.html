@@ -1,0 +1,113 @@
+<div
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 grid grid-cols-1 lg:grid-cols-3 gap-8"
+>
+  <!-- Coluna principal -->
+  <div class="lg:col-span-2 flex flex-col justify-between">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6 gap-4">
+      <h2 class="text-xl font-semibold text-gray-800">
+        Detalhes do Abastecimento
+      </h2>
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+        (click)="goBack()"
+      >
+        Voltar
+      </button>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="flex-1">
+      @if (fueling) {
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Valor Total
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.amount | currency : "BRL" : "symbol" : "1.2-2" }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Litros
+          </label>
+          <p class="text-gray-800 text-sm">{{ fueling.liters || 0 }} L</p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Preço por Litro
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.pricePerLiter | currency : "BRL" : "symbol" : "1.2-2" }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Data
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.date | date : "dd/MM/yyyy" }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Odômetro
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.odometer ? fueling.odometer + ' km' : '-' }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Veículo
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.vehiclePlate || "-" }}
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+          >
+            Motorista
+          </label>
+          <p class="text-gray-800 text-sm">
+            {{ fueling.driverName || "-" }}
+          </p>
+        </div>
+      </div>
+      } @else {
+      <p class="text-gray-500 text-sm italic">Carregando abastecimento...</p>
+      }
+    </div>
+  </div>
+
+  <!-- Coluna lateral com imagem ilustrativa -->
+  <div class="hidden lg:flex items-center justify-center">
+    <img
+      src="details-refueling.png"
+      alt="Ilustração de abastecimento"
+      class="max-h-64 opacity-90 custom-shadow-img"
+    />
+  </div>
+</div>

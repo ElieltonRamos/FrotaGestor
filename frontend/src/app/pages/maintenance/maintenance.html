@@ -1,0 +1,31 @@
+<div class="p-6">
+  <!-- Menus -->
+  <div class="flex gap-4 border-b mb-6">
+    <button
+      (click)="selectTab('list')"
+      [class.border-b-2]="activeTab === 'list'"
+      [class.text-blue-600]="activeTab === 'list'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Listar Manutenções
+    </button>
+    <button
+      (click)="selectTab('create')"
+      [class.border-b-2]="activeTab === 'create'"
+      [class.text-blue-600]="activeTab === 'create'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Registrar Manutenções
+    </button>
+  </div>
+
+  <!-- Aba Create -->
+  @if (activeTab === 'create') {
+  <app-create-maintenance />
+  }
+
+  <!-- Aba List -->
+  @if (activeTab === 'list') {
+  <app-list-maintenance />
+  }
+</div>

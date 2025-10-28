@@ -1,0 +1,216 @@
+<!-- Indicadores de Abastecimento -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total gasto -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-green-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Total Gasto (Período)</span>
+    <div class="min-h-[32px] flex items-center justify-start">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-green-600">
+        {{
+          indicators?.totalAmount ?? 0 | currency : "BRL" : "symbol" : "1.2-2"
+        }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Total de litros -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-blue-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Total de Litros</span>
+    <div class="min-h-[32px] flex items-center justify-start">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-blue-600">
+        {{ indicators?.totalLiters ?? 0 | number : "1.0-2" }} L
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Preço médio por litro -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-orange-400"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Preço Médio/Litro</span>
+    <div class="min-h-[32px] flex items-center justify-start">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-orange-500">
+        {{
+          indicators?.avgPricePerLiter ?? 0
+            | currency : "BRL" : "symbol" : "1.2-2"
+        }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Motorista com mais abastecimentos -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-blue-400"
+  >
+    <span class="text-[11px] text-slate-500 mb-1"
+      >Motorista com Mais Abastecimentos</span
+    >
+    <div class="min-h-[32px] flex flex-col justify-center">
+      @if (loadingIndicators) {
+      <div class="flex items-center justify-start">
+        <div
+          class="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
+      } @else if (indicators?.topDriver) {
+      <span class="text-sm font-bold text-blue-700">{{
+        indicators?.topDriver?.name
+      }}</span>
+      <span class="text-[10px] text-slate-400 mt-1"
+        >{{ indicators?.topDriver?.count }} abastecimentos</span
+      >
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+
+  <!-- Veículo com maior gasto -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-emerald-400"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Veículo com Maior Gasto</span>
+    <div class="min-h-[32px] flex flex-col justify-center">
+      @if (loadingIndicators) {
+      <div class="flex items-center justify-start">
+        <div
+          class="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
+      } @else if (indicators?.topVehicleByAmount) {
+      <span class="text-sm font-bold text-emerald-700">{{
+        indicators?.topVehicleByAmount?.plate
+      }}</span>
+      <span class="text-[10px] text-slate-400 mt-1">
+        {{
+          indicators?.topVehicleByAmount?.amount ?? 0
+            | currency : "BRL" : "symbol" : "1.2-2"
+        }}
+      </span>
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+
+  <!-- Veículo com mais litros -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-cyan-400"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Veículo com Mais Litros</span>
+    <div class="min-h-[32px] flex flex-col justify-center">
+      @if (loadingIndicators) {
+      <div class="flex items-center justify-start">
+        <div
+          class="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
+      } @else if (indicators?.topVehicleByLiters) {
+      <span class="text-sm font-bold text-cyan-700">{{
+        indicators?.topVehicleByLiters?.plate
+      }}</span>
+      <span class="text-[10px] text-slate-400 mt-1">
+        {{ indicators?.topVehicleByLiters?.liters ?? 0 | number : "1.0-2" }} L
+      </span>
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+
+  <!-- Último abastecimento -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-slate-400"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Último Abastecimento</span>
+    <div class="min-h-[32px] flex flex-col justify-center">
+      @if (loadingIndicators) {
+      <div class="flex items-center justify-start">
+        <div
+          class="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
+        ></div>
+      </div>
+      } @else if (indicators?.lastRefueling) {
+      <span class="text-sm font-bold text-slate-800">
+        {{ indicators?.lastRefueling?.date | date : "dd/MM/yyyy" }}
+      </span>
+      <span class="text-[10px] text-slate-400 mt-1"
+        >Placa: {{ indicators?.lastRefueling?.plate }}</span
+      >
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div
+  class="flex flex-wrap justify-between mb-6 gap-4 bg-white shadow-md rounded-xl p-4"
+>
+  <app-base-filter
+    [filtersConfig]="expenseFilters"
+    [(filter)]="filter"
+    (apply)="applyFilters()"
+    (clear)="clearFilters()"
+  ></app-base-filter>
+
+  <div class="flex items-center">
+    <app-paginator
+      [totalItems]="total"
+      [itemsPerPage]="limit"
+      [totalPages]="totalPages"
+      [page]="page"
+      (pageChanged)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<!-- Lista -->
+<div class="bg-white shadow-md rounded-xl p-4">
+  <app-base-list
+    [columns]="expenseColumns"
+    [data]="expenses"
+    [page]="page"
+    [limit]="limit"
+    [total]="total"
+    [totalPages]="totalPages"
+    [sortKey]="sortKey"
+    [sortAsc]="sortAsc"
+    (sortChange)="sortBy($event)"
+    (pageChange)="onPageChange($event)"
+    (edit)="onEdit($event)"
+    (details)="onNavDetails($event)"
+  ></app-base-list>
+</div>
+
+<!-- Modal -->
+<app-modal-edit-component
+  [title]="'Editar Abastecimento'"
+  [show]="showModal"
+  [entity]="selectedExpense"
+  [fields]="expenseFields"
+  (close)="onCloseModal()"
+  (save)="onSaveModal($event)"
+></app-modal-edit-component>

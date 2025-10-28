@@ -1,0 +1,162 @@
+<!-- Indicadores de Viagens -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total de Viagens -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-blue-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Total de Viagens (Mês)</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-blue-600">
+        {{ indicators?.totalTrips ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Em andamento -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-yellow-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Em Andamento</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-yellow-600">
+        {{ indicators?.inProgress ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Concluídas -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-green-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Concluídas</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-green-600">
+        {{ indicators?.completed ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Canceladas -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-red-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Canceladas</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-red-600">
+        {{ indicators?.canceled ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Distância Total -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-indigo-500 col-span-1 sm:col-span-2 lg:col-span-2"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Distância Total</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-indigo-600">
+        {{ indicators?.totalDistance ?? 0 }} km
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Última Viagem -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-slate-500 col-span-1 sm:col-span-2 lg:col-span-2"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Última Viagem</span>
+    <div class="min-h-[32px] flex flex-col">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else if (indicators?.lastTrip) {
+      <span class="text-sm font-bold text-slate-800">
+        {{ indicators?.lastTrip?.date | date : "dd/MM/yyyy" }}
+      </span>
+      <span class="text-[10px] text-slate-400">
+        {{ indicators?.lastTrip?.driverName }} ({{
+          indicators?.lastTrip?.vehiclePlate
+        }})
+      </span>
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+</div>
+
+<div class="flex flex-wrap justify-between mb-4 gap-4">
+  <!-- Filtros dinâmicos -->
+  <app-base-filter
+    [filtersConfig]="tripFilters"
+    [(filter)]="filter"
+    (apply)="applyFilters()"
+    (clear)="clearFilters()"
+  ></app-base-filter>
+
+  <!-- Paginador -->
+  <div class="flex items-center">
+    <app-paginator
+      [totalItems]="total"
+      [itemsPerPage]="limit"
+      [totalPages]="totalPages"
+      [page]="page"
+      (pageChanged)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<app-base-list
+  [columns]="tripColumns"
+  [data]="trips"
+  [page]="page"
+  [limit]="limit"
+  [total]="total"
+  [totalPages]="totalPages"
+  [sortKey]="sortKey"
+  [sortAsc]="sortAsc"
+  (sortChange)="sortBy($event)"
+  (pageChange)="onPageChange($event)"
+  (edit)="onEdit($event)"
+  (details)="onNavDetails($event)"
+></app-base-list>
+
+<app-modal-edit-component
+  [title]="'Editar Viagem'"
+  [show]="showModal"
+  [entity]="selectedTrip"
+  [fields]="tripFields"
+  (close)="onCloseModal()"
+  (save)="onSaveModal($event)"
+></app-modal-edit-component>

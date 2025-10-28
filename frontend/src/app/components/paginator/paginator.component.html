@@ -1,0 +1,20 @@
+<div class="flex space-x-2 items-center text-sm text-white">
+  <button
+    class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600"
+    [disabled]="page === 1"
+    (click)="changePage(page - 1)"
+  >
+    Anterior
+  </button>
+
+  <span class="text-black">
+    Página {{ page }} de {{ totalPages }}
+  </span>
+
+  <button
+    class="px-3 py-1 bg-gray-700 rounded hover:bg-gray-600"
+    (click)="changePage(page + 1)"
+  >
+    Próxima
+  </button>
+</div>

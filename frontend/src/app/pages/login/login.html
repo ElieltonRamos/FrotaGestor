@@ -1,0 +1,77 @@
+<div class="flex items-center justify-center min-h-screen bg-gray-300">
+  <div class="flex bg-white shadow-lg rounded-md overflow-hidden w-[600px]">
+    <!-- Logo -->
+    <div class="flex items-center justify-center p-6 bg-white">
+      <img src="FrotaGestor.png" alt="Redenorte" class="h-44" />
+    </div>
+
+    <!-- Formulário -->
+    <div class="flex-1 p-6">
+      <form (ngSubmit)="login()" class="space-y-4">
+        <!-- Usuário -->
+        <div class="flex items-center border border-gray-300 rounded px-3">
+          <ng-icon name="heroUserSolid" class="w-5 h-5 text-gray-500"></ng-icon>
+          <input
+            type="text"
+            placeholder="Usuário"
+            [(ngModel)]="username"
+            name="username"
+            class="w-full p-2 outline-none"
+          />
+        </div>
+
+        <!-- Senha -->
+        <div class="flex items-center border border-gray-300 rounded px-3">
+          <!-- Ícone de cadeado -->
+          <ng-icon
+            name="heroLockClosedSolid"
+            class="w-5 h-5 text-gray-500"
+          ></ng-icon>
+
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Senha"
+            [(ngModel)]="password"
+            name="password"
+            class="w-full p-2 outline-none"
+          />
+
+          <!-- Botão Olhinho -->
+          <button
+            type="button"
+            (click)="togglePassword()"
+            class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+          >
+            <ng-icon
+              [name]="showPassword ? 'heroEyeSlashSolid' : 'heroEyeSolid'"
+              class="w-5 h-5"
+            ></ng-icon>
+          </button>
+        </div>
+
+        <!-- Botão -->
+        <button
+          type="submit"
+          [disabled]="isLoading"
+          class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded flex items-center justify-center"
+        >
+          @if (isLoading) {
+          <span
+            class="loader border-2 border-white border-t-transparent rounded-full w-5 h-5 animate-spin mr-2"
+          ></span>
+          Entrando... } @else { Entrar }
+        </button>
+
+        <!-- Link Esqueceu senha -->
+        <!-- <div class="text-right">
+          <a href="#" class="text-sm text-gray-500 hover:underline"
+            >Esqueceu sua senha?</a
+          >
+        </div> -->
+      </form>
+
+      <!-- Versão -->
+      <p class="text-center text-xs text-gray-400 mt-4">Versão 0.4</p>
+    </div>
+  </div>
+</div>
