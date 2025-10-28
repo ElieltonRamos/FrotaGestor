@@ -10,7 +10,6 @@ suspend fun startTcpServer() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
         .bind("0.0.0.0", 5000)
-
     println("Servidor TCP rodando na porta 5000")
 
     while (true) {
@@ -23,38 +22,30 @@ suspend fun startTcpServer() {
 suspend fun handleDevice(socket: Socket) {
     val input = socket.openReadChannel()
     val output = socket.openWriteChannel(autoFlush = true)
-
     var imei: String? = null
-
     try {
         while (!input.isClosedForRead) {
             val buffer = ByteArray(1024)
             val bytesRead = input.readAvailable(buffer)
             if (bytesRead > 0) {
                 val data = buffer.copyOf(bytesRead)
-                // 📌 Print do pacote recebido em hexadecimal
                 println("Pacote recebido (${bytesRead} bytes): " + data.joinToString(" ") { "%02X".format(it) })
                 val packetType = data[3].toInt() and 0xFF
-
                 when (packetType) {
-                    0x01 -> { // LOGIN
+                    0x01 -> {
                         imei = parseImeiFromLogin(data)
                         println("Dispositivo conectado: IMEI=$imei")
-
-                        // Envia ACK de login
                         val ackLogin = byteArrayOf(
                             0x78, 0x78, 0x05, 0x01, 0x00, 0x00, 0x0D, 0x0A
                         )
                         output.writeFully(ackLogin)
                     }
 
-                    0x12, 0x22 -> { // GPS fix / status
-                        if (imei == null) continue // ignorar se login não recebido
+                    0x12, 0x22 -> {
+                        if (imei == null) continue
                         val gps = parseGpsPacket(data)
                         saveOrUpdateGps(imei, gps!!)
-
-                        // ACK para GPS
-                        val serial = data[1] // número de série do pacote
+                        val serial = data[1]
                         val ackGps = byteArrayOf(
                             0x78, 0x78, 0x05, packetType.toByte(), serial, 0x00, 0x0D, 0x0A
                         )

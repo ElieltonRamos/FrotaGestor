@@ -16,15 +16,15 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="!gpsDevice" class="text-center text-gray-600">
+  @if (gpsDevice) {
+  <div class="text-center text-gray-600">
     Carregando detalhes do dispositivo...
   </div>
+  }
 
   <!-- Device Details -->
-  <div
-    *ngIf="gpsDevice"
-    class="p-6 bg-gray-50 rounded-lg border border-gray-100"
-  >
+  @if (gpsDevice) {
+  <div class="p-6 bg-gray-50 rounded-lg border border-gray-100">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Left Column: Device Information -->
       <div>
@@ -34,103 +34,327 @@
         <div class="space-y-3">
           <div>
             <span class="text-sm font-semibold text-gray-600">IMEI:</span>
-            <span class="text-sm text-gray-900">{{ gpsDevice.imei }}</span>
+            <span class="text-sm text-gray-900 ml-2">{{ gpsDevice.imei }}</span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Veículo:</span>
-            <span class="text-sm text-gray-900">
+            <span class="text-sm text-gray-900 ml-2">
               {{
                 selectedVehicle
-                  ? selectedVehicle.model + " " + selectedVehicle.plate
-                  : "N/A"
+                  ? selectedVehicle.model + " - " + selectedVehicle.plate
+                  : "Não vinculado"
               }}
             </span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Latitude:</span>
-            <span class="text-sm text-gray-900">{{
+            <span class="text-sm text-gray-900 ml-2">{{
               gpsDevice.latitude || "N/A"
             }}</span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Longitude:</span>
-            <span class="text-sm text-gray-900">{{
+            <span class="text-sm text-gray-900 ml-2">{{
               gpsDevice.longitude || "N/A"
             }}</span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Data/Hora:</span>
-            <span class="text-sm text-gray-900">{{
+            <span class="text-sm text-gray-900 ml-2">{{
               gpsDevice.dateTime ? (gpsDevice.dateTime | date : "short") : "N/A"
             }}</span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Velocidade:</span>
-            <span class="text-sm text-gray-900"
+            <span class="text-sm text-gray-900 ml-2"
               >{{ gpsDevice.speed || "N/A" }} km/h</span
             >
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Direção:</span>
-            <span class="text-sm text-gray-900">{{
+            <span class="text-sm text-gray-900 ml-2">{{
               gpsDevice.heading || "N/A"
             }}</span>
           </div>
           <div>
             <span class="text-sm font-semibold text-gray-600">Ignição:</span>
-            <span class="text-sm text-gray-900">{{
+            <span class="text-sm text-gray-900 ml-2">{{
               gpsDevice.ignition || "N/A"
             }}</span>
           </div>
-          <div>
+          <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-gray-600"
               >Ícone no Mapa:</span
             >
+            <img
+              [src]="gpsDevice.iconMapUrl"
+              [alt]="gpsDevice.iconMapUrl"
+              class="w-8 h-8 object-contain"
+              (error)="$event.target.src = 'icon-car.png'"
+            />
             <span class="text-sm text-gray-900">{{
               gpsDevice.iconMapUrl || "N/A"
             }}</span>
           </div>
         </div>
+
+        <!-- Action Buttons -->
+        <div class="mt-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors"
+            (click)="onEdit()"
+          >
+            Editar Dispositivo
+          </button>
+
+          <button
+            *ngIf="gpsDevice.vehicleId"
+            type="button"
+            class="px-3 py-1.5 rounded bg-orange-600 text-white text-xs hover:bg-orange-700 transition-colors"
+            (click)="unlinkVehicle()"
+          >
+            Desvincular Veículo
+          </button>
+
+          <button
+            type="button"
+            [disabled]="!canDelete"
+            [class.opacity-50]="!canDelete"
+            [class.cursor-not-allowed]="!canDelete"
+            class="px-3 py-1.5 rounded bg-red-600 text-white text-xs hover:bg-red-700 transition-colors"
+            (click)="confirmDelete()"
+          >
+            Deletar Dispositivo
+          </button>
+        </div>
+
+        <p *ngIf="!canDelete" class="mt-2 text-xs text-gray-500">
+          * Para deletar o dispositivo, primeiro desvincule-o do veículo
+        </p>
+      </div>
+      <app-map [markers]="markers"></app-map>
+    </div>
+  </div>
+  }
+
+  <!-- Custom Edit Modal -->
+  @if (showCustomEditModal) {
+  <div
+    class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transition-all flex flex-col"
+    >
+      <!-- Modal Header -->
+      <div
+        class="flex justify-between items-center border-b border-gray-200 px-6 py-4 bg-gray-50"
+      >
+        <h2 class="text-lg font-semibold text-gray-800">
+          Editar Dispositivo GPS
+        </h2>
         <button
-          type="button"
-          class="mt-4 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
-          (click)="onEdit()"
+          (click)="onCloseCustomEditModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
         >
-          Editar Dispositivo
+          ✖
         </button>
       </div>
 
-      <!-- Right Column: Map Placeholder -->
-      <div class="flex items-center justify-center">
-        <div
-          class="bg-gray-200 h-64 w-full rounded-lg flex items-center justify-center"
-        >
-          <span class="text-gray-500"
-            >Mapa com localização do dispositivo (Placeholder)</span
-          >
+      <!-- Modal Body -->
+      @if (editingDevice) {
+      <div class="p-6 flex flex-col gap-4 overflow-y-auto">
+        <!-- IMEI Field -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">
+            IMEI <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="editingDevice.imei"
+            class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            placeholder="Insira o IMEI"
+          />
         </div>
+
+        <!-- Title Field -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">
+            Título (Exibido no Mapa)
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="editingDevice.title"
+            class="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            placeholder="Ex: Gol ABC-1234"
+          />
+        </div>
+
+        <!-- Vehicle Selection -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">
+            Veículo
+          </label>
+          <div class="flex gap-2">
+            <input
+              type="text"
+              class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 outline-none"
+              [value]="
+                selectedVehicleForEdit
+                  ? `${selectedVehicleForEdit.plate} - ${selectedVehicleForEdit.model} (${selectedVehicleForEdit.brand})`
+                  : editingDevice.vehicleId
+                  ? 'Veículo ID: ' + editingDevice.vehicleId
+                  : 'Nenhum veículo selecionado'
+              "
+              readonly
+            />
+            <button
+              type="button"
+              class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors shadow-sm"
+              (click)="showVehicleModalForEdit = true"
+            >
+              Selecionar
+            </button>
+          </div>
+        </div>
+
+        <!-- Icon Selection with Preview -->
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">
+            Ícone no Mapa <span class="text-red-500">*</span>
+          </label>
+
+          <!-- Current Icon Preview -->
+          <div
+            class="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-3"
+          >
+            <span class="text-sm text-gray-600">Atual:</span>
+            <div class="flex items-center gap-2">
+              <img
+                [src]="getIconPreview(editingDevice.iconMapUrl || '')"
+                [alt]="getIconLabel(editingDevice.iconMapUrl || '')"
+                class="w-10 h-10 object-contain"
+                (error)="$event.target.src = 'icon-car.png'"
+              />
+              <span class="text-sm font-medium text-gray-800">
+                {{ getIconLabel(editingDevice.iconMapUrl || "") }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Icon Grid Selection -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div
+              *ngFor="let icon of availableIcons"
+              (click)="editingDevice.iconMapUrl = icon.value"
+              [class.ring-2]="editingDevice.iconMapUrl === icon.value"
+              [class.ring-blue-500]="editingDevice.iconMapUrl === icon.value"
+              [class.bg-blue-50]="editingDevice.iconMapUrl === icon.value"
+              class="cursor-pointer p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex flex-col items-center gap-2"
+            >
+              <img
+                [src]="icon.preview"
+                [alt]="icon.label"
+                class="w-12 h-12 object-contain"
+                (error)="$event.target.src = 'icon-car.png'"
+              />
+              <span class="text-xs text-gray-700 text-center">
+                {{ icon.label }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- Modal Footer -->
+      <div
+        class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-gray-50"
+      >
+        <button
+          type="button"
+          (click)="onCloseCustomEditModal()"
+          class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="onSaveCustomEdit()"
+          class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors"
+        >
+          Salvar
+        </button>
       </div>
     </div>
   </div>
+  }
 
-  <!-- Edit Modal -->
-  <app-modal-edit-component
-    [title]="'Editar Dispositivo GPS'"
-    [show]="showModal"
-    [entity]="gpsDevice"
-    [fields]="gpsDeviceFields"
-    (close)="onCloseModal()"
-    (save)="onSaveModal($event)"
-  ></app-modal-edit-component>
+  <!-- Delete Confirmation Modal -->
+  @if (showDeleteConfirm) {
+  <div
+    class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+    >
+      <!-- Modal Header -->
+      <div
+        class="flex justify-between items-center border-b border-gray-200 px-6 py-4 bg-gray-50"
+      >
+        <h2 class="text-lg font-semibold text-gray-800">Confirmar Exclusão</h2>
+        <button
+          (click)="cancelDelete()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          ✖
+        </button>
+      </div>
 
-  <!-- Vehicle Selection Modal -->
+      <!-- Modal Body -->
+      <div class="p-6">
+        <p class="text-sm text-gray-700">
+          Tem certeza que deseja deletar este dispositivo GPS?
+        </p>
+        <p class="text-sm text-gray-600 mt-2">
+          <strong>IMEI:</strong> {{ gpsDevice?.imei }}
+        </p>
+        <p class="text-sm text-red-600 mt-3 font-medium">
+          Esta ação não pode ser desfeita.
+        </p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div
+        class="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 bg-gray-50"
+      >
+        <button
+          type="button"
+          (click)="cancelDelete()"
+          class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="deleteDevice()"
+          class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm transition-colors"
+        >
+          Deletar
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Vehicle Selection Modal for Edit -->
   <app-select-modal
-    [show]="showVehicleModal"
+    [show]="showVehicleModalForEdit"
     title="Selecionar Veículo"
     [columns]="vehicleColumns"
     [filtersConfig]="vehicleFilters"
     [dataFetcher]="vehicleFetcher"
-    (select)="onVehicleSelect($event)"
-    (close)="showVehicleModal = false"
+    (select)="onVehicleSelectForEdit($event)"
+    (close)="showVehicleModalForEdit = false"
   ></app-select-modal>
 </div>

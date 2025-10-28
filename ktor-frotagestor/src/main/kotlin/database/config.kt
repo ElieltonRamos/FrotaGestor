@@ -47,7 +47,7 @@ object DatabaseFactory {
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         try {
             newSuspendedTransaction(Dispatchers.IO) {
-                addLogger(StdOutSqlLogger)
+//                addLogger(StdOutSqlLogger)
                 block()
             }
         } catch (e: Exception) {

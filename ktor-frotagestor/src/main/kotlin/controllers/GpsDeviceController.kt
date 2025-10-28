@@ -17,6 +17,7 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in create GPS device route: ${e.message}")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
@@ -31,6 +32,21 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in update GPS device route: ${e.message}")
+            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun delete(call: ApplicationCall) {
+        try {
+            val id = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+
+            val serviceResult = gpsDeviceService.deleteGpsDevice(id)
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in delete GPS device route: ${e.message}")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
@@ -51,6 +67,7 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getAll GPS devices route: ${e.message}")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
@@ -64,6 +81,7 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getById GPS device route: ${e.message}")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
@@ -72,10 +90,12 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
         try {
             val id = call.parameters["id"]?.toIntOrNull()
                 ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+
             val serviceResult = gpsDeviceService.findGpsDeviceByVehicleId(id)
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
-            println("Error in findGpsDeviceByVehicleId gps device route: ${e.message}")
+            println("Error in findGpsDeviceByVehicleId GPS device route: ${e.message}")
+            e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }

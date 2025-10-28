@@ -67,16 +67,15 @@ CREATE TABLE expenses (
 
 CREATE TABLE gps_devices (
     id INT AUTO_INCREMENT PRIMARY KEY,        -- ID do dispositivo
-    vehicle_id INT NOT NULL,                  -- Veículo vinculado
+    vehicle_id INT NULL,                      -- Veículo vinculado (AGORA PODE SER NULL)
     imei VARCHAR(50) UNIQUE NOT NULL,         -- Identificador do GPS
-    latitude DECIMAL(9,6) NOT NULL,          -- Última latitude
-    longitude DECIMAL(9,6) NOT NULL,         -- Última longitude
-    date_time DATETIME NOT NULL,              -- Momento da leitura
-    speed DECIMAL(5,2) DEFAULT 0,            -- Velocidade (opcional)
-    heading DECIMAL(5,2) DEFAULT 0,          -- Direção (opcional)
+    latitude DECIMAL(9,6) DEFAULT 0,          -- Última latitude
+    longitude DECIMAL(9,6) DEFAULT 0,         -- Última longitude
+    date_time DATETIME,                       -- Momento da leitura
+    speed DECIMAL(5,2) DEFAULT 0,             -- Velocidade (opcional)
+    heading DECIMAL(5,2) DEFAULT 0,           -- Direção (opcional)
     icon_map_url VARCHAR(255),                -- Ícone para o mapa
     title VARCHAR(255),                       -- Modelo + placa
     ignition BOOLEAN DEFAULT FALSE,           -- Ignition ligada/desligada
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
 );
-

@@ -12,6 +12,7 @@ import { Vehicle } from '../../../interfaces/vehicle';
 import { ColumnConfig } from '../../../components/base-list-component/base-list-component';
 import { FilterConfig } from '../../../components/base-filter-component/base-filter-component';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
+import { MapComponent } from "../../../components/map-component/map-component";
 
 @Component({
   selector: 'app-gps-details',
@@ -19,9 +20,9 @@ import { alertError, alertSuccess } from '../../../utils/custom-alerts';
   imports: [
     CommonModule,
     FormsModule,
-    ModalEditComponent,
     SelectModalComponent,
-  ],
+    MapComponent
+],
   templateUrl: './details-gps-device.html',
 })
 export class GpsDetails {
@@ -31,12 +32,28 @@ export class GpsDetails {
   private vehicleService = inject(VehicleService);
   private cdr = inject(ChangeDetectorRef);
 
+  markers: GpsDevice[] = [];
   gpsDevice: GpsDevice | null = null;
   selectedVehicle: Vehicle | null = null;
   showModal = false;
+  showCustomEditModal = false;
   showVehicleModal = false;
+  showVehicleModalForEdit = false;
+  showDeleteConfirm = false;
   vehicleSearchTerm: string = '';
   vehicleInitialFilter: any = {};
+  editingDevice?: GpsDevice;
+  selectedVehicleForEdit?: Vehicle;
+
+  // Ícones disponíveis com preview
+  availableIcons = [
+    { value: 'icon-car.png', label: 'Carro', preview: 'icon-car.png' },
+    { value: 'icon-truck-box.png', label: 'Caminhão Baú', preview: 'icon-truck-box.png' },
+    { value: 'icon-motocicle.png', label: 'Motocicleta', preview: 'icon-motocicle.png' },
+    { value: 'icon-pickup.png', label: 'Picape', preview: 'icon-pickup.png' },
+    { value: 'icon-strada-fiat.png', label: 'Strada Fiat', preview: 'icon-strada-fiat.png' },
+    { value: 'icon-strada.png', label: 'Strada', preview: 'icon-strada.png' }
+  ];
 
   gpsDeviceFields: FormField[] = [
     { name: 'imei', label: 'IMEI', type: 'text', required: true, placeholder: 'Insira o IMEI' },
@@ -85,8 +102,11 @@ export class GpsDetails {
     this.gpsDeviceService.getById(id).subscribe({
       next: (device) => {
         this.gpsDevice = device;
+        this.markers = [device]
         if (device.vehicleId) {
           this.loadVehicle(device.vehicleId);
+        } else {
+          this.selectedVehicle = null;
         }
         this.cdr.detectChanges();
       },
@@ -111,8 +131,43 @@ export class GpsDetails {
 
   onEdit() {
     if (this.gpsDevice) {
-      this.showModal = true;
+      this.editingDevice = { ...this.gpsDevice };
+      this.selectedVehicleForEdit = this.selectedVehicle ? { ...this.selectedVehicle } : undefined;
+      this.showCustomEditModal = true;
     }
+  }
+
+  onCloseCustomEditModal() {
+    this.showCustomEditModal = false;
+    this.editingDevice = undefined;
+    this.selectedVehicleForEdit = undefined;
+  }
+
+  onSaveCustomEdit() {
+    if (!this.editingDevice) return;
+
+    const id = this.editingDevice.id;
+    const payload = { ...this.editingDevice };
+    
+    if (this.selectedVehicleForEdit) {
+      payload.vehicleId = this.selectedVehicleForEdit.id!;
+      payload.title = `${this.selectedVehicleForEdit.model} ${this.selectedVehicleForEdit.plate}`;
+    }
+    
+    delete payload.id;
+
+    this.gpsDeviceService.update(id!, payload).subscribe({
+      next: () => {
+        this.showCustomEditModal = false;
+        this.editingDevice = undefined;
+        this.selectedVehicleForEdit = undefined;
+        alertSuccess('Dispositivo atualizado com sucesso');
+        this.loadGpsDevice(id!);
+      },
+      error: (err) => {
+        alertError(`Erro ao atualizar dispositivo: ${err?.error?.message || 'Erro desconhecido.'}`);
+      },
+    });
   }
 
   onCloseModal() {
@@ -150,6 +205,74 @@ export class GpsDetails {
     this.cdr.detectChanges();
   }
 
+  onVehicleSelectForEdit(vehicle: Vehicle) {
+    this.selectedVehicleForEdit = vehicle;
+    if (this.editingDevice) {
+      this.editingDevice.vehicleId = vehicle.id!;
+    }
+    this.showVehicleModalForEdit = false;
+  }
+
+  unlinkVehicle() {
+    if (!this.gpsDevice || !this.gpsDevice.id) {
+      alertError('Dispositivo não encontrado.');
+      return;
+    }
+
+    if (!this.gpsDevice.vehicleId) {
+      alertError('Dispositivo já está desvinculado.');
+      return;
+    }
+
+    const payload = {
+      ...this.gpsDevice,
+      vehicleId: null,
+      title: null,
+    };
+    delete payload.id;
+
+    this.gpsDeviceService.update(this.gpsDevice.id, payload).subscribe({
+      next: () => {
+        alertSuccess('Veículo desvinculado com sucesso.');
+        this.loadGpsDevice(this.gpsDevice!.id!);
+      },
+      error: (err) => {
+        alertError(`Erro ao desvincular veículo: ${err?.error?.message || 'Erro desconhecido.'}`);
+      },
+    });
+  }
+
+  confirmDelete() {
+    this.showDeleteConfirm = true;
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirm = false;
+  }
+
+  deleteDevice() {
+    if (!this.gpsDevice || !this.gpsDevice.id) {
+      alertError('Dispositivo não encontrado.');
+      return;
+    }
+
+    if (this.gpsDevice.vehicleId) {
+      alertError('Não é possível deletar um dispositivo vinculado a um veículo.');
+      return;
+    }
+
+    this.gpsDeviceService.delete(this.gpsDevice.id).subscribe({
+      next: () => {
+        alertSuccess('Dispositivo deletado com sucesso.');
+        this.router.navigate(['/dispositivos']);
+      },
+      error: (err) => {
+        alertError(`Erro ao deletar dispositivo: ${err?.error?.message || 'Erro desconhecido.'}`);
+        this.showDeleteConfirm = false;
+      },
+    });
+  }
+
   vehicleFetcher = (
     page: number,
     limit: number,
@@ -168,6 +291,20 @@ export class GpsDetails {
   }
 
   goBack() {
-    this.router.navigate(['/gps-devices']);
+    this.router.navigate(['/dispositivos']);
+  }
+
+  getIconPreview(iconName: string): string {
+    const icon = this.availableIcons.find(i => i.value === iconName);
+    return icon?.preview || iconName;
+  }
+
+  getIconLabel(iconName: string): string {
+    const icon = this.availableIcons.find(i => i.value === iconName);
+    return icon?.label || iconName;
+  }
+
+  get canDelete(): boolean {
+    return this.gpsDevice ? !this.gpsDevice.vehicleId : false;
   }
 }

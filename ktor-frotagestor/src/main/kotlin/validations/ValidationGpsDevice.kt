@@ -12,11 +12,49 @@ fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
     val gpsDevice: PartialGpsDevice = try {
         Json.decodeFromString<PartialGpsDevice>(rawBody)
     } catch (e: SerializationException) {
-        return ValidationResult.Error("JSON inválido")
+        return ValidationResult.Error("JSON inválido: ${e.message}")
     }
 
+    // Validação do IMEI (obrigatório)
     if (gpsDevice.imei.isNullOrBlank()) {
         return ValidationResult.Error("O campo IMEI é obrigatório")
+    }
+
+    // Validação do formato do IMEI (15 dígitos)
+    if (!gpsDevice.imei.matches(Regex("^\\d{15}$"))) {
+        return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
+    }
+
+    // Validação do iconMapUrl (obrigatório)
+    if (gpsDevice.iconMapUrl.isNullOrBlank()) {
+        return ValidationResult.Error("O campo iconMapUrl é obrigatório")
+    }
+
+    // Validação de coordenadas (se fornecidas)
+    gpsDevice.latitude?.let { lat ->
+        if (lat < -90.0 || lat > 90.0) {
+            return ValidationResult.Error("Latitude inválida. Deve estar entre -90 e 90")
+        }
+    }
+
+    gpsDevice.longitude?.let { lon ->
+        if (lon < -180.0 || lon > 180.0) {
+            return ValidationResult.Error("Longitude inválida. Deve estar entre -180 e 180")
+        }
+    }
+
+    // Validação de velocidade (se fornecida)
+    gpsDevice.speed?.let { speed ->
+        if (speed < 0.0) {
+            return ValidationResult.Error("Velocidade não pode ser negativa")
+        }
+    }
+
+    // Validação de heading/direção (se fornecida)
+    gpsDevice.heading?.let { heading ->
+        if (heading < 0.0 || heading > 360.0) {
+            return ValidationResult.Error("Direção inválida. Deve estar entre 0 e 360")
+        }
     }
 
     return ValidationResult.Success(gpsDevice)
@@ -30,11 +68,13 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
     val gpsDevice = try {
         Json.decodeFromString<PartialGpsDevice>(rawBody)
     } catch (e: SerializationException) {
-        return ValidationResult.Error("JSON inválido")
+        return ValidationResult.Error("JSON inválido: ${e.message}")
     }
 
+    // Verifica se pelo menos um campo foi fornecido para atualização
     if (
         gpsDevice.imei.isNullOrBlank() &&
+        gpsDevice.vehicleId == null &&
         gpsDevice.latitude == null &&
         gpsDevice.longitude == null &&
         gpsDevice.dateTime == null &&
@@ -45,6 +85,42 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
         gpsDevice.ignition == null
     ) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
+    }
+
+    // Validações de formato (apenas se os campos forem fornecidos)
+
+    // IMEI (se fornecido)
+    gpsDevice.imei?.let { imei ->
+        if (imei.isNotBlank() && !imei.matches(Regex("^\\d{15}$"))) {
+            return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
+        }
+    }
+
+    // Coordenadas (se fornecidas)
+    gpsDevice.latitude?.let { lat ->
+        if (lat < -90.0 || lat > 90.0) {
+            return ValidationResult.Error("Latitude inválida. Deve estar entre -90 e 90")
+        }
+    }
+
+    gpsDevice.longitude?.let { lon ->
+        if (lon < -180.0 || lon > 180.0) {
+            return ValidationResult.Error("Longitude inválida. Deve estar entre -180 e 180")
+        }
+    }
+
+    // Velocidade (se fornecida)
+    gpsDevice.speed?.let { speed ->
+        if (speed < 0.0) {
+            return ValidationResult.Error("Velocidade não pode ser negativa")
+        }
+    }
+
+    // Heading/direção (se fornecida)
+    gpsDevice.heading?.let { heading ->
+        if (heading < 0.0 || heading > 360.0) {
+            return ValidationResult.Error("Direção inválida. Deve estar entre 0 e 360")
+        }
     }
 
     return ValidationResult.Success(gpsDevice)

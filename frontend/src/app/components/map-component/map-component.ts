@@ -215,7 +215,7 @@ export class MapComponent implements AfterViewInit, OnDestroy, OnChanges {
     const popup = new Popup({ offset: 25 }).setHTML(popupHtml);
 
     const marker = new Marker({ element: el })
-      .setLngLat([markerData.longitude, markerData.latitude])
+      .setLngLat([markerData.longitude ?? 0, markerData.latitude ?? 0])
       .setPopup(popup)
       .addTo(this.map);
 
