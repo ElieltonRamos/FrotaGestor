@@ -5,9 +5,6 @@ import io.ktor.network.sockets.*
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.*
-import parseImeiFromLogin
-import parseGpsPacket
-import saveOrUpdateGps
 
 suspend fun startTcpServer() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
@@ -54,7 +51,7 @@ suspend fun handleDevice(socket: Socket) {
                     0x12, 0x22 -> { // GPS fix / status
                         if (imei == null) continue // ignorar se login não recebido
                         val gps = parseGpsPacket(data)
-                        saveOrUpdateGps(imei, gps)
+                        saveOrUpdateGps(imei, gps!!)
 
                         // ACK para GPS
                         val serial = data[1] // número de série do pacote
