@@ -132,10 +132,7 @@
 
       <!-- Modal Body -->
       @if (editingDevice) {
-      <div
-        class="p-6 flex flex-col gap-4 overflow-y-auto"
-        *ngIf="editingDevice"
-      >
+      <div class="p-6 flex flex-col gap-4 overflow-y-auto">
         <!-- IMEI Field -->
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">
@@ -216,8 +213,8 @@
 
           <!-- Icon Grid Selection -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            @for (icon of availableIcons; track icon.value) {
             <div
-              *ngFor="let icon of availableIcons"
               (click)="editingDevice.iconMapUrl = icon.value"
               [class.ring-2]="editingDevice.iconMapUrl === icon.value"
               [class.ring-blue-500]="editingDevice.iconMapUrl === icon.value"
@@ -234,6 +231,7 @@
                 {{ icon.label }}
               </span>
             </div>
+            }
           </div>
         </div>
       </div>
