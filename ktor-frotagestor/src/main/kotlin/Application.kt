@@ -1,6 +1,7 @@
 package com.frotagestor
 
 import com.frotagestor.accurate_gt_06.startTcpServerGt06
+import com.frotagestor.accurate_suntech_st310.startTcpServerSuntech
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.plugins.configureRouting
 import io.ktor.server.application.*
@@ -19,7 +20,8 @@ fun Application.module() {
     configureValidateBody()
     configureRouting()
     launch {
-        startTcpServerGt06()
+//        startTcpServerGt06()
+        startTcpServerSuntech()
     }
 }
 

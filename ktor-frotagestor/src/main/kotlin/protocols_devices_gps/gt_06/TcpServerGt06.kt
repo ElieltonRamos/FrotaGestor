@@ -9,8 +9,8 @@ import kotlinx.coroutines.*
 suspend fun startTcpServerGt06() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
-        .bind("0.0.0.0", 5023)
-    println("Servidor TCP rodando na porta 5023 para protocolo GT-06")
+        .bind("0.0.0.0", 3003)
+    println("Servidor TCP rodando na porta 3003 para protocolo GT-06")
 
     while (true) {
         val socket = serverSocket.accept()
