@@ -15,10 +15,10 @@ from datetime import datetime
 import sys
 
 # ================== CONFIGURAÇÃO ==================
-HOST = "notebook.tail240759.ts.net"
-PORT = 8443
-PROTOCOL = "UDP"                      # "UDP" ou "TCP"
-DEV_ID = "850000"                     # ID do dispositivo (6 dígitos)
+HOST = "179.124.217.117"
+PORT = 5011
+PROTOCOL = "TCP"                      # "UDP" ou "TCP"
+DEV_ID = "123456789"                     # ID do dispositivo (6 dígitos)
 FIRMWARE_VER = "001"                  # Versão do firmware
 INTERVAL = 2                          # Intervalo entre envios (segundos)
 ITERATIONS = 120                      # Quantidade de posições

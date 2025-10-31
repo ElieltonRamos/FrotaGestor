@@ -6,7 +6,7 @@ import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.*
 
-suspend fun startTcpServer() {
+suspend fun startTcpServerGt06() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
         .bind("0.0.0.0", 5023)
