@@ -20,11 +20,6 @@ fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
         return ValidationResult.Error("O campo IMEI é obrigatório")
     }
 
-    // Validação do formato do IMEI (15 dígitos)
-    if (!gpsDevice.imei.matches(Regex("^\\d{15}$"))) {
-        return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
-    }
-
     // Validação do iconMapUrl (obrigatório)
     if (gpsDevice.iconMapUrl.isNullOrBlank()) {
         return ValidationResult.Error("O campo iconMapUrl é obrigatório")
@@ -85,15 +80,6 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
         gpsDevice.ignition == null
     ) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
-    }
-
-    // Validações de formato (apenas se os campos forem fornecidos)
-
-    // IMEI (se fornecido)
-    gpsDevice.imei?.let { imei ->
-        if (imei.isNotBlank() && !imei.matches(Regex("^\\d{15}$"))) {
-            return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
-        }
     }
 
     // Coordenadas (se fornecidas)
