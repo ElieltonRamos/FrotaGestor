@@ -1,102 +1,230 @@
 <div
   class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200"
 >
-  <!-- Cabeçalho e detalhes -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2 flex flex-col">
-      <div class="flex items-center justify-between mb-6 gap-4">
-        <h2 class="text-xl font-semibold text-gray-800">Detalhes do Veículo</h2>
-        <button
-          class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
-          (click)="goBack()"
+  <div
+    class="max-w-5xl mx-auto mt-8 bg-white shadow rounded-lg border border-gray-200 overflow-hidden"
+  >
+    <!-- Cabeçalho + Detalhes Unificados + Imagem -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Coluna 1 e 2: Detalhes do Veículo e GPS (Unificado) -->
+      <div class="lg:col-span-2 p-6 bg-gray-50">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-800">
+            Detalhes do Veículo e GPS
+          </h2>
+          <button
+            class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+            (click)="goBack()"
+          >
+            Voltar
+          </button>
+        </div>
+
+        @if (vehicle || gpsDevice()) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <!-- Dados do Veículo -->
+          <div class="space-y-4">
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Placa</label
+              >
+              <p class="text-gray-800 text-sm">{{ vehicle?.plate || "-" }}</p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Modelo</label
+              >
+              <p class="text-gray-800 text-sm">{{ vehicle?.model || "-" }}</p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Marca</label
+              >
+              <p class="text-gray-800 text-sm">{{ vehicle?.brand || "-" }}</p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Ano</label
+              >
+              <p class="text-gray-800 text-sm">{{ vehicle?.year || "-" }}</p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Status</label
+              >
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium"
+                [class.bg-green-100]="vehicle?.status === 'ATIVO'"
+                [class.text-green-700]="vehicle?.status === 'ATIVO'"
+                [class.bg-red-100]="vehicle?.status === 'INATIVO'"
+                [class.text-red-700]="vehicle?.status === 'INATIVO'"
+                [class.bg-yellow-100]="vehicle?.status === 'MANUTENCAO'"
+                [class.text-yellow-700]="vehicle?.status === 'MANUTENCAO'"
+              >
+                {{ vehicle?.status || "-" }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Dados do GPS -->
+          <div class="space-y-4">
+            @if (gpsDevice()) {
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >IMEI</label
+              >
+              <p class="text-gray-800 text-sm font-mono">
+                {{ gpsDevice()!.imei }}
+              </p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Última Leitura</label
+              >
+              <p class="text-gray-800 text-sm">
+                {{
+                  gpsDevice()!.dateTime
+                    ? (gpsDevice()!.dateTime | date : "dd/MM/yyyy HH:mm")
+                    : "-"
+                }}
+              </p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Velocidade</label
+              >
+              <p class="text-gray-800 text-sm">
+                {{
+                  gpsDevice()!.speed != null
+                    ? gpsDevice()!.speed + " km/h"
+                    : "-"
+                }}
+              </p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Direção</label
+              >
+              <p class="text-gray-800 text-sm">
+                {{
+                  gpsDevice()!.heading != null
+                    ? gpsDevice()!.heading + "°"
+                    : "-"
+                }}
+              </p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+                >Ignição</label
+              >
+              <span
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                [class.bg-green-100]="gpsDevice()!.ignition"
+                [class.text-green-700]="gpsDevice()!.ignition"
+                [class.bg-red-100]="!gpsDevice()!.ignition"
+                [class.text-red-700]="!gpsDevice()!.ignition"
+              >
+                <span
+                  class="w-2 h-2 rounded-full mr-1.5"
+                  [class.bg-green-500]="gpsDevice()!.ignition"
+                  [class.bg-red-500]="!gpsDevice()!.ignition"
+                >
+                </span>
+                {{ gpsDevice()!.ignition ? "Ligada" : "Desligada" }}
+              </span>
+            </div>
+            } @else {
+            <p class="text-gray-500 text-sm italic">
+              Nenhum dispositivo GPS vinculado.
+            </p>
+            }
+          </div>
+        </div>
+
+        <!-- Coordenadas (em uma linha abaixo) -->
+        @if (gpsDevice() && (gpsDevice()!.latitude || gpsDevice()!.longitude)) {
+        <div
+          class="mt-6 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm"
         >
-          Voltar
-        </button>
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Latitude</label
+            >
+            <p class="text-gray-800 font-mono">
+              {{ gpsDevice()!.latitude?.toFixed(6) }}
+            </p>
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Longitude</label
+            >
+            <p class="text-gray-800 font-mono">
+              {{ gpsDevice()!.longitude?.toFixed(6) }}
+            </p>
+          </div>
+        </div>
+        }
+
+        <!-- Ícone do GPS -->
+        @if (gpsDevice()?.iconMapUrl) {
+        <div class="mt-5 flex flex-col justify-start">
+          <p class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+            Ícone no Mapa
+          </p>
+          <img
+            [src]="gpsDevice()!.iconMapUrl!"
+            alt="Ícone do GPS"
+            class="h-22 w-22 object-contain"
+            onerror="this.style.display='none'"
+          />
+        </div>
+        } } @else {
+        <p class="text-gray-500 text-sm italic">Carregando informações...</p>
+        }
+
+        <!-- Botões de ação -->
+        <div class="flex justify-end mt-6 space-x-3">
+          @if(vehicle?.status === 'ATIVO') {
+          <button
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
+            (click)="disableVehicle()"
+            [disabled]="loading"
+          >
+            @if(loading) { Aguardando... } @else { Desabilitar Veículo }
+          </button>
+          } @if(vehicle?.status === 'INATIVO') {
+          <button
+            class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
+            (click)="activateVehicle()"
+            [disabled]="loading"
+          >
+            @if(loading) { Aguardando... } @else { Ativar Veículo }
+          </button>
+          }
+        </div>
       </div>
 
-      @if (vehicle) {
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Placa</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.plate }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Modelo</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.model }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Marca</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.brand || "-" }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Ano</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.year || "-" }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Status</label
-          >
-          <span
-            class="px-3 py-1 rounded-full text-xs font-medium"
-            [class.bg-green-100]="vehicle.status === 'ATIVO'"
-            [class.text-green-700]="vehicle.status === 'ATIVO'"
-            [class.bg-red-100]="vehicle.status === 'INATIVO'"
-            [class.text-red-700]="vehicle.status === 'INATIVO'"
-            [class.bg-yellow-100]="vehicle.status === 'MANUTENCAO'"
-            [class.text-yellow-700]="vehicle.status === 'MANUTENCAO'"
-          >
-            {{ vehicle.status }}
-          </span>
-        </div>
+      <!-- Coluna 3: Imagem do Veículo (mantida!) -->
+      <div class="hidden lg:flex items-center justify-center p-8">
+        <img
+          src="vehicle-details.png"
+          alt="Ilustração de veículo"
+          class="max-h-64 opacity-90"
+          style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
+        />
       </div>
-      } @else {
-      <p class="text-gray-500 text-sm italic">Carregando veículo...</p>
-      }
-
-      <!-- Rodapé com botões -->
-      @if(vehicle && vehicle.status === 'ATIVO') {
-      <div class="flex justify-end mt-2">
-        <button
-          class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
-          (click)="disableVehicle()"
-          [disabled]="loading"
-        >
-          @if(loading) { Aguardando... } @else { Desabilitar Veículo }
-        </button>
-      </div>
-      } @if(vehicle && vehicle.status === 'INATIVO') {
-      <div class="flex justify-end mt-2">
-        <button
-          class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
-          (click)="activateVehicle()"
-          [disabled]="loading"
-        >
-          @if(loading) { Aguardando... } @else { Ativar Veículo }
-        </button>
-      </div>
-      }
-    </div>
-
-    <div class="hidden lg:flex items-center justify-center">
-      <img
-        src="vehicle-details.png"
-        alt="Ilustração de veículo"
-        class="max-h-64 opacity-90"
-        style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
-      />
     </div>
   </div>
 
@@ -167,6 +295,32 @@
         [totalPages]="expensesTotalPages"
         [page]="expensesPage"
         (pageChanged)="onExpensesPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+
+  <!-- Últimos Eventos GPS -->
+  <div class="mt-10 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Últimos Eventos GPS
+    </h3>
+
+    <div class="flex-1 overflow-y-auto">
+      <app-base-list
+        [columns]="eventsColumns"
+        [data]="gpsEvents"
+        [showActions]="false"
+      ></app-base-list>
+    </div>
+
+    <!-- Paginação -->
+    <div class="border-t border-gray-200 pt-3 flex justify-end">
+      <app-paginator
+        [totalItems]="eventsTotal"
+        [itemsPerPage]="eventsLimit"
+        [totalPages]="eventsTotalPages"
+        [page]="eventsPage"
+        (pageChanged)="onEventsPageChange($event)"
       ></app-paginator>
     </div>
   </div>

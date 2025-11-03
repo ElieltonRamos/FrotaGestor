@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
-import { GpsDevice } from '../interfaces/gpsDevice';
+import { GpsDevice, GpsHistory } from '../interfaces/gpsDevice';
 import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
@@ -62,7 +62,8 @@ export class GpsDeviceService {
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         // Mapeia os nomes dos filtros para os esperados pelo backend
-        const filterKey = key === 'vehicleId' ? 'vehicleId' : key === 'imei' ? 'imei' : key;
+        const filterKey =
+          key === 'vehicleId' ? 'vehicleId' : key === 'imei' ? 'imei' : key;
         params = params.set(filterKey, value.toString());
       }
     });
@@ -91,6 +92,43 @@ export class GpsDeviceService {
   getGpsDeviceByVehicle(vehicleId: number): Observable<GpsDevice> {
     return this.http.get<GpsDevice>(
       `${API_URL}/gps-devices/vehicle/${vehicleId}`
+    );
+  }
+
+  /**
+   * Busca o histórico de posições de um dispositivo GPS com paginação e filtro por período
+   * @param deviceId - ID do dispositivo GPS
+   * @param page - Número da página (padrão: 1)
+   * @param limit - Itens por página (padrão: 10)
+   * @param startDate - Data/hora inicial (ISO string, opcional)
+   * @param endDate - Data/hora final (ISO string, opcional)
+   * @param sortAsc - Ordem ascendente por timestamp (padrão: false = DESC)
+   */
+  getHistoryDevice(
+    deviceId: number,
+    page: number = 1,
+    limit: number = 10,
+    startDate?: string,
+    endDate?: string,
+    sortAsc: boolean = false
+  ): Observable<GpsHistory[]> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('sortBy', 'timestamp')
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    // Adiciona apenas os filtros de data se fornecidos
+    if (startDate) {
+      params = params.set('startDate', startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate);
+    }
+
+    return this.http.get<GpsHistory[]>(
+      `${API_URL}/gps-devices/vehicle/${deviceId}/history`,
+      { params }
     );
   }
 }
