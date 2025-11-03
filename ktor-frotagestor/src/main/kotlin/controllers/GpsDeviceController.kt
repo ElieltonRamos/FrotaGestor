@@ -5,6 +5,7 @@ import com.frotagestor.services.GpsDeviceService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import kotlinx.datetime.LocalDateTime
 
 class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
 
@@ -95,6 +96,32 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in findGpsDeviceByVehicleId GPS device route: ${e.message}")
+            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun getHistoryByVehicle(call: ApplicationCall) {
+        try {
+            val vehicleId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+
+            // Lê query parameters opcionais start e end
+            val startParam = call.request.queryParameters["startDate"]
+            val endParam = call.request.queryParameters["endDate"]
+
+            val startDate: LocalDateTime? = startParam?.let { LocalDateTime.parse(it) }
+            val endDate: LocalDateTime? = endParam?.let { LocalDateTime.parse(it) }
+
+            val serviceResult = gpsDeviceService.getHistoryByVehicle(
+                vehicleId = vehicleId,
+                startDate = startDate,
+                endDate = endDate
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getHistoryByVehicle route: ${e.message}")
             e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }

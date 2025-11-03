@@ -38,7 +38,7 @@ suspend fun handleDevice(socket: Socket) {
     val buffer = StringBuilder()
 
     try {
-        withTimeoutOrNull(3.minutes) {
+        withTimeoutOrNull(5.minutes) {
             while (!input.isClosedForRead) {
                 val bytes = ByteArray(1024)
                 val read = input.readAvailable(bytes)

@@ -31,3 +31,14 @@ data class PartialGpsDevice(
     val title: String? = null,
     val ignition: Boolean? = null
 )
+
+@Serializable
+data class GpsHistory(
+    val id: Long,
+    val gpsDeviceId: Int,
+    val vehicleId: Int?,
+    val dateTime: LocalDateTime,
+    val latitude: Double,
+    val longitude: Double,
+    val rawLog: String,
+)

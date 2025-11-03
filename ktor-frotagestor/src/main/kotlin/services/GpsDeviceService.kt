@@ -2,11 +2,19 @@ package com.frotagestor.services
 
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
+import com.frotagestor.database.models.GpsHistoryTable
 import com.frotagestor.interfaces.*
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
@@ -231,4 +239,45 @@ class GpsDeviceService {
             ServiceResponse(HttpStatusCode.OK, device)
         }
     }
+
+    suspend fun getHistoryByVehicle(
+        vehicleId: Int,
+        startDate: LocalDateTime? = null,
+        endDate: LocalDateTime? = null
+    ): ServiceResponse<List<GpsHistory>> {
+        return DatabaseFactory.dbQuery {
+            // Define o fuso horário
+            val tz = TimeZone.currentSystemDefault()
+
+            // Início e fim do dia atual caso start/end sejam nulos
+            val today = kotlinx.datetime.Clock.System.todayIn(tz)
+            val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
+            val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
+
+            // Cria a query filtrando veículo e intervalo de tempo
+            val query = GpsHistoryTable.selectAll().where {
+                (GpsHistoryTable.vehicleId eq vehicleId) and
+                        (GpsHistoryTable.dateTime greaterEq todayStart) and
+                        (GpsHistoryTable.dateTime lessEq todayEnd)
+            }
+
+            // Ordena pelo timestamp
+            val results = query
+                .orderBy(GpsHistoryTable.dateTime to SortOrder.ASC)
+                .map { row ->
+                    GpsHistory(
+                        id = row[GpsHistoryTable.id],
+                        gpsDeviceId = row[GpsHistoryTable.gpsDeviceId],
+                        vehicleId = row[GpsHistoryTable.vehicleId],
+                        dateTime = row[GpsHistoryTable.dateTime],
+                        latitude = row[GpsHistoryTable.latitude].toDouble(),
+                        longitude = row[GpsHistoryTable.longitude].toDouble(),
+                        rawLog = row[GpsHistoryTable.rawLog],
+                    )
+                }
+
+            ServiceResponse(HttpStatusCode.OK, results)
+        }
+    }
+
 }

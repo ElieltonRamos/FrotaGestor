@@ -79,3 +79,20 @@ CREATE TABLE gps_devices (
     ignition BOOLEAN DEFAULT FALSE,           -- Ignition ligada/desligada
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
 );
+
+CREATE TABLE gps_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,      -- Identificador único do registro
+    gps_device_id INT NOT NULL,                -- Referência ao dispositivo GPS
+    vehicle_id INT NULL,                       -- Referência opcional ao veículo
+    date_time DATETIME NOT NULL,               -- Data e hora do ponto
+    latitude DECIMAL(9,6) NOT NULL,           -- Latitude
+    longitude DECIMAL(9,6) NOT NULL,          -- Longitude
+    raw_log TEXT NOT NULL,                     -- Log bruto recebido do rastreador (JSON, NMEA, etc.)
+
+    FOREIGN KEY (gps_device_id) REFERENCES gps_devices(id) ON DELETE CASCADE,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL,
+
+    INDEX idx_device_time (gps_device_id, date_time),  -- Consultas por dispositivo e tempo
+    INDEX idx_datetime (date_time),                    -- Consultas globais por tempo
+    INDEX idx_vehicle_time (vehicle_id, date_time)    -- Consultas por veículo e tempo
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

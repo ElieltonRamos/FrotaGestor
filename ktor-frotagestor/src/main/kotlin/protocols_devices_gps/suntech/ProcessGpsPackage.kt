@@ -3,6 +3,7 @@ package com.frotagestor.protocols_devices_gps.suntech
 import com.frotagestor.accurate_gt_06.findVehicleIdByImei
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
+import com.frotagestor.database.models.GpsHistoryTable
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -37,16 +38,12 @@ suspend fun processMessage(
 
         // === PACOTE DE POSIÇÃO NORMAL ===
         msg.startsWith("ST300GPS;") || msg.startsWith("ST300STT;") -> {
-            /*
-             * ST300GPS / ST300STT = Pacote de posição padrão enviado periodicamente
-             * STT é o formato mais comum de posições de rastreamento normal
-             */
             if (currentId == null) {
                 val id = extractDeviceId(msg)
                 if (id != null) {
                     val gps = parseGpsPacket(msg)
                     if (gps != null) {
-                        saveOrUpdateGps(id, gps)
+                        saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
                         println("[${generateDate()}] 📍 Posição STT – ID: $id")
                         val ack = "ST300ACK;$id\r\n".toByteArray(Charsets.US_ASCII)
                         onAck(ack)
@@ -58,7 +55,7 @@ suspend fun processMessage(
             }
             val gps = parseGpsPacket(msg)
             if (gps != null) {
-                saveOrUpdateGps(currentId, gps)
+                saveOrUpdateGps(currentId, gps, msg) // Passa a mensagem raw
                 println("[${generateDate()}] 📍 Posição STT – ID: $currentId")
                 val ack = "ST300ACK;$currentId\r\n".toByteArray(Charsets.US_ASCII)
                 onAck(ack)
@@ -74,25 +71,11 @@ suspend fun processMessage(
 
         // === ALERTA (ALT) – indica eventos automáticos do dispositivo ===
         msg.startsWith("ST300ALT;") -> {
-            /*
-             * ST300ALT = Alerta geral de eventos como:
-             *  - Entrada digital ativada/desativada
-             *  - Desconexão de alimentação
-             *  - Movimento detectado
-             *  - Abertura de porta / sensor
-             *  - Botão SOS (dependendo da configuração)
-             *
-             * IMPORTANTE: Evento 40 = Ignição ligada / Evento 41 = Ignição desligada
-             * O ST310 detecta ignição por TENSÃO na Entrada 1 (fio branco):
-             *   - Tensão presente (12V/24V) = Ignição LIGADA (evento 40)
-             *   - Sem tensão (0V) = Ignição DESLIGADA (evento 41)
-             */
             val id = extractDeviceId(msg) ?: currentId
             val gps = parseGpsPacket(msg)
             if (gps != null && id != null) {
-                saveOrUpdateGps(id, gps)
+                saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
 
-                // Identifica o tipo de evento para log mais específico
                 val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
                 val eventDescription = when (eventCode) {
                     40 -> "Ignição LIGADA (tensão detectada na Entrada 1)"
@@ -109,19 +92,11 @@ suspend fun processMessage(
 
         // === EMERGÊNCIA (EMG) – indica acionamento manual de pânico/SOS ===
         msg.startsWith("ST300EMG;") -> {
-            /*
-             * ST300EMG = Emergência / SOS.
-             * Eventos comuns:
-             *  - Evento 3: Bateria principal desconectada
-             *  - Evento 7: Movimento detectado / Shock / Collision
-             *  - Botão de pânico pressionado
-             */
             val id = extractDeviceId(msg) ?: currentId
             val gps = parseGpsPacket(msg)
             if (gps != null && id != null) {
-                saveOrUpdateGps(id, gps)
+                saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
 
-                // Identifica o tipo de emergência
                 val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
                 val emergencyType = when (eventCode) {
                     3 -> "Bateria principal desconectada"
@@ -250,7 +225,7 @@ fun parseDeviceDateTime(dateStr: String, timeStr: String): LocalDateTime {
     }
 }
 
-suspend fun saveOrUpdateGps(imei: String, gps: GpsData) {
+suspend fun saveOrUpdateGps(imei: String, gps: GpsData, rawMessage: String = "") {
     val vehicleId = findVehicleIdByImei(imei)
     if (vehicleId == null) {
         println("⚠️ IMEI $imei não vinculado a nenhum veículo — ignorando pacote")
@@ -270,29 +245,33 @@ suspend fun saveOrUpdateGps(imei: String, gps: GpsData) {
                     "dateTime=${gps.dateTime}"
         )
 
-        if (existingDevice != null) {
-            // Atualiza posição se já existe registro
-            GpsDevicesTable.update({ GpsDevicesTable.imei eq imei }) { row ->
-                row[GpsDevicesTable.latitude] = gps.latitude.toBigDecimal()
-                row[GpsDevicesTable.longitude] = gps.longitude.toBigDecimal()
-                row[GpsDevicesTable.speed] = gps.speed.toBigDecimal()
-                row[GpsDevicesTable.heading] = (gps.heading % 360.0).toBigDecimal()
-                row[GpsDevicesTable.dateTime] = gps.dateTime
-                row[GpsDevicesTable.ignition] = gps.ignition
-            }
-        } else {
-            // Insere novo registro
-            GpsDevicesTable.insert { row ->
-                row[GpsDevicesTable.vehicleId] = vehicleId
-                row[GpsDevicesTable.imei] = imei
-                row[GpsDevicesTable.latitude] = gps.latitude.toBigDecimal()
-                row[GpsDevicesTable.longitude] = gps.longitude.toBigDecimal()
-                row[GpsDevicesTable.speed] = gps.speed.toBigDecimal()
-                row[GpsDevicesTable.heading] = (gps.heading % 360.0).toBigDecimal()
-                row[GpsDevicesTable.dateTime] = gps.dateTime
-                row[GpsDevicesTable.ignition] = gps.ignition
-            }
+        if (existingDevice == null) {
+            println("⚠️ Dispositivo GPS com IMEI $imei não está cadastrado no sistema")
+            return@dbQuery
         }
+
+        val gpsDeviceId = existingDevice[GpsDevicesTable.id]
+
+        // Atualiza posição do dispositivo
+        GpsDevicesTable.update({ GpsDevicesTable.imei eq imei }) { row ->
+            row[GpsDevicesTable.latitude] = gps.latitude.toBigDecimal()
+            row[GpsDevicesTable.longitude] = gps.longitude.toBigDecimal()
+            row[GpsDevicesTable.speed] = gps.speed.toBigDecimal()
+            row[GpsDevicesTable.heading] = (gps.heading % 360.0).toBigDecimal()
+            row[GpsDevicesTable.dateTime] = gps.dateTime
+            row[GpsDevicesTable.ignition] = gps.ignition
+        }
+
+        // Salva no histórico
+        GpsHistoryTable.insert { row ->
+            row[GpsHistoryTable.gpsDeviceId] = gpsDeviceId
+            row[GpsHistoryTable.vehicleId] = vehicleId
+            row[GpsHistoryTable.dateTime] = gps.dateTime
+            row[GpsHistoryTable.latitude] = gps.latitude.toBigDecimal()
+            row[GpsHistoryTable.longitude] = gps.longitude.toBigDecimal()
+            row[GpsHistoryTable.rawLog] = rawMessage
+        }
+        println("[${generateDate()}] ✅ Histórico GPS salvo - deviceId=$gpsDeviceId, vehicleId=$vehicleId")
     }
 }
 
