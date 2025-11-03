@@ -20,54 +20,6 @@ import {
 } from '../../../interfaces/gpsDevice';
 import { GpsDeviceService } from '../../../services/gps-device.service';
 
-const mockHistory = [
-  {
-    "id": 1,
-    "gpsDeviceId": 1,
-    "vehicleId": 4,
-    "dateTime": "2025-11-03T13:20:00",
-    "latitude": -14.850509,
-    "longitude": -42.868326,
-    "rawLog": "ST300EMG;807452267;145;407;20251103;13:20:00;8f8218;-14.850509;-042.868326;000.000;325.25;9;1;46886790;12.00;000000;7;080059;4.1;1"
-  },
-  {
-    "id": 2,
-    "gpsDeviceId": 1,
-    "vehicleId": 4,
-    "dateTime": "2025-11-03T13:28:00",
-    "latitude": -14.909814,
-    "longitude": -42.833833,
-    "rawLog": "ST300EMG;807452267;145;407;20251103;13:28:00;8f8218;-14.909814;-042.833833;000.000;325.25;9;1;46886790;12.00;000000;7;080059;4.1;1"
-  },
-  {
-    "id": 3,
-    "gpsDeviceId": 1,
-    "vehicleId": 4,
-    "dateTime": "2025-11-03T13:36:00",
-    "latitude": -14.942736,
-    "longitude": -42.835507,
-    "rawLog": "ST300EMG;807452267;145;407;20251103;13:36:00;8f8218;-14.942736;-042.835507;000.000;325.25;9;1;46886790;12.00;000000;7;080059;4.1;1"
-  },
-  {
-    "id": 4,
-    "gpsDeviceId": 1,
-    "vehicleId": 4,
-    "dateTime": "2025-11-03T13:44:00",
-    "latitude": -14.991400,
-    "longitude": -42.849798,
-    "rawLog": "ST300EMG;807452267;145;407;20251103;13:44:00;8f8218;-14.991400;-042.849798;000.000;325.25;9;1;46886790;12.00;000000;7;080059;4.1;1"
-  },
-  {
-    "id": 5,
-    "gpsDeviceId": 1,
-    "vehicleId": 4,
-    "dateTime": "2025-11-03T13:52:00",
-    "latitude": -15.050526,
-    "longitude": -42.839543,
-    "rawLog": "ST300EMG;807452267;145;407;20251103;13:52:00;8f8218;-15.050526;-042.839543;000.000;325.25;9;1;46886790;12.00;000000;7;080059;4.1;1"
-  }
-]
-
 @Component({
   selector: 'app-details-vehicle',
   standalone: true,
@@ -164,10 +116,11 @@ export class DetailsVehicle {
 
     const eventMap: Record<string, { type: string; description: string }> = {
       ST300ALT: { type: 'Alerta', description: 'Alarme de sensor' },
-      ST300EMG: { type: 'Emergência', description: 'Botão de pânico' },
+      ST300EMG: { type: 'Emergência', description: 'Bateria Desconectada' },
       ST300HB: { type: 'Heartbeat', description: 'Relatório periódico' },
       ST300GP: { type: 'Posição', description: 'Atualização GPS' },
       ST300IGN: { type: 'Ignição', description: 'Motor ligado/desligado' },
+      ST300STT: { type: 'Relatório Periódico', description: 'Atualização GPS' }
     };
 
     const info = eventMap[header] || {
@@ -198,9 +151,8 @@ export class DetailsVehicle {
       .getHistoryDevice(vehicleId, this.eventsPage, this.eventsLimit)
       .subscribe({
         next: (res) => {
-          console.log(mockHistory, 'req');
-          this.gpsHistory = mockHistory;
-          this.gpsEvents = mockHistory.map((event) =>
+          this.gpsHistory = res;
+          this.gpsEvents = res.map((event) =>
             this.parseGpsEvent(event.rawLog, event.id)
           );
           this.eventsTotal = 0;

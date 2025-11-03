@@ -330,6 +330,12 @@
     <h3 class="text-lg font-semibold text-gray-800 mb-4">
       Localização no mapa
     </h3>
-    <app-map [markers]="markers"/>
+    <app-map
+      [historyPoints]="gpsHistory!"
+      [mapMode]="'history'"
+      [showUserMarker]="false"
+      [vehicleIconUrl]="gpsDevice()?.iconMapUrl!"
+    >
+    </app-map>
   </div>
 </div>
