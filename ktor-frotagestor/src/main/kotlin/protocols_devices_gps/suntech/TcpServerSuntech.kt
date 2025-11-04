@@ -3,7 +3,6 @@ package com.frotagestor.protocols_devices_gps.suntech
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.readAvailable
-import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.*
 import kotlin.time.Duration.Companion.minutes
 
@@ -33,7 +32,6 @@ suspend fun startTcpServerSuntech() {
 
 suspend fun handleDevice(socket: Socket) {
     val input = socket.openReadChannel()
-    val output = socket.openWriteChannel(autoFlush = true)
     var deviceId: String? = null
     val buffer = StringBuilder()
 
@@ -42,46 +40,42 @@ suspend fun handleDevice(socket: Socket) {
             while (!input.isClosedForRead) {
                 val bytes = ByteArray(1024)
                 val read = input.readAvailable(bytes)
+                if (read <= 0) continue
 
-                if (read > 0) {
-                    val rawBytes = bytes.copyOf(read)
-                    val ascii = rawBytes.toString(Charsets.US_ASCII)
-                    buffer.append(ascii)
+                val ascii = bytes.copyOf(read).toString(Charsets.US_ASCII)
+                buffer.append(ascii)
 
-                    do {
-                        val fullMsg = buffer.toString()
-                        val crIndex = fullMsg.indexOf('\r')
-                        val lfIndex = fullMsg.indexOf('\n')
+                do {
+                    val fullMsg = buffer.toString()
+                    val endIndex = fullMsg.indexOf('\r').takeIf { it >= 0 } ?: fullMsg.indexOf('\n').takeIf { it >= 0 } ?: -1
+                    if (endIndex < 0) break
 
-                        val endIndex = when {
-                            crIndex >= 0 && lfIndex == crIndex + 1 -> crIndex
-                            crIndex >= 0 -> crIndex
-                            lfIndex >= 0 -> lfIndex
-                            else -> -1
+                    val message = fullMsg.substring(0, endIndex).trim()
+                    buffer.delete(0, endIndex + 1)
+
+                    if (message.isNotBlank()) {
+                        logPacket(socket.remoteAddress.toString(), message)
+
+                        val extractedId = extractDeviceId(message)
+                        if (extractedId != null && deviceId == null) {
+                            deviceId = extractedId
+                            DeviceConnectionManager.registerConnection(deviceId!!, socket)
+                            println("[${generateDate()}] Dispositivo registrado: DeviceID=$deviceId")
                         }
 
-                        if (endIndex >= 0) {
-                            val message = fullMsg.substring(0, endIndex).trim()
-                            buffer.delete(0, endIndex + 1)
-
-                            if (message.isNotBlank()) {
-                                logPacket(socket.remoteAddress.toString(), message)
-
-                                deviceId = extractDeviceId(message) ?: deviceId
-
-                                processMessage(message, deviceId) { ack ->
-                                    output.writeFully(ack)
-                                }
-                            }
+                        processMessage(message, deviceId) { imei, command ->
+                            DeviceConnectionManager.sendCommand(imei, "$command\r")
                         }
-                    } while (endIndex >= 0)
-                }
+                    }
+                } while (true)
             }
-        } ?: println("[${generateDate()}] Timeout de leitura – desconectando ${socket.remoteAddress}")
-
+        }
     } catch (e: Exception) {
         println("[${generateDate()}] Erro na conexão ${socket.remoteAddress}: ${e.message}")
     } finally {
+        if (deviceId != null) {
+            DeviceConnectionManager.unregisterConnection(deviceId!!)
+        }
         socket.close()
         println("[${generateDate()}] Conexão encerrada: ${socket.remoteAddress}")
     }

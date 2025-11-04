@@ -25,96 +25,98 @@ data class GpsData(
 suspend fun processMessage(
     msg: String,
     currentId: String?,
-    onAck: suspend (ByteArray) -> Unit
+    onAck: suspend (String, String) -> Unit  // (imei, comando)
 ) {
     when {
-        // === HEARTBEAT / ALIVE (mantém conexão ativa) ===
+        // === HEARTBEAT / ALIVE ===
         msg.startsWith("ST300ALV;") -> {
             val id = msg.substringAfter("ST300ALV;").trim()
             println("[${generateDate()}] HEARTBEAT (ALV) – Device ID: $id")
-            val ack = "ST300ACK;$id\r\n".toByteArray(Charsets.US_ASCII)
-            onAck(ack)
+            onAck(id, "ST300ACK;$id;02;ALV")
         }
 
-        // === PACOTE DE POSIÇÃO NORMAL ===
+        // === PACOTE DE POSIÇÃO ===
         msg.startsWith("ST300GPS;") || msg.startsWith("ST300STT;") -> {
             if (currentId == null) {
-                val id = extractDeviceId(msg)
-                if (id != null) {
-                    val gps = parseGpsPacket(msg)
-                    if (gps != null) {
-                        saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
-                        println("[${generateDate()}] 📍 Posição STT – ID: $id")
-                        val ack = "ST300ACK;$id\r\n".toByteArray(Charsets.US_ASCII)
-                        onAck(ack)
-                        return
-                    }
-                }
-                println("[${generateDate()}] GPS recebido sem ID conhecido. Ignorando.")
+                val id = extractDeviceId(msg) ?: return
+                val gps = parseGpsPacket(msg) ?: return
+                saveOrUpdateGps(id, gps, msg)
+                println("[${generateDate()}] Posição STT – ID: $id")
+                onAck(id, "ST300ACK;$id;02;STT")
                 return
             }
-            val gps = parseGpsPacket(msg)
-            if (gps != null) {
-                saveOrUpdateGps(currentId, gps, msg) // Passa a mensagem raw
-                println("[${generateDate()}] 📍 Posição STT – ID: $currentId")
-                val ack = "ST300ACK;$currentId\r\n".toByteArray(Charsets.US_ASCII)
-                onAck(ack)
-            }
+            val gps = parseGpsPacket(msg) ?: return
+            saveOrUpdateGps(currentId, gps, msg)
+            println("[${generateDate()}] Posição STT – ID: $currentId")
+            onAck(currentId, "ST300ACK;$currentId;02;STT")
         }
 
-        // === PACOTE DE COMANDO (resposta a comandos enviados ao dispositivo) ===
+        // === RESPOSTA DE COMANDO ===
         msg.startsWith("ST300CMD;") -> {
-            println("[${generateDate()}] Comando recebido: $msg")
-            val ack = "ST300ACK;${currentId ?: "UNKNOWN"}\r\n".toByteArray(Charsets.US_ASCII)
-            onAck(ack)
+            val id = extractDeviceId(msg) ?: currentId ?: "UNKNOWN"
+            println("[${generateDate()}] Resposta de comando recebida: $msg")
+
+            val gps = parseGpsPacket(msg)
+            if (gps != null && id != "UNKNOWN") {
+                saveOrUpdateGps(id, gps, msg)
+                println("[${generateDate()}] Posição atualizada via CMD – ID: $id")
+            }
+            onAck(id, "ST300ACK;$id;02;CMD")
         }
 
-        // === ALERTA (ALT) – indica eventos automáticos do dispositivo ===
+        // === RESPOSTA DE CONFIGURAÇÃO ===
+        msg.startsWith("ST300RES;") -> {
+            val id = extractDeviceId(msg) ?: currentId ?: "UNKNOWN"
+            println("[${generateDate()}] Resposta de configuração recebida: $msg")
+
+            val parts = msg.split(";")
+            val result = parts.getOrNull(3)
+            if (result?.contains("Success", ignoreCase = true) == true) {
+                println("[${generateDate()}] Configuração aplicada com sucesso – ID: $id")
+            } else {
+                println("[${generateDate()}] Erro na configuração – ID: $id, Resultado: $result")
+            }
+            onAck(id, "ST300ACK;$id;02;RES")
+        }
+
+        // === ALERTA (ALT) ===
         msg.startsWith("ST300ALT;") -> {
-            val id = extractDeviceId(msg) ?: currentId
-            val gps = parseGpsPacket(msg)
-            if (gps != null && id != null) {
-                saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
+            val id = extractDeviceId(msg) ?: currentId ?: return
+            val gps = parseGpsPacket(msg) ?: return
+            saveOrUpdateGps(id, gps, msg)
 
-                val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
-                val eventDescription = when (eventCode) {
-                    40 -> "Ignição LIGADA (tensão detectada na Entrada 1)"
-                    41 -> "Ignição DESLIGADA (sem tensão na Entrada 1)"
-                    3 -> "Bateria principal desconectada"
-                    else -> "Evento detectado pelo dispositivo"
-                }
-
-                println("[${generateDate()}] ALERTA (ALT) – ID: $id – $eventDescription")
-                val ack = "ST300ACK;$id\r\n".toByteArray(Charsets.US_ASCII)
-                onAck(ack)
+            val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
+            val eventDescription = when (eventCode) {
+                40 -> "Ignição LIGADA"
+                41 -> "Ignição DESLIGADA"
+                3 -> "Bateria principal desconectada"
+                else -> "Evento detectado"
             }
+            println("[${generateDate()}] ALERTA (ALT) – ID: $id – $eventDescription")
+            onAck(id, "ST300ACK;$id;02;ALT")
         }
 
-        // === EMERGÊNCIA (EMG) – indica acionamento manual de pânico/SOS ===
+        // === EMERGÊNCIA (EMG) ===
         msg.startsWith("ST300EMG;") -> {
-            val id = extractDeviceId(msg) ?: currentId
-            val gps = parseGpsPacket(msg)
-            if (gps != null && id != null) {
-                saveOrUpdateGps(id, gps, msg) // Passa a mensagem raw
+            val id = extractDeviceId(msg) ?: currentId ?: return
+            val gps = parseGpsPacket(msg) ?: return
+            saveOrUpdateGps(id, gps, msg)
 
-                val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
-                val emergencyType = when (eventCode) {
-                    3 -> "Bateria principal desconectada"
-                    7 -> "Movimento/Choque detectado"
-                    else -> "Emergência acionada"
-                }
-
-                println("[${generateDate()}] EMERGÊNCIA (EMG) – ID: $id – $emergencyType")
-                val ack = "ST300ACK;$id\r\n".toByteArray(Charsets.US_ASCII)
-                onAck(ack)
+            val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
+            val emergencyType = when (eventCode) {
+                3 -> "Bateria principal desconectada"
+                7 -> "Movimento/Choque detectado"
+                else -> "Emergência acionada"
             }
+            println("[${generateDate()}] EMERGÊNCIA (EMG) – ID: $id – $emergencyType")
+            onAck(id, "ST300ACK;$id;02;EMG")
         }
 
         // === PACOTE DESCONHECIDO ===
         else -> {
             println("[${generateDate()}] Pacote desconhecido: $msg")
-            val ack = "ST300NAK;UNKNOWN\r\n".toByteArray(Charsets.US_ASCII)
-            onAck(ack)
+            val id = currentId ?: "UNKNOWN"
+            onAck(id, "ST300NAK;$id;02")
         }
     }
 }
@@ -140,6 +142,8 @@ fun extractDeviceId(message: String): String? {
         message.startsWith("ST300STT;") -> message.substringAfter("ST300STT;").substringBefore(";").trim()
         message.startsWith("ST300ALT;") -> message.substringAfter("ST300ALT;").substringBefore(";").trim()
         message.startsWith("ST300EMG;") -> message.substringAfter("ST300EMG;").substringBefore(";").trim()
+        message.startsWith("ST300CMD;") -> message.substringAfter("ST300CMD;").substringBefore(";").trim()
+        message.startsWith("ST300RES;") -> message.substringAfter("ST300RES;").substringBefore(";").trim()
         else -> null
     }
 }
@@ -151,29 +155,18 @@ fun parseGpsPacket(data: String): GpsData? {
         // Detecta o tipo de pacote
         val packetType = parts.getOrNull(0) ?: ""
 
-        // Exemplo de pacote ALT/EMG:
-        // ST300ALT;807452267;145;407;20251101;13:10:37;8f8218;-14.949052;-042.840349;000.000;109.50;4;1;46894505;11.93;000000;40;080059;4.0;1
-        // [0]      [1]       [2] [3] [4]      [5]      [6]    [7]        [8]         [9]      [10]   [11][12][13]     [14]  [15]   [16][17]  [18] [19]
-
-        // Exemplo de pacote STT:
-        // ST300STT;807452267;145;407;20251101;13:33:49;8f8244;-14.948942;-042.840272;001.037;007.98;9;1;46894544;0.00;000000;1;0008;080059;4.1;1
-        // [0]      [1]       [2] [3] [4]      [5]      [6]    [7]        [8]         [9]      [10]   [11][12][13]     [14]  [15]   [16][17][18]  [19][20]
-
         val latitude = parts.getOrNull(7)?.toDoubleOrNull() ?: 0.0
         val longitude = parts.getOrNull(8)?.toDoubleOrNull() ?: 0.0
         val speed = parts.getOrNull(9)?.toDoubleOrNull() ?: 0.0
         val heading = parts.getOrNull(10)?.toDoubleOrNull() ?: 0.0
 
         // 🔍 ANÁLISE DA IGNIÇÃO:
-        // Para pacotes ALT/EMG: Campo [16] contém o código do evento
-        // Para pacotes STT: Campo [16] é diferente, usar último campo
         val eventCode = if (packetType.contains("ALT") || packetType.contains("EMG")) {
             parts.getOrNull(16)?.toIntOrNull()
         } else {
             null
         }
 
-        // Campo último sempre contém status I/O
         val ioStatus = parts.lastOrNull()?.toIntOrNull()
 
         // Determina ignição baseado no código do evento (mais confiável)

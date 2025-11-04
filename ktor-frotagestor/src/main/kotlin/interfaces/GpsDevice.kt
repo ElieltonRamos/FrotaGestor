@@ -42,3 +42,25 @@ data class GpsHistory(
     val longitude: Double,
     val rawLog: String,
 )
+
+@Serializable
+data class CommandRequest(
+    val commandType: String,
+    val parameters: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class CommandResponse(
+    val success: Boolean,
+    val message: String,
+    val command: String? = null
+)
+
+@Serializable
+data class ConnectedDeviceDto(
+    val id: Int,
+    val imei: String,
+    val vehicleId: Int?,
+    val title: String?,
+    val connected: Boolean
+)

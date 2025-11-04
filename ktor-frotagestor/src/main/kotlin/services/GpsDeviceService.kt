@@ -8,7 +8,6 @@ import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
