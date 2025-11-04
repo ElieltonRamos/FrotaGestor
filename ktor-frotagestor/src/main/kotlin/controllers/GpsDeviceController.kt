@@ -105,27 +105,58 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
 
     suspend fun getHistoryByVehicle(call: ApplicationCall) {
         try {
+            // 1. Validação do ID do veículo
             val vehicleId = call.parameters["id"]?.toIntOrNull()
-                ?: return call.respond(HttpStatusCode.BadRequest, mapOf("message" to "Parâmetro 'id' inválido ou ausente"))
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+                )
 
-            // Lê query parameters opcionais start e end
-            val startParam = call.request.queryParameters["startDate"]
-            val endParam = call.request.queryParameters["endDate"]
+            // 2. Parâmetros de paginação
+            val page = call.request.queryParameters["page"]?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull()
+                ?.coerceIn(1, 100) ?: 20  // Máximo 100 por página
 
-            val startDate: LocalDateTime? = startParam?.let { LocalDateTime.parse(it) }
-            val endDate: LocalDateTime? = endParam?.let { LocalDateTime.parse(it) }
+            // 3. Parâmetros de data (opcional)
+            val startDate: LocalDateTime? = call.request.queryParameters["startDate"]?.let { param ->
+                try { LocalDateTime.parse(param) } catch (e: Exception) {
+                    return call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("message" to "Formato de 'startDate' inválido. Use ISO: YYYY-MM-DDTHH:MM:SS")
+                    )
+                }
+            }
 
+            val endDate: LocalDateTime? = call.request.queryParameters["endDate"]?.let { param ->
+                try { LocalDateTime.parse(param) } catch (e: Exception) {
+                    return call.respond(
+                        HttpStatusCode.BadRequest,
+                        mapOf("message" to "Formato de 'endDate' inválido. Use ISO: YYYY-MM-DDTHH:MM:SS")
+                    )
+                }
+            }
+
+            // 4. Chama o serviço
             val serviceResult = gpsDeviceService.getHistoryByVehicle(
                 vehicleId = vehicleId,
                 startDate = startDate,
-                endDate = endDate
+                endDate = endDate,
+                page = page,
+                limit = limit
             )
 
+            // 5. Responde com status e corpo
             call.respond(serviceResult.status, serviceResult.data)
+
         } catch (e: Exception) {
+            // 6. Log de erro (produção: use logger)
             println("Error in getHistoryByVehicle route: ${e.message}")
             e.printStackTrace()
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno no servidor")
+            )
         }
     }
 

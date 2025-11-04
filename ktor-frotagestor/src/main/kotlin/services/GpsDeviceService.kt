@@ -4,6 +4,7 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
 import com.frotagestor.interfaces.*
+import com.frotagestor.protocols_devices_gps.suntech.BuildCommandResult
 import com.frotagestor.protocols_devices_gps.suntech.DeviceConnectionManager
 import com.frotagestor.protocols_devices_gps.suntech.buildSuntechCommand
 import com.frotagestor.validations.getOrReturn
@@ -245,27 +246,34 @@ class GpsDeviceService {
     suspend fun getHistoryByVehicle(
         vehicleId: Int,
         startDate: LocalDateTime? = null,
-        endDate: LocalDateTime? = null
-    ): ServiceResponse<List<GpsHistory>> {
+        endDate: LocalDateTime? = null,
+        page: Int = 1,
+        limit: Int = 20
+    ): ServiceResponse<PaginatedResponse<GpsHistory>> {
         return DatabaseFactory.dbQuery {
-            // Define o fuso horário
             val tz = TimeZone.currentSystemDefault()
-
-            // Início e fim do dia atual caso start/end sejam nulos
             val today = kotlinx.datetime.Clock.System.todayIn(tz)
             val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
             val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
 
-            // Cria a query filtrando veículo e intervalo de tempo
-            val query = GpsHistoryTable.selectAll().where {
+            // Validação de página e limite
+            val safePage = if (page < 1) 1 else page
+            val safeLimit = if (limit < 1) 20 else if (limit > 100) 100 else limit
+            val offset = ((safePage - 1) * safeLimit).toLong()
+
+            // Query com filtros
+            val baseQuery = GpsHistoryTable.selectAll().where {
                 (GpsHistoryTable.vehicleId eq vehicleId) and
                         (GpsHistoryTable.dateTime greaterEq todayStart) and
                         (GpsHistoryTable.dateTime lessEq todayEnd)
             }
 
-            // Ordena pelo timestamp
-            val results = query
+            val total = baseQuery.count()
+
+            val results = baseQuery
                 .orderBy(GpsHistoryTable.dateTime to SortOrder.ASC)
+                .limit(safeLimit)
+                .offset(offset)
                 .map { row ->
                     GpsHistory(
                         id = row[GpsHistoryTable.id],
@@ -274,11 +282,22 @@ class GpsDeviceService {
                         dateTime = row[GpsHistoryTable.dateTime],
                         latitude = row[GpsHistoryTable.latitude].toDouble(),
                         longitude = row[GpsHistoryTable.longitude].toDouble(),
-                        rawLog = row[GpsHistoryTable.rawLog],
+                        rawLog = row[GpsHistoryTable.rawLog]
                     )
                 }
 
-            ServiceResponse(HttpStatusCode.OK, results)
+            val totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = PaginatedResponse(
+                    data = results,
+                    total = total.toInt(),
+                    page = safePage,
+                    limit = safeLimit,
+                    totalPages = totalPages
+                )
+            )
         }
     }
 
@@ -301,13 +320,14 @@ class GpsDeviceService {
                 data = CommandResponse(false, "Dispositivo não está conectado ao servidor TCP")
             )
         }
-        val command = try {
-            buildSuntechCommand(deviceId, request)
-        } catch (e: Exception) {
-            return ServiceResponse(
-                status = HttpStatusCode.InternalServerError,
-                data = CommandResponse(false, "Erro ao construir comando: ${e.message}")
-            )
+        val command = when (val buildResult = buildSuntechCommand(deviceId, request)) {
+            is BuildCommandResult.Success -> buildResult.command
+            is BuildCommandResult.Error -> {
+                return ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = CommandResponse(false, buildResult.message)
+                )
+            }
         }
         val success = DeviceConnectionManager.sendCommand(deviceId, command)
         return if (success) {

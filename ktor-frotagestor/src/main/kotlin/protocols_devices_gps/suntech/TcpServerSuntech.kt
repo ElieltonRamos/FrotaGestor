@@ -36,7 +36,7 @@ suspend fun handleDevice(socket: Socket) {
     val buffer = StringBuilder()
 
     try {
-        withTimeoutOrNull(5.minutes) {
+        withTimeoutOrNull(30.minutes) {
             while (!input.isClosedForRead) {
                 val bytes = ByteArray(1024)
                 val read = input.readAvailable(bytes)
@@ -51,7 +51,6 @@ suspend fun handleDevice(socket: Socket) {
                     if (endIndex < 0) break
 
                     val message = fullMsg.substring(0, endIndex).trim()
-                    println("$fullMsg = Log Antes do Parse")
                     buffer.delete(0, endIndex + 1)
 
                     if (message.isNotBlank()) {

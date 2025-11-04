@@ -28,14 +28,11 @@ suspend fun processMessage(
     onAck: suspend (String, String) -> Unit  // (imei, comando)
 ) {
     when {
-        // === HEARTBEAT / ALIVE ===
         msg.startsWith("ST300ALV;") -> {
             val id = msg.substringAfter("ST300ALV;").substringBefore(";").trim()
             println("[${generateDate()}] HEARTBEAT (ALV) – Device ID: $id")
-            // ✅ CORREÇÃO: Não envia ACK para heartbeat, apenas registra
         }
 
-        // === PACOTE DE POSIÇÃO (STT/GPS) ===
         msg.startsWith("ST300GPS;") || msg.startsWith("ST300STT;") -> {
             val id = if (currentId == null) {
                 extractDeviceId(msg) ?: return
@@ -46,16 +43,14 @@ suspend fun processMessage(
             val gps = parseGpsPacket(msg) ?: return
             saveOrUpdateGps(id, gps, msg)
             println("[${generateDate()}] Posição recebida – ID: $id, Lat: ${gps.latitude}, Lon: ${gps.longitude}")
-            // ✅ CORREÇÃO: Não envia ACK para pacotes de posição normais
         }
 
-        // === RESPOSTA DE COMANDO (CMD) ===
         msg.startsWith("ST300CMD;Res;") -> {
             val id = extractDeviceId(msg) ?: currentId ?: "UNKNOWN"
             println("[${generateDate()}] Resposta de comando recebida: $msg")
             val parts = msg.split(";")
-            val commandType = parts.getOrNull(3) // StatusReq, Enable1, Disable1, etc
-            val result = parts.getOrNull(4) // Success, Failed
+            val commandType = parts.getOrNull(3)
+            val result = parts.getOrNull(4)
             println("[${generateDate()}] Comando: $commandType, Resultado: $result")
             val gps = parseGpsPacket(msg)
             if (gps != null && id != "UNKNOWN") {
@@ -64,12 +59,10 @@ suspend fun processMessage(
             }
         }
 
-        // === ALERTA (ALT) ===
         msg.startsWith("ST300ALT;") -> {
             val id = extractDeviceId(msg) ?: currentId ?: return
             val gps = parseGpsPacket(msg) ?: return
             saveOrUpdateGps(id, gps, msg)
-
             val parts = msg.split(";")
             val alertId = parts.getOrNull(3)?.toIntOrNull()
             val eventDescription = when (alertId) {
@@ -87,7 +80,6 @@ suspend fun processMessage(
             println("[${generateDate()}] ALERTA (ALT) – ID: $id – $eventDescription")
         }
 
-        // === EMERGÊNCIA (EMG) ===
         msg.startsWith("ST300EMG;") -> {
             val id = extractDeviceId(msg) ?: currentId ?: return
             val gps = parseGpsPacket(msg) ?: return
@@ -104,7 +96,6 @@ suspend fun processMessage(
             println("[${generateDate()}] EMERGÊNCIA (EMG) – ID: $id – $emergencyType")
         }
 
-        // === EVENTO (EVT) ===
         msg.startsWith("ST300EVT;") -> {
             val id = extractDeviceId(msg) ?: currentId ?: return
             val gps = parseGpsPacket(msg) ?: return
@@ -115,7 +106,6 @@ suspend fun processMessage(
             println("[${generateDate()}] EVENTO (EVT) – ID: $id – Tipo: $eventType")
         }
 
-        // === PACOTE DESCONHECIDO ===
         else -> {
             println("[${generateDate()}] ⚠️ Pacote desconhecido: $msg")
             // Não envia NAK, apenas loga
@@ -161,22 +151,14 @@ fun parseGpsPacket(data: String): GpsData? {
     return try {
         val parts = data.split(";")
         val packetType = parts.getOrNull(0) ?: ""
-
         val latitude = parts.getOrNull(7)?.toDoubleOrNull() ?: 0.0
         val longitude = parts.getOrNull(8)?.toDoubleOrNull() ?: 0.0
         val speed = parts.getOrNull(9)?.toDoubleOrNull() ?: 0.0
         val heading = parts.getOrNull(10)?.toDoubleOrNull() ?: 0.0
-
-        // 🔍 ANÁLISE DA IGNIÇÃO:
         val eventCode = if (packetType.contains("ALT") || packetType.contains("EMG")) {
             parts.getOrNull(16)?.toIntOrNull()
-        } else {
-            null
-        }
-
+        } else { null }
         val ioStatus = parts.lastOrNull()?.toIntOrNull()
-
-        // Determina ignição baseado no código do evento (mais confiável)
         val ignition = when (eventCode) {
             40 -> true   // Evento de ignição ligada
             41 -> false  // Evento de ignição desligada
@@ -186,17 +168,13 @@ fun parseGpsPacket(data: String): GpsData? {
         }
 
         println("[${generateDate()}] 🔍 Debug GPS: type=$packetType, eventCode=$eventCode, ioStatus=$ioStatus, ignition=$ignition")
-
-        // Parseia data/hora do dispositivo (campos 4 e 5)
         val dateStr = parts.getOrNull(4) // 20251101
         val timeStr = parts.getOrNull(5) // 13:10:37
-
         val timestamp = if (dateStr != null && timeStr != null) {
             parseDeviceDateTime(dateStr, timeStr)
         } else {
             Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
         }
-
         GpsData(latitude, longitude, speed, heading, ignition, timestamp)
     } catch (e: Exception) {
         println("[${generateDate()}] Erro ao parsear GPS: ${e.message}")
