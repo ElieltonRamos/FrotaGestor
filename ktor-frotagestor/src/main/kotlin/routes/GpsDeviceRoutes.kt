@@ -17,6 +17,7 @@ fun Route.gpsDeviceRoutes() {
             delete("/{id}") { controller.delete(call) }
             get("vehicle/{id}") { controller.findGpsDeviceByVehicleId(call) }
             get("vehicle/{id}/history") { controller.getHistoryByVehicle(call) }
+            post("commands") { controller.sendCommand(call) }
         }
     }
 }

@@ -2,7 +2,6 @@ package com.frotagestor.plugins
 
 import com.frotagestor.routes.driverRoutes
 import com.frotagestor.routes.expenseRoutes
-import com.frotagestor.routes.gpsCommandRoutes
 import com.frotagestor.routes.gpsDeviceRoutes
 import com.frotagestor.routes.reportsRoutes
 import com.frotagestor.routes.tripRoutes
@@ -24,6 +23,5 @@ fun Application.configureRouting() {
         expenseRoutes()
         reportsRoutes()
         gpsDeviceRoutes()
-        gpsCommandRoutes()
     }
 }

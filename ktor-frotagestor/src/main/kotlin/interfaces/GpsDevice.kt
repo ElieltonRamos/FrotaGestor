@@ -46,6 +46,7 @@ data class GpsHistory(
 @Serializable
 data class CommandRequest(
     val commandType: String,
+    val deviceId: String,
     val parameters: Map<String, String> = emptyMap()
 )
 

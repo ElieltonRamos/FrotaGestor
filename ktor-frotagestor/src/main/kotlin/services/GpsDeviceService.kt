@@ -4,7 +4,10 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
 import com.frotagestor.interfaces.*
+import com.frotagestor.protocols_devices_gps.suntech.DeviceConnectionManager
+import com.frotagestor.protocols_devices_gps.suntech.buildSuntechCommand
 import com.frotagestor.validations.getOrReturn
+import com.frotagestor.validations.validateCommandRequest
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
@@ -279,4 +282,44 @@ class GpsDeviceService {
         }
     }
 
+    suspend fun sendCommandDevice(rawBody: String): ServiceResponse<CommandResponse> {
+        val request = validateCommandRequest(rawBody).getOrReturn { msg ->
+            return ServiceResponse(HttpStatusCode.BadRequest, CommandResponse(false, msg))
+        }
+        val deviceId = request.deviceId
+        val device = DatabaseFactory.dbQuery {
+            GpsDevicesTable.selectAll()
+                .where { GpsDevicesTable.imei eq deviceId }
+                .singleOrNull()
+        } ?: return ServiceResponse(
+            status = HttpStatusCode.NotFound,
+            data = CommandResponse(false, "Dispositivo GPS não encontrado com DeviceId: $deviceId")
+        )
+        if (!DeviceConnectionManager.isDeviceConnected(deviceId)) {
+            return ServiceResponse(
+                status = HttpStatusCode.ServiceUnavailable,
+                data = CommandResponse(false, "Dispositivo não está conectado ao servidor TCP")
+            )
+        }
+        val command = try {
+            buildSuntechCommand(deviceId, request)
+        } catch (e: Exception) {
+            return ServiceResponse(
+                status = HttpStatusCode.InternalServerError,
+                data = CommandResponse(false, "Erro ao construir comando: ${e.message}")
+            )
+        }
+        val success = DeviceConnectionManager.sendCommand(deviceId, command)
+        return if (success) {
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = CommandResponse(true, "Comando enviado com sucesso", command)
+            )
+        } else {
+            ServiceResponse(
+                status = HttpStatusCode.ServiceUnavailable,
+                data = CommandResponse(false, "Falha ao enviar comando")
+            )
+        }
+    }
 }

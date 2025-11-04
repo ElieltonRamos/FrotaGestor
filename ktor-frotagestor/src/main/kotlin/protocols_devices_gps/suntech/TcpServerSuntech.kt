@@ -51,6 +51,7 @@ suspend fun handleDevice(socket: Socket) {
                     if (endIndex < 0) break
 
                     val message = fullMsg.substring(0, endIndex).trim()
+                    println("$fullMsg = Log Antes do Parse")
                     buffer.delete(0, endIndex + 1)
 
                     if (message.isNotBlank()) {

@@ -30,53 +30,38 @@ suspend fun processMessage(
     when {
         // === HEARTBEAT / ALIVE ===
         msg.startsWith("ST300ALV;") -> {
-            val id = msg.substringAfter("ST300ALV;").trim()
+            val id = msg.substringAfter("ST300ALV;").substringBefore(";").trim()
             println("[${generateDate()}] HEARTBEAT (ALV) – Device ID: $id")
-            onAck(id, "ST300ACK;$id;02;ALV")
+            // ✅ CORREÇÃO: Não envia ACK para heartbeat, apenas registra
         }
 
-        // === PACOTE DE POSIÇÃO ===
+        // === PACOTE DE POSIÇÃO (STT/GPS) ===
         msg.startsWith("ST300GPS;") || msg.startsWith("ST300STT;") -> {
-            if (currentId == null) {
-                val id = extractDeviceId(msg) ?: return
-                val gps = parseGpsPacket(msg) ?: return
-                saveOrUpdateGps(id, gps, msg)
-                println("[${generateDate()}] Posição STT – ID: $id")
-                onAck(id, "ST300ACK;$id;02;STT")
-                return
+            val id = if (currentId == null) {
+                extractDeviceId(msg) ?: return
+            } else {
+                currentId
             }
+
             val gps = parseGpsPacket(msg) ?: return
-            saveOrUpdateGps(currentId, gps, msg)
-            println("[${generateDate()}] Posição STT – ID: $currentId")
-            onAck(currentId, "ST300ACK;$currentId;02;STT")
+            saveOrUpdateGps(id, gps, msg)
+            println("[${generateDate()}] Posição recebida – ID: $id, Lat: ${gps.latitude}, Lon: ${gps.longitude}")
+            // ✅ CORREÇÃO: Não envia ACK para pacotes de posição normais
         }
 
-        // === RESPOSTA DE COMANDO ===
-        msg.startsWith("ST300CMD;") -> {
+        // === RESPOSTA DE COMANDO (CMD) ===
+        msg.startsWith("ST300CMD;Res;") -> {
             val id = extractDeviceId(msg) ?: currentId ?: "UNKNOWN"
             println("[${generateDate()}] Resposta de comando recebida: $msg")
-
+            val parts = msg.split(";")
+            val commandType = parts.getOrNull(3) // StatusReq, Enable1, Disable1, etc
+            val result = parts.getOrNull(4) // Success, Failed
+            println("[${generateDate()}] Comando: $commandType, Resultado: $result")
             val gps = parseGpsPacket(msg)
             if (gps != null && id != "UNKNOWN") {
                 saveOrUpdateGps(id, gps, msg)
                 println("[${generateDate()}] Posição atualizada via CMD – ID: $id")
             }
-            onAck(id, "ST300ACK;$id;02;CMD")
-        }
-
-        // === RESPOSTA DE CONFIGURAÇÃO ===
-        msg.startsWith("ST300RES;") -> {
-            val id = extractDeviceId(msg) ?: currentId ?: "UNKNOWN"
-            println("[${generateDate()}] Resposta de configuração recebida: $msg")
-
-            val parts = msg.split(";")
-            val result = parts.getOrNull(3)
-            if (result?.contains("Success", ignoreCase = true) == true) {
-                println("[${generateDate()}] Configuração aplicada com sucesso – ID: $id")
-            } else {
-                println("[${generateDate()}] Erro na configuração – ID: $id, Resultado: $result")
-            }
-            onAck(id, "ST300ACK;$id;02;RES")
         }
 
         // === ALERTA (ALT) ===
@@ -85,15 +70,21 @@ suspend fun processMessage(
             val gps = parseGpsPacket(msg) ?: return
             saveOrUpdateGps(id, gps, msg)
 
-            val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
-            val eventDescription = when (eventCode) {
-                40 -> "Ignição LIGADA"
-                41 -> "Ignição DESLIGADA"
-                3 -> "Bateria principal desconectada"
-                else -> "Evento detectado"
+            val parts = msg.split(";")
+            val alertId = parts.getOrNull(3)?.toIntOrNull()
+            val eventDescription = when (alertId) {
+                1 -> "Ignição LIGADA"
+                2 -> "Ignição DESLIGADA"
+                3 -> "Entrada 1 ativa"
+                4 -> "Entrada 1 inativa"
+                5 -> "Entrada 2 ativa"
+                6 -> "Entrada 2 inativa"
+                18 -> "Excesso de velocidade"
+                19 -> "Bateria principal desconectada"
+                23 -> "Movimento no estacionamento"
+                else -> "Alerta ID: $alertId"
             }
             println("[${generateDate()}] ALERTA (ALT) – ID: $id – $eventDescription")
-            onAck(id, "ST300ACK;$id;02;ALT")
         }
 
         // === EMERGÊNCIA (EMG) ===
@@ -102,21 +93,32 @@ suspend fun processMessage(
             val gps = parseGpsPacket(msg) ?: return
             saveOrUpdateGps(id, gps, msg)
 
-            val eventCode = msg.split(";").getOrNull(16)?.toIntOrNull()
-            val emergencyType = when (eventCode) {
+            val parts = msg.split(";")
+            val emergencyMode = parts.getOrNull(3)?.toIntOrNull()
+            val emergencyType = when (emergencyMode) {
+                1 -> "Botão de pânico acionado"
+                2 -> "Movimento sem ignição"
                 3 -> "Bateria principal desconectada"
-                7 -> "Movimento/Choque detectado"
-                else -> "Emergência acionada"
+                else -> "Emergência modo: $emergencyMode"
             }
             println("[${generateDate()}] EMERGÊNCIA (EMG) – ID: $id – $emergencyType")
-            onAck(id, "ST300ACK;$id;02;EMG")
+        }
+
+        // === EVENTO (EVT) ===
+        msg.startsWith("ST300EVT;") -> {
+            val id = extractDeviceId(msg) ?: currentId ?: return
+            val gps = parseGpsPacket(msg) ?: return
+            saveOrUpdateGps(id, gps, msg)
+
+            val parts = msg.split(";")
+            val eventType = parts.getOrNull(3)?.toIntOrNull()
+            println("[${generateDate()}] EVENTO (EVT) – ID: $id – Tipo: $eventType")
         }
 
         // === PACOTE DESCONHECIDO ===
         else -> {
-            println("[${generateDate()}] Pacote desconhecido: $msg")
-            val id = currentId ?: "UNKNOWN"
-            onAck(id, "ST300NAK;$id;02")
+            println("[${generateDate()}] ⚠️ Pacote desconhecido: $msg")
+            // Não envia NAK, apenas loga
         }
     }
 }
@@ -136,23 +138,28 @@ fun logPacket(remote: String, message: String) {
 }
 
 fun extractDeviceId(message: String): String? {
-    return when {
-        message.startsWith("ST300ALV;") -> message.substringAfter("ST300ALV;").substringBefore(";").trim()
-        message.startsWith("ST300GPS;") -> message.substringAfter("ST300GPS;").substringBefore(";").trim()
-        message.startsWith("ST300STT;") -> message.substringAfter("ST300STT;").substringBefore(";").trim()
-        message.startsWith("ST300ALT;") -> message.substringAfter("ST300ALT;").substringBefore(";").trim()
-        message.startsWith("ST300EMG;") -> message.substringAfter("ST300EMG;").substringBefore(";").trim()
-        message.startsWith("ST300CMD;") -> message.substringAfter("ST300CMD;").substringBefore(";").trim()
-        message.startsWith("ST300RES;") -> message.substringAfter("ST300RES;").substringBefore(";").trim()
-        else -> null
+    return try {
+        when {
+            message.startsWith("ST300ALV;") -> message.substringAfter("ST300ALV;").substringBefore(";").trim()
+            message.startsWith("ST300GPS;") -> message.substringAfter("ST300GPS;").substringBefore(";").trim()
+            message.startsWith("ST300STT;") -> message.substringAfter("ST300STT;").substringBefore(";").trim()
+            message.startsWith("ST300ALT;") -> message.substringAfter("ST300ALT;").substringBefore(";").trim()
+            message.startsWith("ST300EMG;") -> message.substringAfter("ST300EMG;").substringBefore(";").trim()
+            message.startsWith("ST300EVT;") -> message.substringAfter("ST300EVT;").substringBefore(";").trim()
+            message.startsWith("ST300CMD;Res;") -> {
+                message.split(";").getOrNull(2)?.trim()
+            }
+            else -> null
+        }
+    } catch (e: Exception) {
+        println("[${generateDate()}] Erro ao extrair Device ID: ${e.message}")
+        null
     }
 }
 
 fun parseGpsPacket(data: String): GpsData? {
     return try {
         val parts = data.split(";")
-
-        // Detecta o tipo de pacote
         val packetType = parts.getOrNull(0) ?: ""
 
         val latitude = parts.getOrNull(7)?.toDoubleOrNull() ?: 0.0
@@ -197,10 +204,9 @@ fun parseGpsPacket(data: String): GpsData? {
     }
 }
 
-// Função auxiliar para parsear data/hora do dispositivo
 fun parseDeviceDateTime(dateStr: String, timeStr: String): LocalDateTime {
     return try {
-        // dateStr = "20251101" -> ano=2025, mês=11, dia=01
+        // dateStr = "20251104" -> ano=2025, mês=11, dia=04
         val year = dateStr.substring(0, 4).toInt()
         val month = dateStr.substring(4, 6).toInt()
         val day = dateStr.substring(6, 8).toInt()
@@ -213,7 +219,7 @@ fun parseDeviceDateTime(dateStr: String, timeStr: String): LocalDateTime {
 
         LocalDateTime(year, month, day, hour, minute, second)
     } catch (e: Exception) {
-        println("[${generateDate()}] Erro ao parsear data/hora do dispositivo: ${e.message}")
+        println("[${generateDate()}] ❌ Erro ao parsear data/hora: $dateStr $timeStr - ${e.message}")
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     }
 }
@@ -230,13 +236,6 @@ suspend fun saveOrUpdateGps(imei: String, gps: GpsData, rawMessage: String = "")
             .selectAll()
             .where { GpsDevicesTable.imei eq imei }
             .singleOrNull()
-
-        println(
-            "[${generateDate()}] 🔹 Salvando GPS Suntech: " +
-                    "vehicleId=$vehicleId, lat=${gps.latitude}, lon=${gps.longitude}, " +
-                    "speed=${gps.speed}, heading=${gps.heading}, ign=${gps.ignition}, " +
-                    "dateTime=${gps.dateTime}"
-        )
 
         if (existingDevice == null) {
             println("⚠️ Dispositivo GPS com IMEI $imei não está cadastrado no sistema")
@@ -264,7 +263,7 @@ suspend fun saveOrUpdateGps(imei: String, gps: GpsData, rawMessage: String = "")
             row[GpsHistoryTable.longitude] = gps.longitude.toBigDecimal()
             row[GpsHistoryTable.rawLog] = rawMessage
         }
-        println("[${generateDate()}] ✅ Histórico GPS salvo - deviceId=$gpsDeviceId, vehicleId=$vehicleId")
+        println("[${generateDate()}] ✅ GPS salvo - vehicleId=$vehicleId, lat=${gps.latitude}, lon=${gps.longitude}, ign=${gps.ignition}")
     }
 }
 

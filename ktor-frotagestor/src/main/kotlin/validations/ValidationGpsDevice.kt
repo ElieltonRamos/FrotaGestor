@@ -1,5 +1,6 @@
 package com.frotagestor.validations
 
+import com.frotagestor.interfaces.CommandRequest
 import com.frotagestor.interfaces.PartialGpsDevice
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -110,4 +111,35 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
     }
 
     return ValidationResult.Success(gpsDevice)
+}
+
+fun validateCommandRequest(rawBody: String): ValidationResult<CommandRequest> {
+    if (rawBody.isBlank()) {
+        return ValidationResult.Error("Body da requisição está vazio")
+    }
+
+    val commandRequest: CommandRequest = try {
+        Json.decodeFromString<CommandRequest>(rawBody)
+    } catch (e: SerializationException) {
+        return ValidationResult.Error("JSON inválido: ${e.message}")
+    }
+
+    if (commandRequest.commandType.isBlank()) {
+        return ValidationResult.Error("O campo commandType é obrigatório e não pode estar vazio")
+    }
+
+    if (commandRequest.deviceId.isBlank()) {
+        return ValidationResult.Error("O campo deviceId é obrigatório e não pode estar vazio")
+    }
+
+    commandRequest.parameters.forEach { (key, value) ->
+        if (key.isBlank()) {
+            return ValidationResult.Error("Parâmetro com chave vazia não é permitido")
+        }
+        if (value.isBlank()) {
+            return ValidationResult.Error("Parâmetro com valor vazio para a chave '$key' não é permitido")
+        }
+    }
+
+    return ValidationResult.Success(commandRequest)
 }

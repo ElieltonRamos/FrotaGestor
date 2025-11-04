@@ -1,9 +1,11 @@
 package com.frotagestor.controllers
 
+import com.frotagestor.interfaces.CommandRequest
 import com.frotagestor.plugins.RawBodyKey
 import com.frotagestor.services.GpsDeviceService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import kotlinx.datetime.LocalDateTime
 
@@ -122,6 +124,18 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getHistoryByVehicle route: ${e.message}")
+            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
+    suspend fun sendCommand(call: ApplicationCall) {
+        try {
+            val rawBody = call.attributes[RawBodyKey]
+            val serviceResult = gpsDeviceService.sendCommandDevice(rawBody)
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in sendCommand route: ${e.message}")
             e.printStackTrace()
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
