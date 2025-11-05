@@ -11,10 +11,10 @@ object DatabaseSeeder {
         println("🚀 Executando seeds...")
 
         UserSeed.run(jdbcUrl, user, password)
-        DriverSeed.run(jdbcUrl, user, password)
-        VehicleSeed.run(jdbcUrl, user, password)
-        TripSeed.run(jdbcUrl, user, password)
-        ExpenseSeed.run(jdbcUrl, user, password)
+//        DriverSeed.run(jdbcUrl, user, password)
+//        VehicleSeed.run(jdbcUrl, user, password)
+//        TripSeed.run(jdbcUrl, user, password)
+//        ExpenseSeed.run(jdbcUrl, user, password)
 
         println("✅ Seeds executados com sucesso.")
     }

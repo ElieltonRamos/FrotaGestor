@@ -31,3 +31,37 @@ data class PartialGpsDevice(
     val title: String? = null,
     val ignition: Boolean? = null
 )
+
+@Serializable
+data class GpsHistory(
+    val id: Long,
+    val gpsDeviceId: Int,
+    val vehicleId: Int?,
+    val dateTime: LocalDateTime,
+    val latitude: Double,
+    val longitude: Double,
+    val rawLog: String,
+)
+
+@Serializable
+data class CommandRequest(
+    val commandType: String,
+    val deviceId: String,
+    val parameters: Map<String, String> = emptyMap()
+)
+
+@Serializable
+data class CommandResponse(
+    val success: Boolean,
+    val message: String,
+    val command: String? = null
+)
+
+@Serializable
+data class ConnectedDeviceDto(
+    val id: Int,
+    val imei: String,
+    val vehicleId: Int?,
+    val title: String?,
+    val connected: Boolean
+)

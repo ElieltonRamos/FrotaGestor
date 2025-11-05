@@ -1,208 +1,170 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { VehicleService } from '../../../services/vehicle.service';
-import { Vehicle, VehicleStatus } from '../../../interfaces/vehicle';
-import { alertError, alertSuccess } from '../../../utils/custom-alerts';
-import { MapComponent } from '../../../components/map-component/map-component';
-import {
-  BaseListComponent,
-  ColumnConfig,
-} from '../../../components/base-list-component/base-list-component';
-import { PaginatorComponent } from '../../../components/paginator/paginator.component';
 import { CommonModule } from '@angular/common';
-import { Driver } from '../../../interfaces/driver';
-import { Trip } from '../../../interfaces/trip';
-import { Expense } from '../../../interfaces/expense';
-import { GpsDevice } from '../../../interfaces/gpsDevice';
+
+import { VehicleService } from '../../../services/vehicle.service';
 import { GpsDeviceService } from '../../../services/gps-device.service';
+import { MapComponent } from '../../../components/map-component/map-component';
+import { BaseListComponent } from '../../../components/base-list-component/base-list-component';
+import { PaginatorComponent } from '../../../components/paginator/paginator.component';
+
+import { Vehicle, VehicleStatus } from '../../../interfaces/vehicle';
+import { Driver } from '../../../interfaces/driver';
+import { GpsDevice, GpsHistory } from '../../../interfaces/gpsDevice';
+import { alertError, alertSuccess } from '../../../utils/custom-alerts';
+
+import { createDataLoader, DataSet } from './data-loader';
+import { SECTIONS, DataSetKey, AVAILABLE_COMMANDS } from './sections.config';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-details-vehicle',
   standalone: true,
-  imports: [CommonModule, MapComponent, BaseListComponent, PaginatorComponent],
+  imports: [
+    FormsModule,
+    CommonModule,
+    MapComponent,
+    BaseListComponent,
+    PaginatorComponent,
+  ],
   templateUrl: './details-vehicle.html',
 })
 export class DetailsVehicle {
   private route = inject(ActivatedRoute);
-  private serviceVehicle = inject(VehicleService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private gpsDevice = inject(GpsDeviceService)
+  private serviceVehicle = inject(VehicleService);
+  private serviceGpsDevice = inject(GpsDeviceService);
 
   vehicle?: Vehicle;
-  loading = false;
   topDriver?: Driver;
+  gpsDevice = signal<GpsDevice | null>(null);
   markers: GpsDevice[] = [];
+  loading = false;
+  mapPoints: GpsHistory[] = [];
 
-  trips: Trip[] = [];
-  tripsColumns: ColumnConfig<any>[] = [
-    { key: 'startTime', label: 'Data de Inicio', sortable: true },
-    { key: 'startLocation', label: 'Origem' },
-    { key: 'endLocation', label: 'Destino' },
-    { key: 'driverName', label: 'Motorista' },
-  ];
-  tripsPage = 1;
-  tripsLimit = 5;
-  tripsTotal = 0;
-  tripsTotalPages = 1;
+  dataSets: Record<DataSetKey, DataSet<any>> = {
+    gpsEvents: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
+    trips: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
+    expenses: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
+  };
 
-  expenses: Expense[] = []
-  expensesColumns: ColumnConfig<any>[] = [
-    { key: 'date', label: 'Data', sortable: true },
-    { key: 'description', label: 'Descrição' },
-    { key: 'amount', label: 'Valor', sortable: true },
-    { key: 'type', label: 'Categoria' },
-  ];
-  expensesPage = 1;
-  expensesLimit = 5;
-  expensesTotal = 0;
-  expensesTotalPages = 1;
+  availableCommands = AVAILABLE_COMMANDS;
+  selectedCommand: string = 'StatusReq';
+
+  sections = SECTIONS;
+  loadData = createDataLoader(
+    this.serviceVehicle,
+    this.serviceGpsDevice,
+    this.cdr,
+    this.dataSets
+  );
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loadGpsDevice(id)
-    if (id) this.loadVehicle(id);
-    else this.router.navigate(['/veiculos']);
+    if (!id) this.router.navigate(['/veiculos']);
+    this.loadAll(id);
   }
 
-  private loadVehicle(id: number) {
+  getDataSet<K extends DataSetKey>(key: K) {
+    return this.dataSets[key];
+  }
+
+  private loadAll(id: number) {
     this.loading = true;
     this.serviceVehicle.getById(id).subscribe({
       next: (res) => {
         this.vehicle = res;
         this.loading = false;
-        this.cdr.detectChanges();
-        this.loadTopDriver(id);
-        this.loadTrips(id);
-        this.loadExpenses(id);
+        this.loadRelated(id);
       },
-      error: () => {
-        this.loading = false;
-        this.router.navigate(['/veiculos']);
-      },
+      error: () => this.router.navigate(['/veiculos']),
     });
   }
 
-  private loadTopDriver(vehicleId: number) {
-    this.serviceVehicle.getTopDriverByVehicle(vehicleId).subscribe({
-      next: (driver) => {
-        this.topDriver = driver;
-        this.cdr.detectChanges();
-      },
-    });
-  }
+  private loadRelated(vehicleId: number) {
+    this.serviceVehicle
+      .getTopDriverByVehicle(vehicleId)
+      .subscribe({ next: (d) => (this.topDriver = d) });
 
-  loadGpsDevice(vehicleId: number) {
-    this.gpsDevice.getGpsDeviceByVehicle(vehicleId).subscribe({
+    this.serviceGpsDevice.getGpsDeviceByVehicle(vehicleId).subscribe({
       next: (res) => {
-        this.markers = [res]
+        this.gpsDevice.set(res);
+        this.markers = [res];
       },
-      error: (e) => {
-        alertError(`Nao foi possivel encontrar dispositivo GPS vinculado a esse veiculo ${e.error.message}`)
+      error: (e) => alertError(`Erro ao buscar GPS: ${e.error.message}`),
+    });
+
+    this.serviceGpsDevice.getHistoryDevice(vehicleId, 1, 200).subscribe({
+      next: (res) => {
+        this.mapPoints = res.data
+        this.cdr.detectChanges();
       }
-    })
+    });
+
+    (Object.keys(this.dataSets) as DataSetKey[]).forEach((key) =>
+      this.loadData(key, vehicleId)
+    );
   }
 
-  // 🔹 Viagens
-  private loadTrips(vehicleId: number) {
-    this.serviceVehicle
-      .getTripsByVehicle(vehicleId, this.tripsPage, this.tripsLimit)
-      .subscribe({
-        next: (res) => {
-          this.trips = res.data;
-          this.tripsTotal = res.total;
-          this.tripsPage = res.page;
-          this.tripsLimit = res.limit;
-          this.tripsTotalPages = res.totalPages;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.trips = [];
-          this.tripsTotal = 0;
-        },
-      });
+  onPageChange(type: DataSetKey, newPage: number) {
+    this.dataSets[type].page = newPage;
   }
 
-  onTripsPageChange(newPage: number) {
-    this.tripsPage = newPage;
-    if (this.vehicle?.id) this.loadTrips(this.vehicle.id);
+  toggleStatus(active: boolean) {
+    if (!this.vehicle?.id) return;
+    const status = active ? VehicleStatus.ATIVO : VehicleStatus.INATIVO;
+    const message = active
+      ? 'Veículo reativado com sucesso.'
+      : 'Veículo desabilitado com sucesso.';
+
+    this.loading = true;
+    this.serviceVehicle.update(this.vehicle.id, { status }).subscribe({
+      next: () => {
+        this.loadAll(this.vehicle!.id!);
+        alertSuccess(message);
+      },
+      error: (err) => {
+        this.loading = false;
+        alertError(`Erro ao atualizar veículo. ${err?.error?.message || ''}`);
+      },
+    });
   }
 
-  private loadExpenses(vehicleId: number) {
-    this.serviceVehicle
-      .getExpensesByVehicle(vehicleId, this.expensesPage, this.expensesLimit)
-      .subscribe({
-        next: (res) => {
-          this.expenses = res.data;
-          this.expensesTotal = res.total;
-          this.expensesPage = res.page;
-          this.expensesLimit = res.limit;
-          this.expensesTotalPages = res.totalPages;
-          this.cdr.detectChanges();
-        },
-        error: (e) => {
-          this.expenses = [];
-          this.expensesTotal = 0;
-        },
-      });
-  }
+  sendGpsCommand() {
+    const gps = this.gpsDevice();
+    if (!gps) {
+      alertError('Nenhum dispositivo GPS vinculado.');
+      return;
+    }
 
-  onExpensesPageChange(newPage: number) {
-    this.expensesPage = newPage;
-    if (this.vehicle?.id) this.loadExpenses(this.vehicle.id);
-  }
+    this.loading = true;
+    const request = {
+      commandType: this.selectedCommand,
+      deviceId: gps.imei,
+      parameters: {},
+    };
 
-  onTripSelect(trip: any) {
-    this.router.navigate(['/viagens', trip.id]);
-  }
-
-  onExpenseSelect(expense: any) {
-    this.router.navigate(['/despesas', expense.id]);
+    this.serviceGpsDevice.sendCommandDevice(request).subscribe({
+      next: (res) => {
+        this.loading = false;
+        if (res.success) {
+          alertSuccess(`Comando "${this.selectedCommand}" enviado com sucesso!`);
+          this.loadAll(this.vehicle!.id!);
+        } else {
+          alertError(`Falha ao enviar comando: ${res.message}`);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        alertError(
+          `Erro ao enviar comando: ${err?.error?.message || 'Desconhecido'}`
+        );
+      },
+    });
   }
 
   goBack() {
     this.router.navigate(['/veiculos']);
-  }
-
-  disableVehicle() {
-    if (!this.vehicle?.id) return;
-    this.loading = true;
-
-    this.serviceVehicle
-      .update(this.vehicle.id, { status: VehicleStatus.INATIVO })
-      .subscribe({
-        next: () => {
-          this.loadVehicle(this.vehicle!.id!);
-          this.loading = false;
-          alertSuccess('Veículo desabilitado com sucesso.');
-        },
-        error: (err) => {
-          this.loading = false;
-          alertError(
-            `Erro ao desabilitar o veículo. ${err?.error?.message || ''}`
-          );
-        },
-      });
-  }
-
-  activateVehicle() {
-    if (!this.vehicle?.id) return;
-    this.loading = true;
-
-    this.serviceVehicle
-      .update(this.vehicle.id, { status: VehicleStatus.ATIVO })
-      .subscribe({
-        next: () => {
-          this.loadVehicle(this.vehicle!.id!);
-          this.loading = false;
-          alertSuccess('Veículo reativado com sucesso.');
-        },
-        error: (err) => {
-          this.loading = false;
-          alertError(
-            `Erro ao reativar o veículo. ${err?.error?.message || ''}`
-          );
-        },
-      });
   }
 }

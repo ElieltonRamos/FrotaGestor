@@ -18,6 +18,11 @@
       <ng-icon name="heroMapSolid" class="text-blue-500 text-xl"></ng-icon>
       Localização dos Veiculos Cadastrados
     </h3>
-    <app-map [markers]="markers" />
+    <app-map
+      [markers]="markers"
+      [mapMode]="'vehicles'"
+      [showUserMarker]="true"
+    >
+    </app-map>
   </div>
 </section>

@@ -1,5 +1,6 @@
 package com.frotagestor.validations
 
+import com.frotagestor.interfaces.CommandRequest
 import com.frotagestor.interfaces.PartialGpsDevice
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -18,11 +19,6 @@ fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
     // Validação do IMEI (obrigatório)
     if (gpsDevice.imei.isNullOrBlank()) {
         return ValidationResult.Error("O campo IMEI é obrigatório")
-    }
-
-    // Validação do formato do IMEI (15 dígitos)
-    if (!gpsDevice.imei.matches(Regex("^\\d{15}$"))) {
-        return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
     }
 
     // Validação do iconMapUrl (obrigatório)
@@ -87,15 +83,6 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
     }
 
-    // Validações de formato (apenas se os campos forem fornecidos)
-
-    // IMEI (se fornecido)
-    gpsDevice.imei?.let { imei ->
-        if (imei.isNotBlank() && !imei.matches(Regex("^\\d{15}$"))) {
-            return ValidationResult.Error("IMEI inválido. Deve conter exatamente 15 dígitos")
-        }
-    }
-
     // Coordenadas (se fornecidas)
     gpsDevice.latitude?.let { lat ->
         if (lat < -90.0 || lat > 90.0) {
@@ -124,4 +111,35 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
     }
 
     return ValidationResult.Success(gpsDevice)
+}
+
+fun validateCommandRequest(rawBody: String): ValidationResult<CommandRequest> {
+    if (rawBody.isBlank()) {
+        return ValidationResult.Error("Body da requisição está vazio")
+    }
+
+    val commandRequest: CommandRequest = try {
+        Json.decodeFromString<CommandRequest>(rawBody)
+    } catch (e: SerializationException) {
+        return ValidationResult.Error("JSON inválido: ${e.message}")
+    }
+
+    if (commandRequest.commandType.isBlank()) {
+        return ValidationResult.Error("O campo commandType é obrigatório e não pode estar vazio")
+    }
+
+    if (commandRequest.deviceId.isBlank()) {
+        return ValidationResult.Error("O campo deviceId é obrigatório e não pode estar vazio")
+    }
+
+    commandRequest.parameters.forEach { (key, value) ->
+        if (key.isBlank()) {
+            return ValidationResult.Error("Parâmetro com chave vazia não é permitido")
+        }
+        if (value.isBlank()) {
+            return ValidationResult.Error("Parâmetro com valor vazio para a chave '$key' não é permitido")
+        }
+    }
+
+    return ValidationResult.Success(commandRequest)
 }

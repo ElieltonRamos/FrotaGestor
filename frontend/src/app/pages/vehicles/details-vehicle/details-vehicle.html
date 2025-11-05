@@ -1,11 +1,14 @@
 <div
-  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200"
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200 space-y-12"
 >
-  <!-- Cabeçalho e detalhes -->
+  <!-- Cabeçalho e Detalhes -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2 flex flex-col">
-      <div class="flex items-center justify-between mb-6 gap-4">
-        <h2 class="text-xl font-semibold text-gray-800">Detalhes do Veículo</h2>
+    <!-- Painel principal -->
+    <div class="lg:col-span-2 p-6 bg-gray-50 rounded-lg">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-gray-800">
+          Detalhes do Veículo e GPS
+        </h2>
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
           (click)="goBack()"
@@ -14,94 +17,219 @@
         </button>
       </div>
 
-      @if (vehicle) {
+      @if (vehicle || gpsDevice()) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Placa</label
+        <!-- Dados do Veículo -->
+        <div class="space-y-4">
+          <div
+            *ngFor="
+              let item of [
+                { label: 'Placa', value: vehicle?.plate },
+                { label: 'Modelo', value: vehicle?.model },
+                { label: 'Marca', value: vehicle?.brand },
+                { label: 'Ano', value: vehicle?.year }
+              ]
+            "
           >
-          <p class="text-gray-800 text-sm">{{ vehicle.plate }}</p>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >
+              {{ item.label }}
+            </label>
+            <p class="text-gray-800 text-sm">{{ item.value || "-" }}</p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Status</label
+            >
+            <span
+              class="px-3 py-1 rounded-full text-xs font-medium"
+              [class.bg-green-100]="vehicle?.status === 'ATIVO'"
+              [class.text-green-700]="vehicle?.status === 'ATIVO'"
+              [class.bg-red-100]="vehicle?.status === 'INATIVO'"
+              [class.text-red-700]="vehicle?.status === 'INATIVO'"
+              [class.bg-yellow-100]="vehicle?.status === 'MANUTENCAO'"
+              [class.text-yellow-700]="vehicle?.status === 'MANUTENCAO'"
+            >
+              {{ vehicle?.status || "-" }}
+            </span>
+          </div>
         </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Modelo</label
+
+        <!-- Dados do GPS -->
+        <div class="space-y-4">
+          @if (gpsDevice()) {
+          <div
+            *ngFor="
+              let item of [
+                { label: 'IMEI', value: gpsDevice()!.imei },
+                {
+                  label: 'Última Leitura',
+                  value: gpsDevice()!.dateTime
+                    ? (gpsDevice()!.dateTime | date : 'dd/MM/yyyy HH:mm')
+                    : '-'
+                },
+                {
+                  label: 'Velocidade',
+                  value:
+                    gpsDevice()!.speed != null
+                      ? gpsDevice()!.speed + ' km/h'
+                      : '-'
+                },
+                {
+                  label: 'Direção',
+                  value:
+                    gpsDevice()!.heading != null
+                      ? gpsDevice()!.heading + '°'
+                      : '-'
+                }
+              ]
+            "
           >
-          <p class="text-gray-800 text-sm">{{ vehicle.model }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Marca</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.brand || "-" }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Ano</label
-          >
-          <p class="text-gray-800 text-sm">{{ vehicle.year || "-" }}</p>
-        </div>
-        <div>
-          <label
-            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
-            >Status</label
-          >
-          <span
-            class="px-3 py-1 rounded-full text-xs font-medium"
-            [class.bg-green-100]="vehicle.status === 'ATIVO'"
-            [class.text-green-700]="vehicle.status === 'ATIVO'"
-            [class.bg-red-100]="vehicle.status === 'INATIVO'"
-            [class.text-red-700]="vehicle.status === 'INATIVO'"
-            [class.bg-yellow-100]="vehicle.status === 'MANUTENCAO'"
-            [class.text-yellow-700]="vehicle.status === 'MANUTENCAO'"
-          >
-            {{ vehicle.status }}
-          </span>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >
+              {{ item.label }}
+            </label>
+            <p class="text-gray-800 text-sm font-mono">{{ item.value }}</p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >
+              Ignição
+            </label>
+            <span
+              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+              [class.bg-green-100]="gpsDevice()!.ignition"
+              [class.text-green-700]="gpsDevice()!.ignition"
+              [class.bg-red-100]="!gpsDevice()!.ignition"
+              [class.text-red-700]="!gpsDevice()!.ignition"
+            >
+              <span
+                class="w-2 h-2 rounded-full mr-1.5"
+                [class.bg-green-500]="gpsDevice()!.ignition"
+                [class.bg-red-500]="!gpsDevice()!.ignition"
+              ></span>
+              {{ gpsDevice()!.ignition ? "Ligada" : "Desligada" }}
+            </span>
+          </div>
+          } @else {
+          <p class="text-gray-500 text-sm italic">
+            Nenhum dispositivo GPS vinculado.
+          </p>
+          }
         </div>
       </div>
-      } @else {
-      <p class="text-gray-500 text-sm italic">Carregando veículo...</p>
+
+      <!-- Coordenadas -->
+      @if (gpsDevice() && (gpsDevice()!.latitude || gpsDevice()!.longitude)) {
+      <div
+        class="mt-6 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm"
+      >
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Latitude</label
+          >
+          <p class="text-gray-800 font-mono">
+            {{ gpsDevice()!.latitude?.toFixed(6) }}
+          </p>
+        </div>
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+            >Longitude</label
+          >
+          <p class="text-gray-800 font-mono">
+            {{ gpsDevice()!.longitude?.toFixed(6) }}
+          </p>
+        </div>
+      </div>
       }
 
-      <!-- Rodapé com botões -->
-      @if(vehicle && vehicle.status === 'ATIVO') {
-      <div class="flex justify-end mt-2">
+      <!-- Ícone -->
+      @if (gpsDevice()?.iconMapUrl) {
+      <div class="mt-5 flex flex-col justify-start">
+        <p class="block text-xs font-semibold text-gray-500 uppercase mb-1">
+          Ícone no Mapa
+        </p>
+        <img
+          [src]="gpsDevice()!.iconMapUrl!"
+          alt="Ícone do GPS"
+          class="h-22 w-22 object-contain"
+          onerror="this.style.display='none'"
+        />
+      </div>
+      } } @else {
+      <p class="text-gray-500 text-sm italic">Carregando informações...</p>
+      }
+
+      <!-- Botões -->
+      <div class="flex justify-end mt-6 space-x-3">
+        @if(vehicle?.status === 'ATIVO') {
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded"
-          (click)="disableVehicle()"
+          (click)="toggleStatus(false)"
           [disabled]="loading"
         >
-          @if(loading) { Aguardando... } @else { Desabilitar Veículo }
+          {{ loading ? "Aguardando..." : "Desabilitar Veículo" }}
         </button>
-      </div>
-      } @if(vehicle && vehicle.status === 'INATIVO') {
-      <div class="flex justify-end mt-2">
+        } @if(vehicle?.status === 'INATIVO') {
         <button
           class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded"
-          (click)="activateVehicle()"
+          (click)="toggleStatus(true)"
           [disabled]="loading"
         >
-          @if(loading) { Aguardando... } @else { Ativar Veículo }
+          {{ loading ? "Aguardando..." : "Ativar Veículo" }}
         </button>
+        }
       </div>
-      }
     </div>
 
-    <div class="hidden lg:flex items-center justify-center">
+    <!-- Imagem lateral -->
+    <div class="hidden lg:flex items-center justify-center p-8">
       <img
         src="vehicle-details.png"
         alt="Ilustração de veículo"
-        class="max-h-64 opacity-90"
-        style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
+        class="max-h-64 opacity-90 drop-shadow-lg"
       />
     </div>
   </div>
 
-  <!-- Motorista mais frequente -->
-  <div class="mt-10 border-t border-gray-200 pt-6">
+  <!-- Comandos GPS -->
+  @if (gpsDevice()) {
+  <div class="mt-8 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Comandos do Dispositivo
+    </h3>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <select
+        [(ngModel)]="selectedCommand"
+        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+      >
+        <option *ngFor="let cmd of availableCommands" [value]="cmd.value">
+          {{ cmd.label }}
+        </option>
+      </select>
+
+      <button
+        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+        [disabled]="loading"
+        (click)="sendGpsCommand()"
+      >
+        {{ loading ? "Enviando..." : "Enviar" }}
+      </button>
+    </div>
+  </div>
+  }
+
+  <!-- Motorista -->
+  <div class="border-t border-gray-200 pt-8">
     <h3 class="text-lg font-semibold text-gray-800 mb-4">
       Motorista que mais utilizou
     </h3>
@@ -109,73 +237,52 @@
     <div
       class="flex items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100"
     >
-      <div>
-        <p class="text-sm font-medium text-gray-800">{{ topDriver?.name }}</p>
-      </div>
+      <p class="text-sm font-medium text-gray-800">{{ topDriver?.name }}</p>
     </div>
     } @else {
     <p class="text-gray-500 text-sm italic">Nenhum motorista encontrado.</p>
     }
   </div>
 
-  <!-- Viagens relacionadas -->
-  <div class="mt-10 border-t border-gray-200 pt-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-      Viagens relacionadas
-    </h3>
+  <!-- Seções unificadas -->
+  <div class="space-y-12">
+    @for (section of sections; track section.key) {
+    <div class="pt-6 border-t border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        {{ section.title }}
+      </h3>
 
-    <div class="flex-1 overflow-y-auto">
-      <app-base-list
-        [columns]="tripsColumns"
-        [data]="trips"
-        (rowClick)="onTripSelect($event)"
-        [showActions]="false"
-      ></app-base-list>
+      <div class="bg-gray-50 rounded-lg border border-gray-100 p-4">
+        <app-base-list
+          [columns]="section.columns"
+          [data]="getDataSet(section.key).items"
+          [showActions]="false"
+        ></app-base-list>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <app-paginator
+          [totalItems]="getDataSet(section.key).total"
+          [itemsPerPage]="getDataSet(section.key).limit"
+          [totalPages]="getDataSet(section.key).totalPages"
+          [page]="getDataSet(section.key).page"
+          (pageChanged)="onPageChange(section.key, $event)"
+        ></app-paginator>
+      </div>
     </div>
-
-    <!-- Paginação -->
-    <div class="border-t border-gray-200 pt-3 flex justify-end">
-      <app-paginator
-        [totalItems]="tripsTotal"
-        [itemsPerPage]="tripsLimit"
-        [totalPages]="tripsTotalPages"
-        [page]="tripsPage"
-        (pageChanged)="onTripsPageChange($event)"
-      ></app-paginator>
-    </div>
-  </div>
-
-  <div class="mt-10 border-t border-gray-200 pt-6">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">
-      Despesas relacionadas
-    </h3>
-
-    <div class="flex-1 overflow-y-auto">
-      <app-base-list
-        [columns]="expensesColumns"
-        [data]="expenses"
-        (rowClick)="onExpenseSelect($event)"
-        [showActions]="false"
-      ></app-base-list>
-    </div>
-
-    <!-- Paginação -->
-    <div class="border-t border-gray-200 pt-3 flex justify-end">
-      <app-paginator
-        [totalItems]="expensesTotal"
-        [itemsPerPage]="expensesLimit"
-        [totalPages]="expensesTotalPages"
-        [page]="expensesPage"
-        (pageChanged)="onExpensesPageChange($event)"
-      ></app-paginator>
-    </div>
+    }
   </div>
 
   <!-- Mapa -->
-  <div class="mt-12 border-t border-gray-200 pt-8">
+  <div class="border-t border-gray-200 pt-8">
     <h3 class="text-lg font-semibold text-gray-800 mb-4">
       Localização no mapa
     </h3>
-    <app-map [markers]="markers"/>
+    <app-map
+      [historyPoints]="mapPoints"
+      [mapMode]="'history'"
+      [showUserMarker]="false"
+      [vehicleIconUrl]="gpsDevice()?.iconMapUrl!"
+    ></app-map>
   </div>
 </div>

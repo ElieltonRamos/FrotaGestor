@@ -16,7 +16,7 @@
   </div>
 
   <!-- Loading State -->
-  @if (gpsDevice) {
+  @if (gpsDevice === null) {
   <div class="text-center text-gray-600">
     Carregando detalhes do dispositivo...
   </div>
@@ -108,14 +108,16 @@
             Editar Dispositivo
           </button>
 
+          @if (gpsDevice.vehicleId !== null || gpsDevice.vehicleId !==
+          undefined) {
           <button
-            *ngIf="gpsDevice.vehicleId"
             type="button"
             class="px-3 py-1.5 rounded bg-orange-600 text-white text-xs hover:bg-orange-700 transition-colors"
             (click)="unlinkVehicle()"
           >
             Desvincular Veículo
           </button>
+          }
 
           <button
             type="button"
@@ -129,9 +131,11 @@
           </button>
         </div>
 
-        <p *ngIf="!canDelete" class="mt-2 text-xs text-gray-500">
+        @if (!canDelete) {
+        <p class="mt-2 text-xs text-gray-500">
           * Para deletar o dispositivo, primeiro desvincule-o do veículo
         </p>
+        }
       </div>
       <app-map [markers]="markers"></app-map>
     </div>
@@ -244,8 +248,8 @@
 
           <!-- Icon Grid Selection -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            @for (icon of availableIcons; track icon.value) {
             <div
-              *ngFor="let icon of availableIcons"
               (click)="editingDevice.iconMapUrl = icon.value"
               [class.ring-2]="editingDevice.iconMapUrl === icon.value"
               [class.ring-blue-500]="editingDevice.iconMapUrl === icon.value"
@@ -262,6 +266,7 @@
                 {{ icon.label }}
               </span>
             </div>
+            }
           </div>
         </div>
       </div>

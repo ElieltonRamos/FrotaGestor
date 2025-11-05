@@ -7,7 +7,14 @@
     "start": "ng serve --host 0.0.0.0 --port 4200",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build-windows": "cargo tauri build --target x86_64-pc-windows-gnu",
+    "tauri:build-linux": "cargo tauri build --bundles deb",
+    "posttauri:build-windows": "mkdir -p installer && cp src-tauri/target/x86_64-pc-windows-gnu/release/bundle/nsis/*.exe installer/",
+    "posttauri:build-linux": "mkdir -p installer && cp src-tauri/target/release/bundle/deb/*.deb installer/"
   },
   "prettier": {
     "overrides": [
@@ -44,6 +51,7 @@
     "@angular/build": "^20.1.4",
     "@angular/cli": "^20.1.4",
     "@angular/compiler-cli": "^20.1.0",
+    "@tauri-apps/cli": "^2.9.1",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.8.0",
     "karma": "~6.4.0",

@@ -4,8 +4,6 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 object DatabaseFactory {
@@ -20,7 +18,7 @@ object DatabaseFactory {
 //                password = System.getenv("DB_PASS") ?: "root"
 
                 jdbcUrl = System.getenv("DB_URL")
-                    ?: "jdbc:mysql://10.1.254.18:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
+                    ?: "jdbc:mysql://100.102.211.42:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
                 driverClassName = "com.mysql.cj.jdbc.Driver"
                 username = System.getenv("DB_USER") ?: "eliel"
                 password = System.getenv("DB_PASS") ?: "elielton"

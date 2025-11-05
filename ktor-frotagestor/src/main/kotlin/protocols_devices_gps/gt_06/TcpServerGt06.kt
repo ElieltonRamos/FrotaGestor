@@ -6,11 +6,11 @@ import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.writeFully
 import kotlinx.coroutines.*
 
-suspend fun startTcpServer() {
+suspend fun startTcpServerGt06() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
-        .bind("0.0.0.0", 5000)
-    println("Servidor TCP rodando na porta 5000")
+        .bind("0.0.0.0", 3003)
+    println("Servidor TCP rodando na porta 3003 para protocolo GT-06")
 
     while (true) {
         val socket = serverSocket.accept()

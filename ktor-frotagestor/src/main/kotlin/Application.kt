@@ -1,10 +1,11 @@
 package com.frotagestor
 
-import com.frotagestor.accurate_gt_06.startTcpServer
+import com.frotagestor.accurate_gt_06.startTcpServerGt06
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.plugins.configureRouting
 import io.ktor.server.application.*
 import com.frotagestor.plugins.*
+import com.frotagestor.protocols_devices_gps.suntech.startTcpServerSuntech
 import kotlinx.coroutines.launch
 
 fun main(args: Array<String>) {
@@ -19,7 +20,8 @@ fun Application.module() {
     configureValidateBody()
     configureRouting()
     launch {
-        startTcpServer()
+//        startTcpServerGt06()
+        startTcpServerSuntech()
     }
 }
 
