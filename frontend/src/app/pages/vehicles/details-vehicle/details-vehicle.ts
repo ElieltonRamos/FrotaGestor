@@ -14,12 +14,19 @@ import { GpsDevice } from '../../../interfaces/gpsDevice';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 
 import { createDataLoader, DataSet } from './data-loader';
-import { SECTIONS, DataSetKey } from './sections.config';
+import { SECTIONS, DataSetKey, AVAILABLE_COMMANDS } from './sections.config';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-details-vehicle',
   standalone: true,
-  imports: [CommonModule, MapComponent, BaseListComponent, PaginatorComponent],
+  imports: [
+    FormsModule,
+    CommonModule,
+    MapComponent,
+    BaseListComponent,
+    PaginatorComponent,
+  ],
   templateUrl: './details-vehicle.html',
 })
 export class DetailsVehicle {
@@ -40,6 +47,9 @@ export class DetailsVehicle {
     trips: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
     expenses: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
   };
+
+  availableCommands = AVAILABLE_COMMANDS;
+  selectedCommand: string = 'StatusReq';
 
   sections = SECTIONS;
   loadData = createDataLoader(
@@ -109,6 +119,39 @@ export class DetailsVehicle {
       error: (err) => {
         this.loading = false;
         alertError(`Erro ao atualizar veículo. ${err?.error?.message || ''}`);
+      },
+    });
+  }
+
+  sendGpsCommand() {
+    const gps = this.gpsDevice();
+    if (!gps) {
+      alertError('Nenhum dispositivo GPS vinculado.');
+      return;
+    }
+
+    this.loading = true;
+    const request = {
+      commandType: this.selectedCommand,
+      deviceId: gps.imei,
+      parameters: {},
+    };
+
+    this.serviceGpsDevice.sendCommandDevice(request).subscribe({
+      next: (res) => {
+        this.loading = false;
+        if (res.success) {
+          alertSuccess(`Comando "${this.selectedCommand}" enviado com sucesso!`);
+          this.loadAll(this.vehicle!.id!);
+        } else {
+          alertError(`Falha ao enviar comando: ${res.message}`);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        alertError(
+          `Erro ao enviar comando: ${err?.error?.message || 'Desconhecido'}`
+        );
       },
     });
   }

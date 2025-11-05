@@ -22,11 +22,10 @@ export interface GpsHistory {
   rawLog: string;
 }
 
-// Adicione essas interfaces/imports se necessário
 export interface ParsedGpsEvent {
   id: number;
-  type: string; // Ex.: 'Emergência'
-  description: string; // Ex.: 'Botão de pânico acionado'
+  type: string;
+  description: string;
   header: string;
   dateTime: string;
   latitude?: number;
@@ -35,5 +34,16 @@ export interface ParsedGpsEvent {
   heading: number;
   battery?: number;
   ignition?: boolean;
-  // Outros campos se precisar
+}
+
+export interface CommandRequest {
+  commandType: string;
+  deviceId: string;
+  parameters?: Record<string, string>;
+}
+
+export interface CommandResponse {
+  success: boolean;
+  message: string;
+  command?: string;
 }

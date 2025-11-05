@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
-import { GpsDevice, GpsHistory, ParsedGpsEvent } from '../interfaces/gpsDevice';
+import { CommandRequest, CommandResponse, GpsDevice, GpsHistory, ParsedGpsEvent } from '../interfaces/gpsDevice';
 import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
@@ -130,6 +130,11 @@ export class GpsDeviceService {
       `${API_URL}/gps-devices/vehicle/${deviceId}/history`,
       { params }
     );
+  }
+
+  sendCommandDevice(request: CommandRequest): Observable<CommandResponse> {
+    const url = `${API_URL}/gps-devices/commands`;
+    return this.http.post<CommandResponse>(url, request)
   }
 
   parse(rawLog: string, id: number): ParsedGpsEvent | null {

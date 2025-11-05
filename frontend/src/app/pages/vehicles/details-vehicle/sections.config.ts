@@ -40,3 +40,14 @@ export const SECTIONS: SectionConfig[] = [
     ],
   },
 ];
+
+export interface CommandOption {
+  value: string;
+  label: string;
+}
+
+export const AVAILABLE_COMMANDS: CommandOption[] = [
+  { value: 'StatusReq', label: 'Solicitar Status' },
+  { value: 'Enable1', label: 'Ativar Saída 1' },
+  { value: 'Disable1', label: 'Desativar Saída 1' },
+];
