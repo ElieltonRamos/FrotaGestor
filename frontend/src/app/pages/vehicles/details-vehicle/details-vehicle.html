@@ -279,7 +279,7 @@
       Localização no mapa
     </h3>
     <app-map
-      [historyPoints]="dataSets.gpsEvents.items"
+      [historyPoints]="mapPoints"
       [mapMode]="'history'"
       [showUserMarker]="false"
       [vehicleIconUrl]="gpsDevice()?.iconMapUrl!"

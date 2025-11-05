@@ -7,6 +7,7 @@ import com.frotagestor.database.models.GpsHistoryTable
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -184,18 +185,17 @@ fun parseGpsPacket(data: String): GpsData? {
 
 fun parseDeviceDateTime(dateStr: String, timeStr: String): LocalDateTime {
     return try {
-        // dateStr = "20251104" -> ano=2025, mês=11, dia=04
         val year = dateStr.substring(0, 4).toInt()
         val month = dateStr.substring(4, 6).toInt()
         val day = dateStr.substring(6, 8).toInt()
-
-        // timeStr = "13:10:37" -> hora=13, min=10, seg=37
         val timeParts = timeStr.split(":")
         val hour = timeParts[0].toInt()
         val minute = timeParts[1].toInt()
         val second = timeParts[2].toInt()
-
-        LocalDateTime(year, month, day, hour, minute, second)
+        val utcDateTime = LocalDateTime(year, month, day, hour, minute, second)
+        val localTz = TimeZone.currentSystemDefault()
+        val instant = utcDateTime.toInstant(TimeZone.UTC)
+        instant.toLocalDateTime(localTz)
     } catch (e: Exception) {
         println("[${generateDate()}] ❌ Erro ao parsear data/hora: $dateStr $timeStr - ${e.message}")
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())

@@ -11,9 +11,9 @@ private val serverScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 suspend fun startTcpServerSuntech() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
-        .bind("0.0.0.0", 3002)
+        .bind("0.0.0.0", 1150)
 
-    println("[${generateDate()}] Servidor TCP rodando na porta 3002 – protocolo Suntech ST310/ST300")
+    println("[${generateDate()}] Servidor TCP rodando na porta 1150 – protocolo Suntech ST310/ST300")
 
     try {
         while (true) {

@@ -11,17 +11,17 @@ object DatabaseFactory {
     fun init() {
         try {
             val config = HikariConfig().apply {
-                jdbcUrl = System.getenv("DB_URL")
-                    ?: "jdbc:mysql://localhost:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
-                driverClassName = "com.mysql.cj.jdbc.Driver"
-                username = System.getenv("DB_USER") ?: "root"
-                password = System.getenv("DB_PASS") ?: "root"
-
 //                jdbcUrl = System.getenv("DB_URL")
-//                    ?: "jdbc:mysql://10.1.254.18:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
+//                    ?: "jdbc:mysql://localhost:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
 //                driverClassName = "com.mysql.cj.jdbc.Driver"
-//                username = System.getenv("DB_USER") ?: "eliel"
-//                password = System.getenv("DB_PASS") ?: "elielton"
+//                username = System.getenv("DB_USER") ?: "root"
+//                password = System.getenv("DB_PASS") ?: "root"
+
+                jdbcUrl = System.getenv("DB_URL")
+                    ?: "jdbc:mysql://100.102.211.42:3306/db_frota_gestor?serverTimezone=America/Sao_Paulo&useSSL=false&allowPublicKeyRetrieval=true"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                username = System.getenv("DB_USER") ?: "eliel"
+                password = System.getenv("DB_PASS") ?: "elielton"
 
                 maximumPoolSize = 10
                 isAutoCommit = false

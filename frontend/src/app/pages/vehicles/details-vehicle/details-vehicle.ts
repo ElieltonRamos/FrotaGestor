@@ -10,7 +10,7 @@ import { PaginatorComponent } from '../../../components/paginator/paginator.comp
 
 import { Vehicle, VehicleStatus } from '../../../interfaces/vehicle';
 import { Driver } from '../../../interfaces/driver';
-import { GpsDevice } from '../../../interfaces/gpsDevice';
+import { GpsDevice, GpsHistory } from '../../../interfaces/gpsDevice';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 
 import { createDataLoader, DataSet } from './data-loader';
@@ -41,6 +41,7 @@ export class DetailsVehicle {
   gpsDevice = signal<GpsDevice | null>(null);
   markers: GpsDevice[] = [];
   loading = false;
+  mapPoints: GpsHistory[] = [];
 
   dataSets: Record<DataSetKey, DataSet<any>> = {
     gpsEvents: { items: [], page: 1, limit: 10, total: 0, totalPages: 0 },
@@ -92,6 +93,13 @@ export class DetailsVehicle {
         this.markers = [res];
       },
       error: (e) => alertError(`Erro ao buscar GPS: ${e.error.message}`),
+    });
+
+    this.serviceGpsDevice.getHistoryDevice(vehicleId, 1, 200).subscribe({
+      next: (res) => {
+        this.mapPoints = res.data
+        this.cdr.detectChanges();
+      }
     });
 
     (Object.keys(this.dataSets) as DataSetKey[]).forEach((key) =>
