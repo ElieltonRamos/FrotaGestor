@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserService } from '../../services/user.service';
 import { alertError } from '../../utils/custom-alerts';
-import { mapNetworkError } from '../../services/api.url';
+import { mapNetworkError, VERSION } from '../../services/api.url';
 import { CommonModule } from '@angular/common';
 import { NgIcon } from "@ng-icons/core";
 
@@ -18,6 +18,7 @@ export class Login {
   password = '';
   isLoading = false;
   showPassword = false;
+  version = VERSION
 
   private router = inject(Router);
   private userService = inject(UserService);

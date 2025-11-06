@@ -97,9 +97,9 @@ export class DetailsVehicle {
 
     this.serviceGpsDevice.getHistoryDevice(vehicleId, 1, 200).subscribe({
       next: (res) => {
-        this.mapPoints = res.data
+        this.mapPoints = res.data;
         this.cdr.detectChanges();
-      }
+      },
     });
 
     (Object.keys(this.dataSets) as DataSetKey[]).forEach((key) =>
@@ -108,7 +108,8 @@ export class DetailsVehicle {
   }
 
   onPageChange(type: DataSetKey, newPage: number) {
-    this.dataSets[type].page = newPage;
+    if (!this.vehicle?.id) return;
+    this.loadData(type, this.vehicle.id, newPage);
   }
 
   toggleStatus(active: boolean) {
@@ -149,7 +150,9 @@ export class DetailsVehicle {
       next: (res) => {
         this.loading = false;
         if (res.success) {
-          alertSuccess(`Comando "${this.selectedCommand}" enviado com sucesso!`);
+          alertSuccess(
+            `Comando "${this.selectedCommand}" enviado com sucesso!`
+          );
           this.loadAll(this.vehicle!.id!);
         } else {
           alertError(`Falha ao enviar comando: ${res.message}`);
