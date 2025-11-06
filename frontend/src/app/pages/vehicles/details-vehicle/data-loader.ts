@@ -12,20 +12,30 @@ export interface DataSet<T> {
   totalPages: number;
 }
 
+export interface DateFilters {
+  startDate?: string;
+  endDate?: string;
+}
+
 export function createDataLoader(
   vehicleService: VehicleService,
   gpsService: GpsDeviceService,
   cdr: ChangeDetectorRef,
   dataSets: Record<DataSetKey, DataSet<any>>
 ) {
-  return function loadData(type: DataSetKey, vehicleId: number, page?: number) {
+  return function loadData(
+    type: DataSetKey,
+    vehicleId: number,
+    page?: number,
+    dateFilters?: DateFilters
+  ) {
     const currentPage = page ?? dataSets[type].page;
     const limit = dataSets[type].limit;
 
     const setData = (res: any, transform?: (d: any) => any) => {
       dataSets[type] = {
         items: transform ? res.data.map(transform) : res.data,
-        page: res.page, // atualiza para refletir a página retornada pelo backend
+        page: res.page,
         limit: res.limit,
         total: res.total,
         totalPages: res.totalPages,
@@ -38,7 +48,13 @@ export function createDataLoader(
     const serviceMap = {
       gpsEvents: () =>
         gpsService
-          .getHistoryDevice(vehicleId, currentPage, limit)
+          .getHistoryDevice(
+            vehicleId,
+            currentPage,
+            limit,
+            dateFilters?.startDate,
+            dateFilters?.endDate
+          )
           .subscribe({
             next: (res) => setData(res, (e) => gpsService.parse(e.rawLog, e.id)),
             error: handleError,
@@ -55,4 +71,3 @@ export function createDataLoader(
     serviceMap[type]();
   };
 }
-

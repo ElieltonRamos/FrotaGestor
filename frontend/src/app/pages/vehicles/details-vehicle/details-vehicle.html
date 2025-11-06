@@ -252,6 +252,57 @@
         {{ section.title }}
       </h3>
 
+      <!-- Filtro de data apenas para eventos GPS -->
+      @if (section.key === 'gpsEvents') {
+      <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[200px]">
+            <label
+              for="startDate"
+              class="block text-xs font-semibold text-gray-600 uppercase mb-1"
+            >
+              Data Inicial
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              [(ngModel)]="startDate"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <div class="flex-1 min-w-[200px]">
+            <label
+              for="endDate"
+              class="block text-xs font-semibold text-gray-600 uppercase mb-1"
+            >
+              Data Final
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              [(ngModel)]="endDate"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <button
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+            (click)="applyDateFilter()"
+          >
+            Filtrar
+          </button>
+
+          <button
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded"
+            (click)="clearDateFilter()"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+      }
+
       <div class="bg-gray-50 rounded-lg border border-gray-100 p-4">
         <app-base-list
           [columns]="section.columns"
