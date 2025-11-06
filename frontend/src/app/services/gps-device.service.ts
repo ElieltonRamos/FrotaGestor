@@ -3,7 +3,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
-import { CommandRequest, CommandResponse, GpsDevice, GpsHistory, ParsedGpsEvent } from '../interfaces/gpsDevice';
+import {
+  CommandRequest,
+  CommandResponse,
+  GpsDevice,
+  GpsHistory,
+  ParsedGpsEvent,
+} from '../interfaces/gpsDevice';
 import { Message } from '../interfaces/user';
 import { PaginatedResponse } from '../interfaces/paginator';
 
@@ -68,9 +74,6 @@ export class GpsDeviceService {
       }
     });
 
-    // Nota: sortBy e order não estão implementados no backend ainda
-    // O backend ordena por ID DESC por padrão
-
     return this.http.get<PaginatedResponse<GpsDevice>>(
       `${API_URL}/gps-devices`,
       { params }
@@ -118,7 +121,6 @@ export class GpsDeviceService {
       .set('sortBy', 'timestamp')
       .set('order', sortAsc ? 'asc' : 'desc');
 
-    // Adiciona apenas os filtros de data se fornecidos
     if (startDate) {
       params = params.set('startDate', startDate);
     }
@@ -134,12 +136,12 @@ export class GpsDeviceService {
 
   sendCommandDevice(request: CommandRequest): Observable<CommandResponse> {
     const url = `${API_URL}/gps-devices/commands`;
-    return this.http.post<CommandResponse>(url, request)
+    return this.http.post<CommandResponse>(url, request);
   }
 
   parse(rawLog: string, id: number): ParsedGpsEvent | null {
     const fields = rawLog.split(';');
-    if (fields.length < 6) return null; // ignora logs inválidos
+    if (fields.length < 11) return null;
 
     const header = fields[0];
 
@@ -163,21 +165,27 @@ export class GpsDeviceService {
     };
 
     const info = eventMap[header];
-    if (!info) return null; // <— ignora logs não mapeados
-
+    if (!info) return null;
     const dateYMD = fields[4] || '';
     const timeHMS = fields[5] || '';
-    const isoDate =
-      dateYMD.length >= 8
-        ? `${dateYMD.substring(0, 4)}-${dateYMD.substring(
-            4,
-            6
-          )}-${dateYMD.substring(6, 8)}T${timeHMS}`
-        : '';
+
+    let dateTime = '-';
+    if (dateYMD.length === 8 && timeHMS) {
+      const year = parseInt(dateYMD.substring(0, 4));
+      const month = parseInt(dateYMD.substring(4, 6)) - 1;
+      const day = parseInt(dateYMD.substring(6, 8));
+      const [hours, minutes, seconds] = timeHMS.split(':').map(Number);
+      const dateObjUTC = new Date(
+        Date.UTC(year, month, day, hours, minutes, seconds)
+      );
+      const options = { timeZone: 'America/Sao_Paulo', hour12: false };
+      dateTime = dateObjUTC.toLocaleString('pt-BR', options);
+    }
 
     const latitude = parseFloat(fields[7]) || 0;
     const longitude = parseFloat(fields[8]) || 0;
-    const speed = parseFloat(fields[9]) || 0;
+    const rawSpeed = parseFloat(fields[9]) || 0;
+    const speed = Math.round(rawSpeed);
     const heading = parseFloat(fields[10]) || 0;
     const ignition = fields[19] === '1';
 
@@ -186,7 +194,7 @@ export class GpsDeviceService {
       type: info.type,
       description: info.description,
       header,
-      dateTime: isoDate ? new Date(isoDate).toLocaleString('pt-BR') : '-',
+      dateTime,
       latitude,
       longitude,
       speed,

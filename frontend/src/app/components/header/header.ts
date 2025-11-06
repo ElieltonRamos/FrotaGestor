@@ -4,6 +4,7 @@ import { UserService } from '../../services/user.service';
 import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { NgIcon } from "@ng-icons/core";
+import { VERSION } from '../../services/api.url';
 
 @Component({
   selector: 'app-header',
@@ -18,6 +19,7 @@ export class Header {
   user = '';
   role = '';
   id = 1;
+  version = VERSION
 
   ngOnInit() {
     const info = this.userService.getUserInfo();

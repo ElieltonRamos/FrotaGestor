@@ -18,13 +18,14 @@ export function createDataLoader(
   cdr: ChangeDetectorRef,
   dataSets: Record<DataSetKey, DataSet<any>>
 ) {
-  return function loadData(type: DataSetKey, vehicleId: number) {
-    const { page, limit } = dataSets[type];
+  return function loadData(type: DataSetKey, vehicleId: number, page?: number) {
+    const currentPage = page ?? dataSets[type].page;
+    const limit = dataSets[type].limit;
 
     const setData = (res: any, transform?: (d: any) => any) => {
       dataSets[type] = {
         items: transform ? res.data.map(transform) : res.data,
-        page: res.page,
+        page: res.page, // atualiza para refletir a página retornada pelo backend
         limit: res.limit,
         total: res.total,
         totalPages: res.totalPages,
@@ -37,21 +38,21 @@ export function createDataLoader(
     const serviceMap = {
       gpsEvents: () =>
         gpsService
-          .getHistoryDevice(vehicleId, page, limit)
+          .getHistoryDevice(vehicleId, currentPage, limit)
           .subscribe({
             next: (res) => setData(res, (e) => gpsService.parse(e.rawLog, e.id)),
             error: handleError,
           }),
       trips: () =>
         vehicleService
-          .getTripsByVehicle(vehicleId, page, limit)
+          .getTripsByVehicle(vehicleId, currentPage, limit)
           .subscribe({ next: setData, error: handleError }),
       expenses: () =>
         vehicleService
-          .getExpensesByVehicle(vehicleId, page, limit)
+          .getExpensesByVehicle(vehicleId, currentPage, limit)
           .subscribe({ next: setData, error: handleError }),
     };
-
     serviceMap[type]();
   };
 }
+
