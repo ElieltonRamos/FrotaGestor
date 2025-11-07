@@ -38,6 +38,7 @@ data class GpsHistory(
     val gpsDeviceId: Int,
     val vehicleId: Int?,
     val dateTime: LocalDateTime,
+    val speed: Double = 0.0,
     val latitude: Double,
     val longitude: Double,
     val rawLog: String,

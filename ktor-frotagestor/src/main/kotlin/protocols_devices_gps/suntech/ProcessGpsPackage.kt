@@ -237,6 +237,7 @@ suspend fun saveOrUpdateGps(imei: String, gps: GpsData, rawMessage: String = "")
             row[GpsHistoryTable.gpsDeviceId] = gpsDeviceId
             row[GpsHistoryTable.vehicleId] = vehicleId
             row[GpsHistoryTable.dateTime] = gps.dateTime
+            row[GpsDevicesTable.speed] = gps.speed.toBigDecimal()
             row[GpsHistoryTable.latitude] = gps.latitude.toBigDecimal()
             row[GpsHistoryTable.longitude] = gps.longitude.toBigDecimal()
             row[GpsHistoryTable.rawLog] = rawMessage

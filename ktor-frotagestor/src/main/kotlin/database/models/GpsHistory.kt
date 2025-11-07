@@ -8,6 +8,7 @@ object GpsHistoryTable : Table("gps_history") {
     val gpsDeviceId = integer("gps_device_id").references(GpsDevicesTable.id)
     val vehicleId = integer("vehicle_id").references(VehiclesTable.id).nullable()
     val dateTime = datetime("date_time")
+    val speed = decimal("speed", 5, 2).default(0.toBigDecimal())
     val latitude = decimal("latitude", 9, 6)
     val longitude = decimal("longitude", 9, 6)
     val rawLog = text("raw_log")

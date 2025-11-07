@@ -85,6 +85,7 @@ CREATE TABLE gps_history (
     gps_device_id INT NOT NULL,                -- Referência ao dispositivo GPS
     vehicle_id INT NULL,                       -- Referência opcional ao veículo
     date_time DATETIME NOT NULL,               -- Data e hora do ponto
+    speed DECIMAL(5,2) DEFAULT 0,
     latitude DECIMAL(9,6) NOT NULL,           -- Latitude
     longitude DECIMAL(9,6) NOT NULL,          -- Longitude
     raw_log TEXT NOT NULL,                     -- Log bruto recebido do rastreador (JSON, NMEA, etc.)
