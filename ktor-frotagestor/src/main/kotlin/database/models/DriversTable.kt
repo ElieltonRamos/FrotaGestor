@@ -2,11 +2,12 @@ package com.frotagestor.database.models
 
 import com.frotagestor.interfaces.DriverStatus
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
 object DriversTable : Table("drivers") {
-    val id = integer("id").autoIncrement()
+    val id: Column<Int> = integer("id").autoIncrement()
     val name = varchar("name", 100)
     val cpf = varchar("cpf", 14).uniqueIndex()
     val cnh = varchar("cnh", 20).uniqueIndex()

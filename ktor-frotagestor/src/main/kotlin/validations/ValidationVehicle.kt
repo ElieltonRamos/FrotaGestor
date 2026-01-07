@@ -24,7 +24,7 @@ fun validateVehicle(rawBody: String): ValidationResult<Vehicle> {
         val msg = if (missingFields.size == 1) {
             "O campo ${missingFields.first()} é obrigatório"
         } else {
-            "Os campos ${missingFields.joinToString(", ")} são obrigatórios"
+            "Os campos ${missingFields.joinToString(" ")} são obrigatórios"
         }
         ValidationResult.Error(msg)
     } else {
@@ -43,12 +43,14 @@ fun validatePartialVehicle(rawBody: String): ValidationResult<PartialVehicle> {
         return ValidationResult.Error("JSON inválido")
     }
 
+    // ✨ Verificar se pelo menos um campo foi fornecido (incluindo defaultDriverId)
     if (
         vehicle.plate?.isBlank() == true &&
         vehicle.model?.isBlank() == true &&
         vehicle.brand.isNullOrBlank() &&
         vehicle.year == null &&
-        vehicle.status == null
+        vehicle.status == null &&
+        vehicle.defaultDriverId == null  // ✨ NOVO CAMPO
     ) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
     }

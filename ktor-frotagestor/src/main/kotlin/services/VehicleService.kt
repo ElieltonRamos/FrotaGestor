@@ -10,16 +10,8 @@ import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateVehicle
 import com.frotagestor.validations.validatePartialVehicle
 import io.ktor.http.HttpStatusCode
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.*
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.Month
-import kotlinx.datetime.plus
-import org.jetbrains.exposed.sql.selectAll
 
 class VehicleService {
 
@@ -31,6 +23,7 @@ class VehicleService {
             )
         }
 
+        // Verificar se placa já existe
         val existingVehicle = DatabaseFactory.dbQuery {
             VehiclesTable
                 .selectAll()
@@ -45,6 +38,26 @@ class VehicleService {
             )
         }
 
+        // ✨ NOVA VALIDAÇÃO: Se defaultDriverId informado, verifica se existe e está ATIVO
+        if (newVehicle.defaultDriverId != null) {
+            val driverExists = DatabaseFactory.dbQuery {
+                DriversTable
+                    .select(DriversTable.id)
+                    .where {
+                        (DriversTable.id eq newVehicle.defaultDriverId) and
+                                (DriversTable.status eq DriverStatus.ATIVO)
+                    }
+                    .singleOrNull()
+            }
+
+            if (driverExists == null) {
+                return ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = Message("Motorista padrão informado não existe ou está inativo!")
+                )
+            }
+        }
+
         DatabaseFactory.dbQuery {
             VehiclesTable.insert {
                 it[plate] = newVehicle.plate
@@ -52,6 +65,7 @@ class VehicleService {
                 it[brand] = newVehicle.brand
                 it[year] = newVehicle.year
                 it[status] = newVehicle.status
+                it[defaultDriverId] = newVehicle.defaultDriverId  // ✨ NOVO CAMPO
                 it[deletedAt] = null
             }
         }
@@ -73,7 +87,10 @@ class VehicleService {
         val existingVehicle = DatabaseFactory.dbQuery {
             VehiclesTable
                 .selectAll()
-                .where { VehiclesTable.id eq id and (VehiclesTable.status neq VehicleStatus.INATIVO) }
+                .where {
+                    VehiclesTable.id eq id and
+                            (VehiclesTable.status neq VehicleStatus.INATIVO)
+                }
                 .singleOrNull()
         }
 
@@ -84,6 +101,26 @@ class VehicleService {
             )
         }
 
+        // ✨ NOVA VALIDAÇÃO: Se defaultDriverId for atualizado, verifica se existe e está ATIVO
+        if (updatedVehicle.defaultDriverId != null) {
+            val driverExists = DatabaseFactory.dbQuery {
+                DriversTable
+                    .select(DriversTable.id)
+                    .where {
+                        (DriversTable.id eq updatedVehicle.defaultDriverId) and
+                                (DriversTable.status eq DriverStatus.ATIVO)
+                    }
+                    .singleOrNull()
+            }
+
+            if (driverExists == null) {
+                return ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = Message("Motorista padrão informado não existe ou está inativo!")
+                )
+            }
+        }
+
         DatabaseFactory.dbQuery {
             VehiclesTable.update({ VehiclesTable.id eq id }) {
                 updatedVehicle.plate?.let { p -> it[plate] = p }
@@ -91,6 +128,7 @@ class VehicleService {
                 updatedVehicle.brand?.let { b -> it[brand] = b }
                 updatedVehicle.year?.let { y -> it[year] = y }
                 updatedVehicle.status?.let { s -> it[status] = s }
+                updatedVehicle.defaultDriverId?.let { d -> it[defaultDriverId] = d }  // ✨ NOVO CAMPO
             }
         }
 
@@ -114,26 +152,35 @@ class VehicleService {
     ): ServiceResponse<PaginatedResponse<Vehicle>> {
         return DatabaseFactory.dbQuery {
             val query = VehiclesTable
-                .selectAll()
+                .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
+                .select(VehiclesTable.columns + listOf(DriversTable.name))
                 .apply {
-                    if (statusFilter != VehicleStatus.INATIVO) {
-                        andWhere { VehiclesTable.deletedAt.isNull() }
+                    // Lógica de soft delete
+                    when (statusFilter) {
+                        VehicleStatus.INATIVO -> andWhere { VehiclesTable.deletedAt.isNotNull() }
+                        else -> andWhere { VehiclesTable.deletedAt.isNull() }
                     }
+
                     if (idFilter != null) {
                         andWhere { VehiclesTable.id eq idFilter }
                     }
+
                     if (!plateFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.plate like "%$plateFilter%" }
+                        andWhere { VehiclesTable.plate like "%${plateFilter}%" } // ✅ FIX
                     }
+
                     if (!modelFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.model like "%$modelFilter%" }
+                        andWhere { VehiclesTable.model like "%${modelFilter}%" } // ✅ FIX
                     }
+
                     if (!brandFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.brand like "%$brandFilter%" }
+                        andWhere { VehiclesTable.brand like "%${brandFilter}%" } // ✅ FIX
                     }
+
                     if (yearFilter != null) {
                         andWhere { VehiclesTable.year eq yearFilter }
                     }
+
                     if (statusFilter != null) {
                         andWhere { VehiclesTable.status eq statusFilter }
                     }
@@ -158,6 +205,8 @@ class VehicleService {
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
+                        defaultDriverId = it[VehiclesTable.defaultDriverId],
+                        defaultDriverName = it.getOrNull(DriversTable.name)
                     )
                 }
 
@@ -176,7 +225,14 @@ class VehicleService {
 
     suspend fun findVehicleById(id: Int): ServiceResponse<Any> {
         val vehicle = DatabaseFactory.dbQuery {
-            VehiclesTable.selectAll().where { VehiclesTable.id eq id and (VehiclesTable.status neq VehicleStatus.INATIVO) }
+            // ✨ LEFT JOIN com DriversTable para pegar nome do motorista padrão
+            VehiclesTable
+                .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
+                .select(VehiclesTable.columns + DriversTable.name)
+                .where {
+                    VehiclesTable.id eq id and
+                            (VehiclesTable.status neq VehicleStatus.INATIVO)
+                }
                 .singleOrNull()?.let {
                     Vehicle(
                         id = it[VehiclesTable.id],
@@ -185,6 +241,8 @@ class VehicleService {
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
+                        defaultDriverId = it[VehiclesTable.defaultDriverId],        // ✨ NOVO
+                        defaultDriverName = it.getOrNull(DriversTable.name)         // ✨ NOVO
                     )
                 }
         }
@@ -204,15 +262,25 @@ class VehicleService {
 
     suspend fun getIndicators(): ServiceResponse<VehicleIndicators> {
         return DatabaseFactory.dbQuery {
-            val activeCount = VehiclesTable.selectAll().where { VehiclesTable.status eq VehicleStatus.ATIVO }.count()
-            val maintenanceCount = VehiclesTable.selectAll()
-                .where { VehiclesTable.status eq VehicleStatus.MANUTENCAO and VehiclesTable.deletedAt.isNull() }
+            val activeCount = VehiclesTable.selectAll()
+                .where { VehiclesTable.status eq VehicleStatus.ATIVO }
                 .count()
 
+            val maintenanceCount = VehiclesTable.selectAll()
+                .where {
+                    VehiclesTable.status eq VehicleStatus.MANUTENCAO and
+                            VehiclesTable.deletedAt.isNull()
+                }
+                .count()
+
+            // ✨ LEFT JOIN para pegar motorista padrão do último veículo
             val lastVehicleRow = VehiclesTable
-                .selectAll().where { VehiclesTable.deletedAt.isNull() }
+                .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
+                .select(VehiclesTable.columns + DriversTable.name)
+                .where { VehiclesTable.deletedAt.isNull() }
                 .orderBy(VehiclesTable.id, SortOrder.DESC)
-                .limit(1).singleOrNull()
+                .limit(1)
+                .singleOrNull()
 
             val lastVehicle = lastVehicleRow?.let {
                 Vehicle(
@@ -222,6 +290,8 @@ class VehicleService {
                     brand = it[VehiclesTable.brand],
                     year = it[VehiclesTable.year],
                     status = it[VehiclesTable.status],
+                    defaultDriverId = it[VehiclesTable.defaultDriverId],        // ✨ NOVO
+                    defaultDriverName = it.getOrNull(DriversTable.name)         // ✨ NOVO
                 )
             }
 
@@ -252,7 +322,7 @@ class VehicleService {
                 today.year,
                 today.month,
                 when (today.month) {
-                    Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                    Month.FEBRUARY -> if ((today.year % 4 == 0 && today.year % 100 != 0) || today.year % 400 == 0) 29 else 28
                     Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
                     else -> 31
                 }
@@ -280,6 +350,7 @@ class VehicleService {
                 }
 
             val total = query.count()
+
             val results = query
                 .orderBy(TripsTable.startTime to SortOrder.ASC)
                 .limit(limit, offset = ((page - 1) * limit).toLong())
@@ -321,39 +392,39 @@ class VehicleService {
     ): ServiceResponse<PaginatedResponse<Expense>> {
         return DatabaseFactory.dbQuery {
             val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
             val firstDayOfMonth = LocalDate(today.year, today.month, 1)
             val lastDayOfMonth = LocalDate(
                 today.year,
                 today.month,
                 when (today.month) {
-                    Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                    Month.FEBRUARY -> if ((today.year % 4 == 0 && today.year % 100 != 0) || today.year % 400 == 0) 29 else 28
                     Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
                     else -> 31
                 }
             )
+
             val effectiveStart = startDate ?: firstDayOfMonth
             val effectiveEnd = endDate ?: lastDayOfMonth
+
             val query = ExpensesTable
                 .join(VehiclesTable, JoinType.INNER) { ExpensesTable.vehicleId eq VehiclesTable.id }
                 .join(DriversTable, JoinType.LEFT) { ExpensesTable.driverId eq DriversTable.id }
                 .select(
-                    ExpensesTable.id,
-                    ExpensesTable.vehicleId,
-                    ExpensesTable.driverId,
-                    ExpensesTable.tripId,
-                    ExpensesTable.date,
-                    ExpensesTable.type,
-                    ExpensesTable.amount,
-                    ExpensesTable.description,
-                    ExpensesTable.liters,
-                    ExpensesTable.pricePerLiter,
-                    ExpensesTable.odometer,
-                    VehiclesTable.plate,
-                    DriversTable.name
+                    ExpensesTable.id, ExpensesTable.vehicleId, ExpensesTable.driverId,
+                    ExpensesTable.tripId, ExpensesTable.date, ExpensesTable.type,
+                    ExpensesTable.amount, ExpensesTable.description, ExpensesTable.liters,
+                    ExpensesTable.pricePerLiter, ExpensesTable.odometer,
+                    VehiclesTable.plate, DriversTable.name
                 )
-                .where { (ExpensesTable.vehicleId eq vehicleId) and (ExpensesTable.date greaterEq effectiveStart) and (ExpensesTable.date lessEq effectiveEnd) }
+                .where {
+                    (ExpensesTable.vehicleId eq vehicleId) and
+                            (ExpensesTable.date greaterEq effectiveStart) and
+                            (ExpensesTable.date lessEq effectiveEnd)
+                }
 
             val total = query.count()
+
             val results = query
                 .orderBy(ExpensesTable.date to SortOrder.ASC)
                 .limit(limit, offset = ((page - 1) * limit).toLong())
@@ -402,7 +473,7 @@ class VehicleService {
                     today.year,
                     today.month,
                     when (today.month) {
-                        Month.FEBRUARY -> if (today.year % 4 == 0 && (today.year % 100 != 0 || today.year % 400 == 0)) 29 else 28
+                        Month.FEBRUARY -> if ((today.year % 4 == 0 && today.year % 100 != 0) || today.year % 400 == 0) 29 else 28
                         Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
                         else -> 31
                     }
@@ -416,20 +487,13 @@ class VehicleService {
                 val endDateTime = effectiveEnd.plus(DatePeriod(days = 1))
                     .atStartOfDayIn(TimeZone.currentSystemDefault())
 
-                // Query: motorista que mais usou o veículo no período
+                // Query motorista que mais usou o veículo no período
                 val result = (TripsTable innerJoin DriversTable)
                     .select(
-                        DriversTable.id,
-                        DriversTable.name,
-                        DriversTable.cpf,
-                        DriversTable.cnh,
-                        DriversTable.cnhCategory,
-                        DriversTable.cnhExpiration,
-                        DriversTable.phone,
-                        DriversTable.email,
-                        DriversTable.status,
-                        DriversTable.deletedAt,
-                        TripsTable.id.count()
+                        DriversTable.id, DriversTable.name, DriversTable.cpf,
+                        DriversTable.cnh, DriversTable.cnhCategory, DriversTable.cnhExpiration,
+                        DriversTable.phone, DriversTable.email, DriversTable.status,
+                        DriversTable.deletedAt, TripsTable.id.count()
                     )
                     .where {
                         (TripsTable.vehicleId eq vehicleId) and
@@ -437,15 +501,9 @@ class VehicleService {
                                 (TripsTable.startTime less endDateTime.toLocalDateTime(TimeZone.currentSystemDefault()))
                     }
                     .groupBy(
-                        DriversTable.id,
-                        DriversTable.name,
-                        DriversTable.cpf,
-                        DriversTable.cnh,
-                        DriversTable.cnhCategory,
-                        DriversTable.cnhExpiration,
-                        DriversTable.phone,
-                        DriversTable.email,
-                        DriversTable.status,
+                        DriversTable.id, DriversTable.name, DriversTable.cpf,
+                        DriversTable.cnh, DriversTable.cnhCategory, DriversTable.cnhExpiration,
+                        DriversTable.phone, DriversTable.email, DriversTable.status,
                         DriversTable.deletedAt
                     )
                     .orderBy(TripsTable.id.count(), SortOrder.DESC)
@@ -473,7 +531,7 @@ class VehicleService {
                     )
                 )
             } catch (e: Exception) {
-                println("Error in getTopDriverByVehicle: ${e.message}")
+                println("Error in getTopDriverByVehicle: \${e.message}")
                 ServiceResponse(
                     status = HttpStatusCode.InternalServerError,
                     data = mapOf("message" to "Erro interno")
@@ -481,7 +539,6 @@ class VehicleService {
             }
         }
     }
-
 
     suspend fun softDeleteVehicle(id: Int): ServiceResponse<Message> {
         val existingVehicle = DatabaseFactory.dbQuery {
