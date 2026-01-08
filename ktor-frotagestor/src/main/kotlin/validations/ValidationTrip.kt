@@ -18,7 +18,7 @@ fun validateTrip(rawBody: String): ValidationResult<Trip> {
 
     val missingFields = mutableListOf<String>()
     if (trip.vehicleId <= 0) missingFields.add("vehicleId")
-    if (trip.driverId <= 0) missingFields.add("driverId")
+    trip.driverId?.let { if (it <= 0) missingFields.add("driverId") }
     if (trip.startTime == null) missingFields.add("startTime")
 
     return if (missingFields.isNotEmpty()) {

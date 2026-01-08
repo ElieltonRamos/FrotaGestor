@@ -30,6 +30,23 @@ suspend fun startTcpServerSuntech() {
     }
 }
 
+fun logPacket(remote: String, message: String) {
+    val hex = message
+        .toByteArray(Charsets.US_ASCII)
+        .joinToString(" ") { "%02X".format(it) }
+
+    println(
+        """
+        |=== PACOTE RECEBIDO ===
+        |Remote   : $remote
+        |Timestamp: ${generateDate()}
+        |Message  : $message
+        |Hex      : $hex
+        |========================
+        """.trimMargin()
+    )
+}
+
 suspend fun handleDevice(socket: Socket) {
     val input = socket.openReadChannel()
     var deviceId: String? = null
