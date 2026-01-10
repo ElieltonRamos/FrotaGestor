@@ -24,7 +24,8 @@ data class GpsData(
     val speed: Double,
     val heading: Double,
     val ignition: Boolean,
-    val dateTime: LocalDateTime,
+    val deviceDateTime: LocalDateTime, // Data do dispositivo (para histórico)
+    val serverDateTime: LocalDateTime  // Data do servidor (para lógica de viagens)
 )
 
 // =======================
@@ -81,47 +82,60 @@ suspend fun saveOrUpdateGps(
 
         val gpsDeviceId = device[GpsDevicesTable.id]
 
-        // Atualiza dispositivo
+        // Atualiza dispositivo (usa data do servidor)
         GpsDevicesTable.update({ GpsDevicesTable.imei eq imei }) {
             it[latitude] = gps.latitude.toBigDecimal()
             it[longitude] = gps.longitude.toBigDecimal()
             it[speed] = gps.speed.toBigDecimal()
             it[heading] = (gps.heading % 360).toBigDecimal()
-            it[dateTime] = gps.dateTime
+            it[dateTime] = gps.serverDateTime // 🔥 USA SERVIDOR
             it[ignition] = gps.ignition
         }
 
-        // Histórico
+        // Histórico (preserva data do dispositivo para referência)
         GpsHistoryTable.insert {
             it[GpsHistoryTable.gpsDeviceId] = gpsDeviceId
             it[GpsHistoryTable.vehicleId] = vehicleId
             it[GpsHistoryTable.latitude] = gps.latitude.toBigDecimal()
             it[GpsHistoryTable.longitude] = gps.longitude.toBigDecimal()
             it[GpsHistoryTable.speed] = gps.speed.toBigDecimal()
-            it[GpsHistoryTable.dateTime] = gps.dateTime
+            it[GpsHistoryTable.dateTime] = gps.deviceDateTime // Mantém data do dispositivo
             it[GpsHistoryTable.rawLog] = rawMessage
         }
     }
 
     // =======================
     // INTEGRAÇÃO COM VIAGENS
+    // 🔥 SEMPRE USA serverDateTime
     // =======================
+
+    // 1️⃣ Primeiro verifica se há timer pendente que já expirou
+    autoTripService.checkPendingTripStart(
+        vehicleId = vehicleId,
+        latitude = gps.latitude,
+        longitude = gps.longitude,
+        currentTime = gps.serverDateTime, // 🔥 USA SERVIDOR
+        speed = gps.speed
+    )
+
+    // 2️⃣ Processa mudanças de ignição
     autoTripService.processIgnitionChange(
         imei = imei,
         vehicleId = vehicleId,
         latitude = gps.latitude,
         longitude = gps.longitude,
         ignition = gps.ignition,
-        dateTime = gps.dateTime,
+        dateTime = gps.serverDateTime, // 🔥 USA SERVIDOR
         speed = gps.speed
     )
 
+    // 3️⃣ Atualiza viagem ativa (se existir)
     autoTripService.updateActiveTrip(
         imei = imei,
         vehicleId = vehicleId,
         latitude = gps.latitude,
         longitude = gps.longitude,
-        dateTime = gps.dateTime,
+        dateTime = gps.serverDateTime, // 🔥 USA SERVIDOR
         speed = gps.speed
     )
 }
@@ -151,15 +165,35 @@ fun parseGpsPacket(data: String): GpsData? = try {
         else -> ioStatus == 1
     }
 
+    // 🔥 CAPTURA DATA DO DISPOSITIVO (para histórico)
     val dateStr = parts.getOrNull(4)
     val timeStr = parts.getOrNull(5)
-    val dateTime = if (dateStr != null && timeStr != null) {
-        parseDeviceDateTime(dateStr, timeStr)
+    val deviceDateTime = if (dateStr != null && timeStr != null) {
+        try {
+            parseDeviceDateTime(dateStr, timeStr)
+        } catch (e: Exception) {
+            println("⚠️ Erro ao parsear data do dispositivo, usando hora do servidor")
+            Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        }
     } else {
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     }
 
-    GpsData(latitude, longitude, speed, heading, ignition, dateTime)
+    // 🔥 SEMPRE USA HORA DO SERVIDOR PARA LÓGICA
+    val serverDateTime = Clock.System.now()
+        .toLocalDateTime(TimeZone.currentSystemDefault())
+
+    println("🕐 Timestamps: Dispositivo=$deviceDateTime | Servidor=$serverDateTime")
+
+    GpsData(
+        latitude = latitude,
+        longitude = longitude,
+        speed = speed,
+        heading = heading,
+        ignition = ignition,
+        deviceDateTime = deviceDateTime,
+        serverDateTime = serverDateTime
+    )
 
 } catch (e: Exception) {
     println("❌ Erro parse GPS: ${e.message}")
