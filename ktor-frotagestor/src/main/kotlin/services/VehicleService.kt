@@ -3,8 +3,10 @@ package com.frotagestor.services
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.DriversTable
 import com.frotagestor.database.models.ExpensesTable
+import com.frotagestor.database.models.SubfleetsTable
 import com.frotagestor.database.models.TripsTable
 import com.frotagestor.database.models.VehiclesTable
+import com.frotagestor.database.models.VehiclesTable.subfleetId
 import com.frotagestor.interfaces.*
 import com.frotagestor.validations.getOrReturn
 import com.frotagestor.validations.validateVehicle
@@ -14,7 +16,6 @@ import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.*
 
 class VehicleService {
-
     suspend fun createVehicle(req: String): ServiceResponse<Message> {
         val newVehicle = validateVehicle(req).getOrReturn { msg ->
             return ServiceResponse(
@@ -38,7 +39,27 @@ class VehicleService {
             )
         }
 
-        // ✨ NOVA VALIDAÇÃO: Se defaultDriverId informado, verifica se existe e está ATIVO
+        // ✨ Validar subfrota (se informada)
+        if (newVehicle.subfleetId != null) {
+            val subfleetExists = DatabaseFactory.dbQuery {
+                SubfleetsTable
+                    .select(SubfleetsTable.id)
+                    .where {
+                        (SubfleetsTable.id eq newVehicle.subfleetId) and
+                                (SubfleetsTable.status eq SubfleetStatus.ACTIVE)
+                    }
+                    .singleOrNull()
+            }
+
+            if (subfleetExists == null) {
+                return ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = Message("Subfrota informada não existe ou está inativa!")
+                )
+            }
+        }
+
+        // Validar motorista padrão (se informado)
         if (newVehicle.defaultDriverId != null) {
             val driverExists = DatabaseFactory.dbQuery {
                 DriversTable
@@ -60,12 +81,13 @@ class VehicleService {
 
         DatabaseFactory.dbQuery {
             VehiclesTable.insert {
+                it[subfleetId] = newVehicle.subfleetId  // ✨ NOVO
                 it[plate] = newVehicle.plate
                 it[model] = newVehicle.model
                 it[brand] = newVehicle.brand
                 it[year] = newVehicle.year
                 it[status] = newVehicle.status
-                it[defaultDriverId] = newVehicle.defaultDriverId  // ✨ NOVO CAMPO
+                it[defaultDriverId] = newVehicle.defaultDriverId
                 it[deletedAt] = null
             }
         }
@@ -101,7 +123,27 @@ class VehicleService {
             )
         }
 
-        // ✨ NOVA VALIDAÇÃO: Se defaultDriverId for atualizado, verifica se existe e está ATIVO
+        // ✨ Validar subfrota (se atualizada)
+        if (updatedVehicle.subfleetId != null) {
+            val subfleetExists = DatabaseFactory.dbQuery {
+                SubfleetsTable
+                    .select(SubfleetsTable.id)
+                    .where {
+                        (SubfleetsTable.id eq updatedVehicle.subfleetId) and
+                                (SubfleetsTable.status eq SubfleetStatus.ACTIVE)
+                    }
+                    .singleOrNull()
+            }
+
+            if (subfleetExists == null) {
+                return ServiceResponse(
+                    status = HttpStatusCode.BadRequest,
+                    data = Message("Subfrota informada não existe ou está inativa!")
+                )
+            }
+        }
+
+        // Validar motorista padrão (se atualizado)
         if (updatedVehicle.defaultDriverId != null) {
             val driverExists = DatabaseFactory.dbQuery {
                 DriversTable
@@ -123,12 +165,13 @@ class VehicleService {
 
         DatabaseFactory.dbQuery {
             VehiclesTable.update({ VehiclesTable.id eq id }) {
+                updatedVehicle.subfleetId?.let { s -> it[subfleetId] = s }  // ✨ NOVO
                 updatedVehicle.plate?.let { p -> it[plate] = p }
                 updatedVehicle.model?.let { m -> it[model] = m }
                 updatedVehicle.brand?.let { b -> it[brand] = b }
                 updatedVehicle.year?.let { y -> it[year] = y }
                 updatedVehicle.status?.let { s -> it[status] = s }
-                updatedVehicle.defaultDriverId?.let { d -> it[defaultDriverId] = d }  // ✨ NOVO CAMPO
+                updatedVehicle.defaultDriverId?.let { d -> it[defaultDriverId] = d }
             }
         }
 
@@ -148,12 +191,14 @@ class VehicleService {
         modelFilter: String? = null,
         brandFilter: String? = null,
         yearFilter: Int? = null,
-        statusFilter: VehicleStatus? = null
+        statusFilter: VehicleStatus? = null,
+        subfleetIdFilter: Int? = null  // ✨ NOVO FILTRO
     ): ServiceResponse<PaginatedResponse<Vehicle>> {
         return DatabaseFactory.dbQuery {
             val query = VehiclesTable
                 .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
-                .select(VehiclesTable.columns + listOf(DriversTable.name))
+                .leftJoin(SubfleetsTable, { subfleetId }, { SubfleetsTable.id })  // ✨ NOVO JOIN
+                .select(VehiclesTable.columns + listOf(DriversTable.name, SubfleetsTable.name))  // ✨ NOVO
                 .apply {
                     // Lógica de soft delete
                     when (statusFilter) {
@@ -166,15 +211,15 @@ class VehicleService {
                     }
 
                     if (!plateFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.plate like "%${plateFilter}%" } // ✅ FIX
+                        andWhere { VehiclesTable.plate like "%${plateFilter}%" }
                     }
 
                     if (!modelFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.model like "%${modelFilter}%" } // ✅ FIX
+                        andWhere { VehiclesTable.model like "%${modelFilter}%" }
                     }
 
                     if (!brandFilter.isNullOrBlank()) {
-                        andWhere { VehiclesTable.brand like "%${brandFilter}%" } // ✅ FIX
+                        andWhere { VehiclesTable.brand like "%${brandFilter}%" }
                     }
 
                     if (yearFilter != null) {
@@ -183,6 +228,11 @@ class VehicleService {
 
                     if (statusFilter != null) {
                         andWhere { VehiclesTable.status eq statusFilter }
+                    }
+
+                    // ✨ NOVO FILTRO
+                    if (subfleetIdFilter != null) {
+                        andWhere { VehiclesTable.subfleetId eq subfleetIdFilter }
                     }
                 }
 
@@ -200,13 +250,15 @@ class VehicleService {
                 .map {
                     Vehicle(
                         id = it[VehiclesTable.id],
+                        subfleetId = it[VehiclesTable.subfleetId],  // ✨ NOVO
                         plate = it[VehiclesTable.plate],
                         model = it[VehiclesTable.model],
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
                         defaultDriverId = it[VehiclesTable.defaultDriverId],
-                        defaultDriverName = it.getOrNull(DriversTable.name)
+                        defaultDriverName = it.getOrNull(DriversTable.name),
+                        subfleetName = it.getOrNull(SubfleetsTable.name)  // ✨ NOVO
                     )
                 }
 
@@ -225,10 +277,10 @@ class VehicleService {
 
     suspend fun findVehicleById(id: Int): ServiceResponse<Any> {
         val vehicle = DatabaseFactory.dbQuery {
-            // ✨ LEFT JOIN com DriversTable para pegar nome do motorista padrão
             VehiclesTable
                 .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
-                .select(VehiclesTable.columns + DriversTable.name)
+                .leftJoin(SubfleetsTable, { subfleetId }, { SubfleetsTable.id })  // ✨ NOVO
+                .select(VehiclesTable.columns + DriversTable.name + SubfleetsTable.name)  // ✨ NOVO
                 .where {
                     VehiclesTable.id eq id and
                             (VehiclesTable.status neq VehicleStatus.INATIVO)
@@ -236,13 +288,15 @@ class VehicleService {
                 .singleOrNull()?.let {
                     Vehicle(
                         id = it[VehiclesTable.id],
+                        subfleetId = it[VehiclesTable.subfleetId],  // ✨ NOVO
                         plate = it[VehiclesTable.plate],
                         model = it[VehiclesTable.model],
                         brand = it[VehiclesTable.brand],
                         year = it[VehiclesTable.year],
                         status = it[VehiclesTable.status],
-                        defaultDriverId = it[VehiclesTable.defaultDriverId],        // ✨ NOVO
-                        defaultDriverName = it.getOrNull(DriversTable.name)         // ✨ NOVO
+                        defaultDriverId = it[VehiclesTable.defaultDriverId],
+                        defaultDriverName = it.getOrNull(DriversTable.name),
+                        subfleetName = it.getOrNull(SubfleetsTable.name)  // ✨ NOVO
                     )
                 }
         }

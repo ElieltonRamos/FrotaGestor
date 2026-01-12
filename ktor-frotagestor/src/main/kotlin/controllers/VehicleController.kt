@@ -59,6 +59,7 @@ class VehicleController(private val vehicleService: VehicleService) {
             val statusFilter = call.request.queryParameters["status"]?.let {
                 runCatching { VehicleStatus.valueOf(it.uppercase()) }.getOrNull()
             }
+            val subfleetIdFilter = call.request.queryParameters["subfleetId"]?.toIntOrNull()  // ✨ NOVO
 
             // 📌 Mapeia string -> coluna
             val sortByColumn = when (sortByParam.lowercase()) {
@@ -86,7 +87,8 @@ class VehicleController(private val vehicleService: VehicleService) {
                 modelFilter = modelFilter,
                 brandFilter = brandFilter,
                 yearFilter = yearFilter,
-                statusFilter = statusFilter
+                statusFilter = statusFilter,
+                subfleetIdFilter = subfleetIdFilter  // ✨ NOVO
             )
 
             call.respond(serviceResult.status, serviceResult.data)

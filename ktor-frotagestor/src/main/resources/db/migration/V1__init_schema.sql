@@ -20,9 +20,30 @@ CREATE TABLE drivers (
     deleted_at DATETIME NULL
 );
 
--- Tabela de veículos
+-- ✨ NOVA TABELA: Subfrotas (organização da frota)
+CREATE TABLE subfleets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT 'Nome da subfrota (ex: Regional Sul)',
+    description TEXT COMMENT 'Descricao detalhada da subfrota',
+    parent_id INT NULL COMMENT 'Subfrota pai (para hierarquia)',
+    color VARCHAR(7) DEFAULT '#3B82F6' COMMENT 'Cor para identificacao visual',
+    icon VARCHAR(50) DEFAULT 'truck' COMMENT 'Icone representativo',
+    manager_user_id INT NULL COMMENT 'Usuario responsavel pela subfrota',
+    status ENUM('ACTIVE', 'INACTIVE') DEFAULT 'ACTIVE',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (parent_id) REFERENCES subfleets(id) ON DELETE SET NULL,
+    FOREIGN KEY (manager_user_id) REFERENCES users(id) ON DELETE SET NULL,
+
+    INDEX idx_subfleets_parent (parent_id),
+    INDEX idx_subfleets_status (status),
+    INDEX idx_subfleets_manager (manager_user_id)
+);
+
+-- Tabela de veículos (✨ COM SUBFROTA)
 CREATE TABLE vehicles (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    subfleet_id INT NULL COMMENT 'Subfrota a qual o veiculo pertence', -- ✨ NOVO CAMPO
     plate VARCHAR(10) UNIQUE NOT NULL,
     model VARCHAR(100) NOT NULL,
     brand VARCHAR(100),
@@ -31,7 +52,9 @@ CREATE TABLE vehicles (
     default_driver_id INT NULL COMMENT 'Motorista padrao/principal do veiculo',
     deleted_at DATETIME NULL,
 
+    FOREIGN KEY (subfleet_id) REFERENCES subfleets(id) ON DELETE SET NULL, -- ✨ NOVO
     FOREIGN KEY (default_driver_id) REFERENCES drivers(id) ON DELETE SET NULL,
+    INDEX idx_vehicles_subfleet (subfleet_id), -- ✨ NOVO ÍNDICE
     INDEX idx_vehicles_default_driver (default_driver_id)
 );
 
