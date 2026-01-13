@@ -17,6 +17,7 @@ export class Menu {
 
   menus = [
     { name: 'Veículos', icon: 'heroTruckSolid', route: '/veiculos' },
+    { name: 'Frotas', icon: 'heroTableCellsSolid', route: '/frotas' },
     { name: 'Dispositivos', icon: 'heroDeviceTabletSolid' , route: '/dispositivos'},
     { name: 'Viagens', icon: 'heroMapSolid', route: '/viagens' },
     { name: 'Motoristas', icon: 'heroUserGroupSolid', route: '/motoristas' },

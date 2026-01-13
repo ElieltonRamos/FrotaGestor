@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { delay, Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
 import {
   Vehicle,
@@ -55,8 +55,8 @@ export class VehicleService {
     return this.http.patch(`${API_URL}/vehicles/${id}`, vehicle);
   }
 
-  delete(id: number | string): Observable<void> {
-    return this.http.delete<void>(`${API_URL}/vehicles/${id}`);
+  delete(id: number | string): Observable<Message> {
+    return this.http.delete<Message>(`${API_URL}/vehicles/${id}`);
   }
 
   getIndicators(filters: Record<string, any> = {}): Observable<VehicleIndicators> {
@@ -79,18 +79,31 @@ export class VehicleService {
     return this.http.get<VehicleReport>(`${API_URL}/reports/vehicles`, { params });
   }
 
+  /** 
+   * 🔄 ATUALIZADO: Agora aceita startDate e endDate
+   */
   getTripsByVehicle(
     vehicleId: number,
     page: number = 1,
     limit: number = 10,
     sortKey: string = 'id',
-    sortAsc: boolean = true
+    sortAsc: boolean = true,
+    startDate?: string,  // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
+    endDate?: string     // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
   ): Observable<PaginatedResponse<Trip>> {
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('page', page)
       .set('limit', limit)
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
+
+    // ✨ Adicionar filtros de data se fornecidos
+    if (startDate) {
+      params = params.set('startDate', startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate);
+    }
 
     return this.http.get<PaginatedResponse<Trip>>(
       `${API_URL}/vehicles/${vehicleId}/trips`,
@@ -98,19 +111,31 @@ export class VehicleService {
     );
   }
 
-  /** 🔹 Lista as despesas relacionadas a um veículo */
+  /** 
+   * 🔄 ATUALIZADO: Agora aceita startDate e endDate
+   */
   getExpensesByVehicle(
     vehicleId: number,
     page: number = 1,
     limit: number = 10,
     sortKey: string = 'id',
-    sortAsc: boolean = true
+    sortAsc: boolean = true,
+    startDate?: string,  // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
+    endDate?: string     // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
   ): Observable<PaginatedResponse<Expense>> {
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('page', page)
       .set('limit', limit)
       .set('sortBy', sortKey)
       .set('order', sortAsc ? 'asc' : 'desc');
+
+    // ✨ Adicionar filtros de data se fornecidos
+    if (startDate) {
+      params = params.set('startDate', startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate);
+    }
 
     return this.http.get<PaginatedResponse<Expense>>(
       `${API_URL}/vehicles/${vehicleId}/expenses`,
@@ -118,7 +143,81 @@ export class VehicleService {
     );
   }
 
-  getTopDriverByVehicle(vehicleId: number) {
-    return this.http.get<Driver>(`${API_URL}/vehicles/${vehicleId}/top-driver`);
+  /** 
+   * 🔄 ATUALIZADO: Agora aceita startDate e endDate
+   */
+  getTopDriverByVehicle(
+    vehicleId: number,
+    startDate?: string,  // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
+    endDate?: string     // ✨ NOVO: formato ISO 8601 (YYYY-MM-DD)
+  ): Observable<Driver> {
+    let params = new HttpParams();
+
+    // ✨ Adicionar filtros de data se fornecidos
+    if (startDate) {
+      params = params.set('startDate', startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate);
+    }
+
+    return this.http.get<Driver>(
+      `${API_URL}/vehicles/${vehicleId}/top-driver`,
+      { params }
+    );
+  }
+
+  /** 
+   * 🆕 Novo método para buscar veículos por subfrota
+   */
+  getBySubfleet(
+    subfleetId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Observable<PaginatedResponse<Vehicle>> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('limit', limit)
+      .set('subfleetIdFilter', subfleetId);
+
+    return this.http.get<PaginatedResponse<Vehicle>>(`${API_URL}/vehicles`, {
+      params,
+    });
+  }
+
+  /** 
+   * 🆕 Atribuir motorista padrão ao veículo
+   */
+  assignDefaultDriver(vehicleId: number, driverId: number): Observable<Message> {
+    return this.http.patch<Message>(`${API_URL}/vehicles/${vehicleId}`, {
+      defaultDriverId: driverId
+    });
+  }
+
+  /** 
+   * 🆕 Remover motorista padrão do veículo
+   */
+  removeDefaultDriver(vehicleId: number): Observable<Message> {
+    return this.http.patch<Message>(`${API_URL}/vehicles/${vehicleId}`, {
+      defaultDriverId: null
+    });
+  }
+
+  /** 
+   * 🆕 Atribuir veículo a uma subfrota
+   */
+  assignToSubfleet(vehicleId: number, subfleetId: number): Observable<Message> {
+    return this.http.patch<Message>(`${API_URL}/vehicles/${vehicleId}`, {
+      subfleetId: subfleetId
+    });
+  }
+
+  /** 
+   * 🆕 Remover veículo de uma subfrota
+   */
+  removeFromSubfleet(vehicleId: number): Observable<Message> {
+    return this.http.patch<Message>(`${API_URL}/vehicles/${vehicleId}`, {
+      subfleetId: null
+    });
   }
 }
