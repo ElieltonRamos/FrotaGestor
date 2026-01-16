@@ -4,9 +4,9 @@ import { Observable } from 'rxjs';
 import { API_URL } from './api.url';
 import {
   Subfleet,
-  CreateSubfleetRequest,
   PartialSubfleet,
   SubfleetReport,
+  SubfleetIndicators,
 } from '../interfaces/subfleet';
 import { PaginatedResponse } from '../interfaces/paginator';
 import { Message } from '../interfaces/user';
@@ -21,7 +21,7 @@ export class SubfleetService {
   /**
    * Criar nova subfrota
    */
-  create(subfleet: CreateSubfleetRequest): Observable<Subfleet> {
+  create(subfleet: PartialSubfleet): Observable<Subfleet> {
     return this.http.post<Subfleet>(`${API_URL}/subfleets`, subfleet);
   }
 
@@ -50,16 +50,10 @@ export class SubfleetService {
       params = params.set('parentId', filters.parentId.toString());
     }
     if (filters.managerUserId !== undefined) {
-      params = params.set(
-        'managerUserId',
-        filters.managerUserId.toString()
-      );
+      params = params.set('managerUserId', filters.managerUserId.toString());
     }
     if (filters.name !== undefined) {
-      params = params.set(
-        'name',
-        filters.name.toString()
-      );
+      params = params.set('name', filters.name.toString());
     }
 
     return this.http.get<PaginatedResponse<Subfleet>>(`${API_URL}/subfleets`, {
@@ -115,118 +109,7 @@ export class SubfleetService {
     });
   }
 
-  /**
-   * Listar subfrotas raiz (sem pai)
-   */
-  getRootSubfleets(
-    page: number = 1,
-    limit: number = 10
-  ): Observable<PaginatedResponse<Subfleet>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('parentIdFilter', 'null'); // Filtrar apenas subfrotas sem pai
-
-    return this.http.get<PaginatedResponse<Subfleet>>(`${API_URL}/subfleets`, {
-      params,
-    });
-  }
-
-  /**
-   * Listar subfrotas filhas de uma subfrota específica
-   */
-  getChildSubfleets(
-    parentId: number,
-    page: number = 1,
-    limit: number = 10
-  ): Observable<PaginatedResponse<Subfleet>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('parentIdFilter', parentId.toString());
-
-    return this.http.get<PaginatedResponse<Subfleet>>(`${API_URL}/subfleets`, {
-      params,
-    });
-  }
-
-  /**
-   * Listar subfrotas por gerente
-   */
-  getByManager(
-    managerUserId: number,
-    page: number = 1,
-    limit: number = 10
-  ): Observable<PaginatedResponse<Subfleet>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('managerUserIdFilter', managerUserId.toString());
-
-    return this.http.get<PaginatedResponse<Subfleet>>(`${API_URL}/subfleets`, {
-      params,
-    });
-  }
-
-  /**
-   * Atribuir gerente a uma subfrota
-   */
-  assignManager(
-    subfleetId: number,
-    managerUserId: number
-  ): Observable<Message> {
-    return this.http.patch<Message>(`${API_URL}/subfleets/${subfleetId}`, {
-      managerUserId: managerUserId,
-    });
-  }
-
-  /**
-   * Remover gerente de uma subfrota
-   */
-  removeManager(subfleetId: number): Observable<Message> {
-    return this.http.patch<Message>(`${API_URL}/subfleets/${subfleetId}`, {
-      managerUserId: null,
-    });
-  }
-
-  /**
-   * Mudar status da subfrota
-   */
-  updateStatus(
-    subfleetId: number,
-    status: 'ACTIVE' | 'INACTIVE'
-  ): Observable<Message> {
-    return this.http.patch<Message>(`${API_URL}/subfleets/${subfleetId}`, {
-      status: status,
-    });
-  }
-
-  /**
-   * Mover subfrota para outra subfrota pai
-   */
-  moveToParent(
-    subfleetId: number,
-    newParentId: number | null
-  ): Observable<Message> {
-    return this.http.patch<Message>(`${API_URL}/subfleets/${subfleetId}`, {
-      parentId: newParentId,
-    });
-  }
-
-  /**
-   * Listar subfrotas ativas (helper method)
-   */
-  getActiveSubfleets(
-    page: number = 1,
-    limit: number = 100
-  ): Observable<PaginatedResponse<Subfleet>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString())
-      .set('statusFilter', 'ACTIVE');
-
-    return this.http.get<PaginatedResponse<Subfleet>>(`${API_URL}/subfleets`, {
-      params,
-    });
+  getIndicators(): Observable<SubfleetIndicators> {
+    return this.http.get<SubfleetIndicators>(`${API_URL}/subfleets/indicators`);
   }
 }

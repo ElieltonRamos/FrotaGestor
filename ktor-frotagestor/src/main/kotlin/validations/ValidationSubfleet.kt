@@ -32,16 +32,6 @@ fun validateSubfleet(rawBody: String): ValidationResult<Subfleet> {
         return ValidationResult.Error(msg)
     }
 
-    // Validar formato da cor (hexadecimal)
-    if (!subfleet.color.matches(Regex("^#[0-9A-Fa-f]{6}$"))) {
-        return ValidationResult.Error("Cor inválida. Use formato hexadecimal (ex: #3B82F6)")
-    }
-
-    // Validar que subfrota não pode ser pai dela mesma
-    if (subfleet.id != null && subfleet.parentId == subfleet.id) {
-        return ValidationResult.Error("Uma subfrota não pode ser pai dela mesma")
-    }
-
     return ValidationResult.Success(subfleet)
 }
 
@@ -60,26 +50,13 @@ fun validatePartialSubfleet(rawBody: String): ValidationResult<PartialSubfleet> 
     }
 
     // Verificar se pelo menos um campo foi fornecido
-    if (
-        subfleet.name.isNullOrBlank() &&
-        subfleet.description == null &&
-        subfleet.parentId == null &&
-        subfleet.color == null &&
-        subfleet.icon == null &&
-        subfleet.managerUserId == null &&
-        subfleet.status == null
-    ) {
+    if (subfleet.name.isNullOrBlank() && subfleet.description == null) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
     }
 
     // Validar nome não vazio se fornecido
     if (subfleet.name?.isBlank() == true) {
         return ValidationResult.Error("O nome não pode estar vazio")
-    }
-
-    // Validar formato da cor se fornecida
-    if (subfleet.color != null && !subfleet.color.matches(Regex("^#[0-9A-Fa-f]{6}$"))) {
-        return ValidationResult.Error("Cor inválida. Use formato hexadecimal (ex: #3B82F6)")
     }
 
     return ValidationResult.Success(subfleet)

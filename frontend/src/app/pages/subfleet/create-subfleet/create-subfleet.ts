@@ -1,6 +1,5 @@
 import { Component, inject } from '@angular/core';
 import { SubfleetService } from '../../../services/subfleet.service';
-import { CreateSubfleetRequest, DEFAULT_SUBFLEET_VALUES, SubfleetStatus } from '../../../interfaces/subfleet';
 import { FormField, DynamicFormComponent } from '../../../components/dynamic-form/dynamic-form';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 
@@ -13,13 +12,6 @@ import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 export class CreateSubfleet {
   private subfleetService = inject(SubfleetService);
 
-  // Se o seu DynamicForm suportar "initialValues", isso já preenche cor/ícone/status.
-  initialValues: Partial<CreateSubfleetRequest> = {
-    color: DEFAULT_SUBFLEET_VALUES.color,
-    icon: DEFAULT_SUBFLEET_VALUES.icon,
-    status: DEFAULT_SUBFLEET_VALUES.status,
-  };
-
   subfleetFields: FormField[] = [
     {
       placeholder: 'Nome',
@@ -29,7 +21,7 @@ export class CreateSubfleet {
       required: true,
     },
     {
-      placeholder: 'Descrição',
+      placeholder: 'Descrição (opcional)',
       name: 'description',
       label: 'Descrição',
       type: 'text',
@@ -37,27 +29,22 @@ export class CreateSubfleet {
   ];
 
   saveSubfleet(data: any) {
-    const payload: CreateSubfleetRequest = {
+    const payload = {
       name: data?.name,
       description: data?.description || undefined,
-      parentId: data?.parentId ? Number(data.parentId) : undefined,
-      color: data?.color || DEFAULT_SUBFLEET_VALUES.color,
-      icon: data?.icon || DEFAULT_SUBFLEET_VALUES.icon,
-      managerUserId: data?.managerUserId
-        ? Number(data.managerUserId)
-        : undefined,
-      status:
-        (data?.status as SubfleetStatus) || DEFAULT_SUBFLEET_VALUES.status,
     };
 
     this.subfleetService.create(payload).subscribe({
-      next: () => alertSuccess('Subfrota cadastrada'),
-      error: (e) =>
+      next: () => {
+        alertSuccess('Subfrota cadastrada com sucesso!');
+      },
+      error: (e) => {
         alertError(
           `Erro ao cadastrar subfrota: ${
             e?.error?.message ?? 'Erro desconhecido'
           }`
-        ),
+        );
+      },
     });
   }
 }

@@ -11,12 +11,13 @@ fun Route.subfleetRoutes() {
     authenticate("auth-jwt") {
         route("subfleets") {
             get { controller.getAll(call) }
+            get("indicators") { controller.getIndicators(call) }  // ✅ NOVO
             post { controller.create(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("{id}") { controller.delete(call) }
-            get("{id}/report") { controller.getReport(call) }
             get("{id}/vehicles") { controller.getVehiclesBySubfleet(call) }
         }
     }
 }
+

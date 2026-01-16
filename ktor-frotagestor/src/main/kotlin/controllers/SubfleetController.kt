@@ -1,14 +1,27 @@
 package com.frotagestor.controllers
 
-import com.frotagestor.interfaces.SubfleetStatus
 import com.frotagestor.services.SubfleetService
-import com.frotagestor.plugins.RawBodyKey
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
+import com.frotagestor.plugins.RawBodyKey
 
 class SubfleetController(private val subfleetService: SubfleetService) {
     private val internalMsgError = "Internal server error"
+
+    /**
+     * GET /subfleets/indicators - Dashboard indicators
+     */
+    suspend fun getIndicators(call: ApplicationCall) {
+        try {
+            val serviceResult = subfleetService.getIndicators()
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getIndicators subfleet route: ${e.message}")
+            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
 
     /**
      * POST /subfleets - Criar nova subfrota
@@ -26,7 +39,7 @@ class SubfleetController(private val subfleetService: SubfleetService) {
     }
 
     /**
-     * PUT /subfleets/:id - Atualizar subfrota
+     * PATCH /subfleets/:id - Atualizar subfrota
      */
     suspend fun update(call: ApplicationCall) {
         try {
@@ -47,43 +60,22 @@ class SubfleetController(private val subfleetService: SubfleetService) {
     }
 
     /**
-     * GET /subfleets - Listar subfrotas com filtros
-     * Query params:
-     * - status: ACTIVE | INACTIVE
-     * - parentId: ID da subfrota pai
-     * - managerUserId: ID do usuário gerente
-     */
-    /**
-     * GET /subfleets - Listar subfrotas com filtros e paginação
-     * Query params:
-     * - page: número da página (padrão: 1)
-     * - limit: itens por página (padrão: 10)
-     * - status: ACTIVE | INACTIVE
-     * - parentId: ID da subfrota pai
-     * - managerUserId: ID do usuário gerente
+     * GET /subfleets - Listar com paginação e filtros simples
+     * Query params: page, limit, name, description
      */
     suspend fun getAll(call: ApplicationCall) {
         try {
-            // Paginação
             val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
             val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
-
-            // Filtros
-            val statusFilter = call.request.queryParameters["status"]?.let {
-                runCatching { SubfleetStatus.valueOf(it.uppercase()) }.getOrNull()
-            }
-
-            val parentIdFilter = call.request.queryParameters["parentId"]?.toIntOrNull()
-            val managerUserIdFilter = call.request.queryParameters["managerUserId"]?.toIntOrNull()
+            val nameFilter = call.request.queryParameters["name"]
+            val descriptionFilter = call.request.queryParameters["description"]
 
             val serviceResult = subfleetService.getAllSubfleets(
                 page = page,
                 limit = limit,
-                statusFilter = statusFilter,
-                parentIdFilter = parentIdFilter,
-                managerUserIdFilter = managerUserIdFilter
+                nameFilter = nameFilter,
+                descriptionFilter = descriptionFilter
             )
-
             call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
             println("Error in getAll subfleets route: ${e.message}")
@@ -93,7 +85,7 @@ class SubfleetController(private val subfleetService: SubfleetService) {
     }
 
     /**
-     * GET /subfleets/:id - Buscar subfrota por ID
+     * GET /subfleets/:id - Buscar por ID
      */
     suspend fun getById(call: ApplicationCall) {
         try {
@@ -113,7 +105,7 @@ class SubfleetController(private val subfleetService: SubfleetService) {
     }
 
     /**
-     * DELETE /subfleets/:id - Deletar subfrota
+     * DELETE /subfleets/:id
      */
     suspend fun delete(call: ApplicationCall) {
         try {
@@ -132,30 +124,6 @@ class SubfleetController(private val subfleetService: SubfleetService) {
         }
     }
 
-    /**
-     * GET /subfleets/:id/report - Relatório da subfrota
-     */
-    suspend fun getReport(call: ApplicationCall) {
-        try {
-            val id = call.parameters["id"]?.toIntOrNull()
-                ?: return call.respond(
-                    HttpStatusCode.BadRequest,
-                    mapOf("message" to "Parâmetro 'id' inválido ou ausente")
-                )
-
-            val serviceResult = subfleetService.getSubfleetReport(id)
-            call.respond(serviceResult.status, serviceResult.data)
-        } catch (e: Exception) {
-            println("Error in getReport subfleet route: ${e.message}")
-            e.printStackTrace()
-            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
-        }
-    }
-
-    /**
-     * GET /subfleets/:id/vehicles - Listar veículos de uma subfrota (delegado)
-     * Nota: Este método delega para VehicleController.getAll com filtro
-     */
     suspend fun getVehiclesBySubfleet(call: ApplicationCall) {
         try {
             val subfleetId = call.parameters["id"]?.toIntOrNull()
@@ -164,17 +132,15 @@ class SubfleetController(private val subfleetService: SubfleetService) {
                     mapOf("message" to "Parâmetro 'id' inválido ou ausente")
                 )
 
-            // Redirecionar para /vehicles?subfleetId=X
-            call.respond(
-                HttpStatusCode.OK,
-                mapOf(
-                    "message" to "Use GET /vehicles?subfleetId=$subfleetId para listar veículos desta subfrota"
-                )
-            )
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+
+            val serviceResult = subfleetService.getVehiclesBySubfleet(subfleetId, page, limit)
+            call.respond(serviceResult.status, serviceResult.data)
         } catch (e: Exception) {
-            println("Error in getVehiclesBySubfleet route: ${e.message}")
-            e.printStackTrace()
+            println("Error in getVehiclesBySubfleet: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
 }

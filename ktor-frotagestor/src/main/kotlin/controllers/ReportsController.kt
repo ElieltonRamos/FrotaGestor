@@ -3,6 +3,7 @@ package com.frotagestor.controllers
 import com.frotagestor.interfaces.DriverReport
 import com.frotagestor.interfaces.ExpenseReport
 import com.frotagestor.interfaces.ServiceResponse
+import com.frotagestor.interfaces.SubfleetReport
 import com.frotagestor.interfaces.TripReport
 import com.frotagestor.interfaces.VehicleReport
 import com.frotagestor.services.ReportsService
@@ -124,4 +125,30 @@ class ReportsController(private val reportsService: ReportsService) {
             )
         }
     }
+
+    suspend fun getSubfleetReport(call: ApplicationCall) {
+        try {
+            val subfleetId = call.parameters["id"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'id' inválido ou ausente")
+                )
+
+            var serviceResult: ServiceResponse<SubfleetReport>
+            val timeMillis = measureTimeMillis {
+                serviceResult = reportsService.getSubfleetReport(subfleetId)
+            }
+
+            println("⏱ Subfleet report service execution time: ${timeMillis}ms")
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getSubfleetReport route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar relatório de subfrota.")
+            )
+        }
+    }
+
 }

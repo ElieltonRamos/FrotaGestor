@@ -1,6 +1,8 @@
 package com.frotagestor.services
 
 import com.frotagestor.database.DatabaseFactory
+import com.frotagestor.database.models.ExpensesTable
+import com.frotagestor.database.models.TripsTable
 import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.DestinationDistribution
 import com.frotagestor.interfaces.DriverDistribution
@@ -11,11 +13,13 @@ import com.frotagestor.interfaces.LastTrip
 import com.frotagestor.interfaces.Message
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.StatusDistribution
+import com.frotagestor.interfaces.SubfleetReport
 import com.frotagestor.interfaces.TripDistributions
 import com.frotagestor.interfaces.TripReport
 import com.frotagestor.interfaces.TripStatus
 import com.frotagestor.interfaces.VehicleDistribution
 import com.frotagestor.interfaces.VehicleReport
+import com.frotagestor.interfaces.VehicleStatus
 import io.ktor.http.HttpStatusCode
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DatePeriod
@@ -24,6 +28,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 
 class ReportsService {
@@ -540,4 +547,68 @@ class ReportsService {
             )
         )
     }
+
+    suspend fun getSubfleetReport(subfleetId: Int): ServiceResponse<SubfleetReport> = DatabaseFactory.dbQuery {
+        val vehicles = VehiclesTable
+            .selectAll()
+            .where {
+                (VehiclesTable.subfleetId eq subfleetId) and
+                        (VehiclesTable.deletedAt.isNull())
+            }
+            .toList()
+
+        val vehicleIds = vehicles.map { it[VehiclesTable.id] }
+
+        val totalVehicles = vehicles.size
+        val activeVehicles = vehicles.count { it[VehiclesTable.status] == VehicleStatus.ATIVO }
+        val maintenanceVehicles = vehicles.count { it[VehiclesTable.status] == VehicleStatus.MANUTENCAO }
+
+        // Contagens de trips (se table existir)
+        val totalTrips = try {
+            TripsTable
+                .selectAll()
+                .where { TripsTable.vehicleId inList vehicleIds }
+                .count()
+                .toInt()
+        } catch (e: Exception) {
+            0
+        }
+
+        // Distância total (se table existir)
+        val totalDistanceKm = try {
+            TripsTable
+                .select(TripsTable.distanceKm.sum())
+                .where { TripsTable.vehicleId inList vehicleIds }
+                .singleOrNull()
+                ?.get(TripsTable.distanceKm.sum())
+                ?.toDouble() ?: 0.0
+        } catch (e: Exception) {
+            0.0
+        }
+
+        // Despesas totais (se table existir)
+        val totalExpenses = try {
+            ExpensesTable
+                .select(ExpensesTable.amount.sum())
+                .where { ExpensesTable.vehicleId inList vehicleIds }
+                .singleOrNull()
+                ?.get(ExpensesTable.amount.sum())
+                ?.toDouble() ?: 0.0
+        } catch (e: Exception) {
+            0.0
+        }
+
+        val report = SubfleetReport(
+            subfleetId = subfleetId,
+            totalVehicles = totalVehicles,
+            activeVehicles = activeVehicles,
+            maintenanceVehicles = maintenanceVehicles,
+            totalTrips = totalTrips,
+            totalDistanceKm = totalDistanceKm,
+            totalExpenses = totalExpenses
+        )
+
+        ServiceResponse(HttpStatusCode.OK, report)
+    }
+
 }

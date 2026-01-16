@@ -2,15 +2,11 @@ import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 
-import {
-  Subfleet,
-  SubfleetReport,
-  SubfleetStatus,
-} from '../../../interfaces/subfleet';
+import { Subfleet, SubfleetReport } from '../../../interfaces/subfleet';
 import { Vehicle } from '../../../interfaces/vehicle';
 
 import { SubfleetService } from '../../../services/subfleet.service';
-import { alertError, alertSuccess } from '../../../utils/custom-alerts';
+import { alertError } from '../../../utils/custom-alerts';
 
 import {
   BaseListComponent,
@@ -48,19 +44,6 @@ export class DetailsSubfleet {
   vehiclesTotal = 0;
   vehiclesTotalPages = 1;
 
-  // frotas filhas
-  childSubfleets: Subfleet[] = [];
-  childColumns: ColumnConfig<any>[] = [
-    { key: 'name', label: 'Nome', sortable: true },
-    { key: 'status', label: 'Status', sortable: true },
-    { key: 'managerName', label: 'Gerente' },
-    { key: 'vehicleCount', label: 'Veículos' },
-  ];
-  childPage = 1;
-  childLimit = 5;
-  childTotal = 0;
-  childTotalPages = 1;
-
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) this.loadSubfleet(id);
@@ -78,7 +61,6 @@ export class DetailsSubfleet {
 
         this.loadReport(id);
         this.loadVehicles(id);
-        this.loadChildSubfleets(id);
       },
       error: () => {
         this.loading = false;
@@ -125,88 +107,11 @@ export class DetailsSubfleet {
     if (this.subfleet?.id) this.loadVehicles(this.subfleet.id);
   }
 
-  private loadChildSubfleets(parentId: number) {
-    this.service
-      .getChildSubfleets(parentId, this.childPage, this.childLimit)
-      .subscribe({
-        next: (res) => {
-          this.childSubfleets = res.data;
-          this.childTotal = res.total;
-          this.childPage = res.page;
-          this.childLimit = res.limit;
-          this.childTotalPages = res.totalPages;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.childSubfleets = [];
-          this.childTotal = 0;
-          this.cdr.detectChanges();
-        },
-      });
-  }
-
-  onChildPageChange(newPage: number) {
-    this.childPage = newPage;
-    if (this.subfleet?.id) this.loadChildSubfleets(this.subfleet.id);
-  }
-
   onVehicleSelect(vehicle: any) {
     this.router.navigate(['/veiculos', vehicle.id]);
   }
 
-  onChildSelect(subfleet: any) {
-    this.router.navigate(['/frotas', subfleet.id]);
-  }
-
   goBack() {
     this.router.navigate(['/frotas']);
-  }
-
-  disableSubfleet() {
-    if (!this.subfleet?.id) return;
-
-    this.loading = true;
-    this.service.updateStatus(this.subfleet.id, 'INACTIVE').subscribe({
-      next: () => {
-        this.loadSubfleet(Number(this.route.snapshot.paramMap.get('id')));
-        this.loading = false;
-        this.cdr.detectChanges();
-        alertSuccess('Subfrota desabilitada com sucesso.');
-      },
-      error: (err) => {
-        this.loading = false;
-        this.cdr.detectChanges();
-        alertError(
-          `Erro ao desabilitar a subfrota. ${err?.error?.message || ''}`
-        );
-      },
-    });
-  }
-
-  activateSubfleet() {
-    if (!this.subfleet?.id) return;
-
-    this.loading = true;
-    this.service.updateStatus(this.subfleet.id, 'ACTIVE').subscribe({
-      next: () => {
-        this.loadSubfleet(Number(this.route.snapshot.paramMap.get('id')));
-        this.loading = false;
-        this.cdr.detectChanges();
-        alertSuccess('Subfrota reativada com sucesso.');
-      },
-      error: (err) => {
-        this.loading = false;
-        this.cdr.detectChanges();
-        alertError(`Erro ao reativar a subfrota. ${err?.error?.message || ''}`);
-      },
-    });
-  }
-
-  isActive() {
-    return this.subfleet?.status === SubfleetStatus.ACTIVE;
-  }
-
-  isInactive() {
-    return this.subfleet?.status === SubfleetStatus.INACTIVE;
   }
 }

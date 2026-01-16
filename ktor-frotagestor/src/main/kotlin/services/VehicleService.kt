@@ -45,8 +45,7 @@ class VehicleService {
                 SubfleetsTable
                     .select(SubfleetsTable.id)
                     .where {
-                        (SubfleetsTable.id eq newVehicle.subfleetId) and
-                                (SubfleetsTable.status eq SubfleetStatus.ACTIVE)
+                        (SubfleetsTable.id eq newVehicle.subfleetId)
                     }
                     .singleOrNull()
             }
@@ -129,8 +128,7 @@ class VehicleService {
                 SubfleetsTable
                     .select(SubfleetsTable.id)
                     .where {
-                        (SubfleetsTable.id eq updatedVehicle.subfleetId) and
-                                (SubfleetsTable.status eq SubfleetStatus.ACTIVE)
+                        (SubfleetsTable.id eq updatedVehicle.subfleetId)
                     }
                     .singleOrNull()
             }

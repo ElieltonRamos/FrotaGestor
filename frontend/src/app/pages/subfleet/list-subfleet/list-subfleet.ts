@@ -55,12 +55,6 @@ export class ListSubfleet {
 
   subfleetFilters: FilterConfig[] = [
     { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'select',
-      options: ['ACTIVE', 'INACTIVE'],
-    },
   ];
 
   subfleets: Subfleet[] = [];
@@ -71,15 +65,10 @@ export class ListSubfleet {
   selectedSubfleet?: Subfleet;
   showModal = false;
 
-  // filtros
+  // filtros (apenas name)
   filter: {
     name?: string;
-    status?: string;
-    parentId?: number;
-    managerUserId?: number;
-  } = {
-    status: 'ACTIVE',
-  };
+  } = {};
 
   // ordenação
   sortKey: keyof Subfleet = 'name';
@@ -111,7 +100,18 @@ export class ListSubfleet {
 
   loadIndicators() {
     this.loadingIndicators = true;
-    // TODO: Implementar endpoint de indicadores no backend
+    this.serviceSubfleet.getIndicators().subscribe({
+      next: (data) => {
+        this.indicators = data;
+        this.loadingIndicators = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Erro ao carregar indicadores:', err);
+        this.loadingIndicators = false;
+        this.indicators = undefined;
+      }
+    });
   }
 
   applyFilters() {
@@ -131,9 +131,7 @@ export class ListSubfleet {
   }
 
   clearFilters() {
-    this.filter = {
-      status: 'ACTIVE',
-    };
+    this.filter = {};
     this.applyFilters();
   }
 
@@ -153,15 +151,9 @@ export class ListSubfleet {
   onSaveModal(subfleet: Subfleet) {
     const id = subfleet.id;
 
-    // Criar objeto apenas com campos permitidos para atualização
     const updateData = {
       name: subfleet.name,
       description: subfleet.description,
-      color: subfleet.color,
-      icon: subfleet.icon,
-      parentId: subfleet.parentId,
-      managerUserId: subfleet.managerUserId,
-      status: subfleet.status,
     };
 
     this.serviceSubfleet.update(id!, updateData).subscribe({
