@@ -15,6 +15,7 @@ fun Route.reportsRoutes() {
             get("expenses") { controller.getReportExpenses(call) }
             get("drivers") { controller.getReportDriver(call) }
             get("subfleet/{id}") { controller.getSubfleetReport(call) }
+            get("subfleets/comparison") { controller.getSubfleetsReport(call) }
         }
     }
 }

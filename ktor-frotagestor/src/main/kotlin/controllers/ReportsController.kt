@@ -4,6 +4,7 @@ import com.frotagestor.interfaces.DriverReport
 import com.frotagestor.interfaces.ExpenseReport
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.SubfleetReport
+import com.frotagestor.interfaces.SubfleetReportResponse
 import com.frotagestor.interfaces.TripReport
 import com.frotagestor.interfaces.VehicleReport
 import com.frotagestor.services.ReportsService
@@ -151,4 +152,33 @@ class ReportsController(private val reportsService: ReportsService) {
         }
     }
 
+    // Adicione no ReportsController existente:
+
+    suspend fun getSubfleetsReport(call: ApplicationCall) {
+        try {
+            val startDateParam = call.request.queryParameters["startDate"]
+            val endDateParam = call.request.queryParameters["endDate"]
+            val startDate = startDateParam?.let {
+                try { LocalDate.parse(it) } catch (_: Exception) { null }
+            }
+            val endDate = endDateParam?.let {
+                try { LocalDate.parse(it) } catch (_: Exception) { null }
+            }
+
+            var serviceResult: ServiceResponse<SubfleetReportResponse>  // ← Nova interface
+            val timeMillis = measureTimeMillis {
+                serviceResult = reportsService.getReportAllSubfleets(startDate, endDate)  // ← Método corrigido
+            }
+
+            println("⏱ Subfleets comparison report execution time: ${timeMillis}ms")
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("❌ Error in getSubfleetsReport route: ${e.stackTraceToString()}")
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                mapOf("message" to "Erro interno ao gerar relatório comparativo de subfrotas.")
+            )
+        }
+    }
 }

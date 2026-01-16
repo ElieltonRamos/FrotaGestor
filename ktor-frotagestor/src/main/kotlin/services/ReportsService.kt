@@ -1,7 +1,9 @@
 package com.frotagestor.services
 
 import com.frotagestor.database.DatabaseFactory
+import com.frotagestor.database.DatabaseFactory.dbQuery
 import com.frotagestor.database.models.ExpensesTable
+import com.frotagestor.database.models.SubfleetsTable
 import com.frotagestor.database.models.TripsTable
 import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.DestinationDistribution
@@ -11,9 +13,13 @@ import com.frotagestor.interfaces.DriverReport
 import com.frotagestor.interfaces.ExpenseReport
 import com.frotagestor.interfaces.LastTrip
 import com.frotagestor.interfaces.Message
+import com.frotagestor.interfaces.Period
+import com.frotagestor.interfaces.Summary
 import com.frotagestor.interfaces.ServiceResponse
 import com.frotagestor.interfaces.StatusDistribution
+import com.frotagestor.interfaces.SubfleetMetric
 import com.frotagestor.interfaces.SubfleetReport
+import com.frotagestor.interfaces.SubfleetReportResponse
 import com.frotagestor.interfaces.TripDistributions
 import com.frotagestor.interfaces.TripReport
 import com.frotagestor.interfaces.TripStatus
@@ -611,4 +617,227 @@ class ReportsService {
         ServiceResponse(HttpStatusCode.OK, report)
     }
 
+//    suspend fun getReportAllSubfleets(
+//        startDate: LocalDate? = null,
+//        endDate: LocalDate? = null
+//    ): ServiceResponse<SubfleetReportResponse> = dbQuery {
+//        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+//        val start = startDate ?: LocalDate(now.year, now.month, 1)
+//        val end = endDate ?: LocalDate(now.year, now.month, now.month.maxLength())
+//        val startDt = start.atStartOfDayIn(TimeZone.currentSystemDefault())
+//        val endDt = end.plus(1, DateTimeUnit.DAY)
+//
+//        // 1. Lista subfrotas existentes
+//        val subfleets = SubfleetsTable.select(SubfleetsTable.columns)
+//            .map {
+//                SubfleetMetric(
+//                    subfleetId = it[SubfleetsTable.id],
+//                    name = it[SubfleetsTable.name],
+//                    color = "#10B981",  // ← Padrão (sem campo color)
+//                    managerName = "Sem Gerente",  // ← Sem tabela managers
+//                    totalVehicles = 0,  // ← Calcular abaixo
+//                    activeVehicles = 0,
+//                    maintenanceVehicles = 0,
+//                    totalTrips = 0,
+//                    totalDistanceKm = 0.0,
+//                    totalExpenses = 0.0,
+//                    costPerKm = 0.0,
+//                    tripsPerVehicle = 0.0,
+//                    kmPerTrip = 0.0,
+//                    vehiclesActiveRate = 0.0,
+//                    topExpenseType = "N/A",
+//                    avgVehicleAge = 0.0,
+//                    vehiclesByType = emptyMap()
+//                )
+//            }
+//
+//        // 2. Para cada subfrota, calcular métricas (simplificado)
+//        subfleets.forEach { metric ->
+//            val subfleetId = metric.subfleetId
+//
+//            // Veículos totais por subfrota
+//            val totalVehicles = VehiclesTable.selectAll().where { VehiclesTable.subfleetId eq subfleetId }.count()
+//
+//            // Ativos (assumindo lógica similar)
+//            val activeVehicles = VehiclesTable.selectAll().where {
+//                (VehiclesTable.subfleetId eq subfleetId) and
+//                        (VehiclesTable.status eq VehicleStatus.ATIVO)
+//            }.count()
+//
+//            metric.apply {
+//                this.totalVehicles = totalVehicles.toInt()
+//                this.activeVehicles = activeVehicles.toInt()
+//                this.maintenanceVehicles = (totalVehicles - activeVehicles).toInt()
+//
+//                // Demais métricas zeradas por enquanto
+//            }
+//        }
+//
+//        ServiceResponse(
+//            status = HttpStatusCode.OK,
+//            data = SubfleetReportResponse(
+//                period = Period(start.toString(), end.toString()),
+//                summary = Summary(
+//                    totalSubfleets = subfleets.size,
+//                    totalVehicles = subfleets.sumOf { it.totalVehicles },
+//                    overallEfficiency = 0.45  // Mock até ter despesas
+//                ),
+//                subfleets = subfleets
+//            )
+//        )
+//    }
+
+    suspend fun getReportAllSubfleets(
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): ServiceResponse<SubfleetReportResponse> = DatabaseFactory.dbQuery {
+
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val start = startDate ?: LocalDate(now.year, now.month, 1)
+        val end = endDate ?: LocalDate(now.year, now.month, now.month.maxLength())
+        val timeZone = TimeZone.currentSystemDefault()
+        val startInstant = start.atStartOfDayIn(timeZone)
+        val endInstant = end.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone)
+
+        // Query principal para dados agregados por subfrota
+        val mainSql = """
+        SELECT
+            s.id AS subfleet_id,
+            s.name AS subfleet_name,
+            COUNT(DISTINCT v.id) AS total_vehicles,
+            COUNT(DISTINCT CASE WHEN v.status = 'ATIVO' THEN v.id END) AS active_vehicles,
+            COUNT(DISTINCT CASE WHEN v.status = 'MANUTENCAO' THEN v.id END) AS maintenance_vehicles,
+            COUNT(DISTINCT t.id) AS total_trips,
+            COALESCE(SUM(t.distance_km), 0) AS total_distance_km,
+            COALESCE(SUM(e.amount), 0) AS total_expenses,
+            COALESCE(AVG(CASE WHEN v.year IS NOT NULL THEN YEAR(CURRENT_DATE) - v.year END), 0) AS avg_vehicle_age,
+            (SELECT e2.type 
+             FROM expenses e2 
+             JOIN vehicles v2 ON e2.vehicle_id = v2.id 
+             WHERE v2.subfleet_id = s.id 
+             AND e2.date >= '$start'
+             AND e2.date < '${end.plus(DatePeriod(days = 1))}'
+             GROUP BY e2.type 
+             ORDER BY SUM(e2.amount) DESC 
+             LIMIT 1) AS top_expense_type
+        FROM subfleets s
+        LEFT JOIN vehicles v ON s.id = v.subfleet_id AND v.deleted_at IS NULL
+        LEFT JOIN trips t ON v.id = t.vehicle_id 
+            AND t.start_time >= '$startInstant'
+            AND t.start_time < '$endInstant'
+        LEFT JOIN expenses e ON v.id = e.vehicle_id 
+            AND e.date >= '$start'
+            AND e.date < '${end.plus(DatePeriod(days = 1))}'
+        GROUP BY s.id, s.name
+    """.trimIndent()
+
+        // Query separada para contar veículos por modelo em cada subfrota
+        val modelsSql = """
+        SELECT
+            v.subfleet_id,
+            COALESCE(v.model, 'Desconhecido') AS vehicle_model,
+            COUNT(*) AS model_count
+        FROM vehicles v
+        WHERE v.deleted_at IS NULL
+        GROUP BY v.subfleet_id, v.model
+    """.trimIndent()
+
+        val subfleetsData = mutableMapOf<Int, MutableMap<String, Any>>()
+        val vehicleTypesBySubfleet = mutableMapOf<Int, MutableMap<String, Int>>()
+
+        transaction {
+            // Processa dados principais
+            exec(mainSql) { rs ->
+                while (rs.next()) {
+                    val subfleetId = rs.getInt("subfleet_id")
+
+                    subfleetsData[subfleetId] = mutableMapOf(
+                        "subfleet_id" to subfleetId,
+                        "name" to (rs.getString("subfleet_name") ?: "Sem Nome"),
+                        "total_vehicles" to rs.getInt("total_vehicles"),
+                        "active_vehicles" to rs.getInt("active_vehicles"),
+                        "maintenance_vehicles" to rs.getInt("maintenance_vehicles"),
+                        "total_trips" to rs.getInt("total_trips"),
+                        "total_distance_km" to rs.getDouble("total_distance_km"),
+                        "total_expenses" to rs.getDouble("total_expenses"),
+                        "avg_vehicle_age" to rs.getDouble("avg_vehicle_age"),
+                        "top_expense_type" to (rs.getString("top_expense_type") ?: "N/A")
+                    )
+
+                    // Inicializa mapa de tipos para cada subfrota
+                    if (!vehicleTypesBySubfleet.containsKey(subfleetId)) {
+                        vehicleTypesBySubfleet[subfleetId] = mutableMapOf()
+                    }
+                }
+            }
+
+            // Processa modelos de veículos
+            exec(modelsSql) { rs ->
+                while (rs.next()) {
+                    val subfleetId = rs.getInt("subfleet_id")
+                    if (subfleetId != 0) { // Ignora veículos sem subfrota
+                        val vehicleModel = rs.getString("vehicle_model")
+                        val modelCount = rs.getInt("model_count")
+
+                        if (!vehicleTypesBySubfleet.containsKey(subfleetId)) {
+                            vehicleTypesBySubfleet[subfleetId] = mutableMapOf()
+                        }
+                        vehicleTypesBySubfleet[subfleetId]!![vehicleModel] = modelCount
+                    }
+                }
+            }
+        }
+
+        // Constrói lista de SubfleetMetric
+        val subfleetMetrics = subfleetsData.map { (subfleetId, data) ->
+            val totalVehicles = data["total_vehicles"] as Int
+            val activeVehicles = data["active_vehicles"] as Int
+            val totalTrips = data["total_trips"] as Int
+            val totalDistanceKm = data["total_distance_km"] as Double
+            val totalExpenses = data["total_expenses"] as Double
+
+            SubfleetMetric(
+                subfleetId = subfleetId,
+                name = data["name"] as String,
+                color = "#${String.format("%06X", (subfleetId * 123456) and 0xFFFFFF)}", // Cor gerada baseada no ID
+                managerName = "",
+                totalVehicles = totalVehicles,
+                activeVehicles = activeVehicles,
+                maintenanceVehicles = data["maintenance_vehicles"] as Int,
+                totalTrips = totalTrips,
+                totalDistanceKm = totalDistanceKm,
+                totalExpenses = totalExpenses,
+                costPerKm = if (totalDistanceKm > 0) totalExpenses / totalDistanceKm else 0.0,
+                tripsPerVehicle = if (totalVehicles > 0) totalTrips.toDouble() / totalVehicles else 0.0,
+                kmPerTrip = if (totalTrips > 0) totalDistanceKm / totalTrips else 0.0,
+                vehiclesActiveRate = if (totalVehicles > 0) (activeVehicles.toDouble() / totalVehicles) * 100 else 0.0,
+                topExpenseType = data["top_expense_type"] as String,
+                avgVehicleAge = data["avg_vehicle_age"] as Double,
+                vehiclesByType = vehicleTypesBySubfleet[subfleetId] ?: emptyMap()
+            )
+        }
+
+        // Calcula sumário geral
+        val totalSubfleets = subfleetMetrics.size
+        val totalVehicles = subfleetMetrics.sumOf { it.totalVehicles }
+        val overallTotalExpenses = subfleetMetrics.sumOf { it.totalExpenses }
+        val overallTotalDistance = subfleetMetrics.sumOf { it.totalDistanceKm }
+        val overallEfficiency = if (overallTotalDistance > 0) overallTotalExpenses / overallTotalDistance else 0.0
+
+        ServiceResponse(
+            status = HttpStatusCode.OK,
+            data = SubfleetReportResponse(
+                period = Period(
+                    startDate = start.toString(),
+                    endDate = end.toString()
+                ),
+                summary = Summary(
+                    totalSubfleets = totalSubfleets,
+                    totalVehicles = totalVehicles,
+                    overallEfficiency = overallEfficiency
+                ),
+                subfleets = subfleetMetrics
+            )
+        )
+    }
 }
