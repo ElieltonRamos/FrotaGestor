@@ -99,7 +99,9 @@ export class ExpenseService {
     return this.http.get<ExpenseIndicators>(url);
   }
 
-  getReportExpense(filters: Record<string, any> = {}): Observable<ExpenseReport> {
+  getReportExpense(
+    filters: Record<string, any> = {}
+  ): Observable<ExpenseReport> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -109,5 +111,27 @@ export class ExpenseService {
     return this.http.get<ExpenseReport>(`${API_URL}/reports/expenses`, {
       params,
     });
+  }
+
+  /**
+   * Busca despesas dos veículos de uma subfrota específica (agregado)
+   * @param subfleetId - ID da subfrota
+   * @param page - Número da página (padrão: 1)
+   * @param limit - Itens por página (padrão: 10)
+   */
+  getExpensesBySubfleet(
+    subfleetId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Observable<PaginatedResponse<Expense>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('subfleetId', subfleetId.toString());
+
+    return this.http.get<PaginatedResponse<Expense>>(
+      `${API_URL}/expenses/subfleet/${subfleetId}`,
+      { params }
+    );
   }
 }

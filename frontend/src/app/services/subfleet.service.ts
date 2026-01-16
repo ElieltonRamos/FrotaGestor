@@ -102,9 +102,8 @@ export class SubfleetService {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString())
-      .set('subfleetIdFilter', subfleetId.toString());
 
-    return this.http.get<PaginatedResponse<Vehicle>>(`${API_URL}/vehicles`, {
+    return this.http.get<PaginatedResponse<Vehicle>>(`${API_URL}/subfleets/${subfleetId}/vehicles`, {
       params,
     });
   }

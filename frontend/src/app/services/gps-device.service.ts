@@ -134,6 +134,58 @@ export class GpsDeviceService {
     );
   }
 
+/**
+ * Busca dispositivos GPS vinculados a veículos de uma subfrota específica
+ * Última localização ATUAL de todos os veículos da subfrota (não paginado)
+ * @param subfleetId - ID da subfrota
+ */
+getGpsDevicesBySubfleet(
+  subfleetId: number
+): Observable<GpsDevice[]> {
+  const params = new HttpParams().set('subfleetId', subfleetId.toString());
+
+  return this.http.get<GpsDevice[]>(
+    `${API_URL}/gps-devices/subfleet/${subfleetId}/current`,
+    { params }
+  );
+}
+
+  /**
+   * Busca histórico GPS agregado de todos dispositivos/veículos de uma subfrota
+   * @param subfleetId - ID da subfrota
+   * @param page - Número da página (padrão: 1)
+   * @param limit - Itens por página (padrão: 10)
+   * @param startDate - Data/hora inicial (ISO string, opcional)
+   * @param endDate - Data/hora final (ISO string, opcional)
+   * @param sortAsc - Ordem ascendente por timestamp (padrão: false = DESC mais recente)
+   */
+  getGpsHistoryBySubfleet(
+    subfleetId: number,
+    page: number = 1,
+    limit: number = 10,
+    startDate?: string,
+    endDate?: string,
+    sortAsc: boolean = false
+  ): Observable<PaginatedResponse<GpsHistory>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('sortBy', 'timestamp')
+      .set('order', sortAsc ? 'asc' : 'desc');
+
+    if (startDate) {
+      params = params.set('startDate', startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate);
+    }
+
+    return this.http.get<PaginatedResponse<GpsHistory>>(
+      `${API_URL}/gps-devices/subfleet/${subfleetId}/history`,
+      { params }
+    );
+  }
+
   sendCommandDevice(request: CommandRequest): Observable<CommandResponse> {
     const url = `${API_URL}/gps-devices/commands`;
     return this.http.post<CommandResponse>(url, request);

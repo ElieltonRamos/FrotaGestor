@@ -171,4 +171,53 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
+    suspend fun getGpsDevicesBySubfleet(call: ApplicationCall) {
+        try {
+            val subfleetId = call.parameters["subfleetId"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'subfleetId' inválido ou ausente")
+                )
+
+            val serviceResult = gpsDeviceService.getGpsDevicesBySubfleet(subfleetId)
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getGpsDevicesBySubfleet route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Erro interno do servidor"))
+        }
+    }
+
+    suspend fun getGpsHistoryBySubfleet(call: ApplicationCall) {
+        try {
+            val subfleetId = call.parameters["subfleetId"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'subfleetId' inválido ou ausente")
+                )
+
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 20
+            val startDate = call.request.queryParameters["startDate"]?.let {
+                LocalDateTime.parse(it)
+            }
+            val endDate = call.request.queryParameters["endDate"]?.let {
+                LocalDateTime.parse(it)
+            }
+
+            val serviceResult = gpsDeviceService.getGpsHistoryBySubfleet(
+                subfleetId = subfleetId,
+                page = page,
+                limit = limit,
+                startDate = startDate,
+                endDate = endDate
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getGpsHistoryBySubfleet route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to "Erro interno do servidor"))
+        }
+    }
+
 }

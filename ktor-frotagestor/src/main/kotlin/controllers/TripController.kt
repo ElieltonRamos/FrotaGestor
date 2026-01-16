@@ -158,4 +158,64 @@ class TripController(private val tripService: TripService) {
             call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
+
+    suspend fun getTripsBySubfleet(call: ApplicationCall) {
+        try {
+            val subfleetId = call.parameters["subfleetId"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'subfleetId' inválido ou ausente")
+                )
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+            val sortByParam = call.request.queryParameters["sortBy"] ?: "id"
+            val orderParam = call.request.queryParameters["order"] ?: "asc"
+
+            val statusFilter = call.request.queryParameters["status"]?.let {
+                TripStatus.valueOf(it.uppercase())
+            }
+            val startDateFilter = call.request.queryParameters["startDate"]?.let {
+                LocalDateTime.parse(it)
+            }
+            val endDateFilter = call.request.queryParameters["endDate"]?.let {
+                LocalDateTime.parse(it)
+            }
+            val driverNameFilter = call.request.queryParameters["driverName"]
+            val vehiclePlateFilter = call.request.queryParameters["vehiclePlate"]
+
+            val sortByColumn = when (sortByParam.lowercase()) {
+                "vehicleid" -> TripsTable.vehicleId
+                "driverid" -> TripsTable.driverId
+                "starttime" -> TripsTable.startTime
+                "endtime" -> TripsTable.endTime
+                "status" -> TripsTable.status
+                "drivername" -> DriversTable.name
+                "vehicleplate" -> VehiclesTable.plate
+                else -> TripsTable.id
+            }
+
+            val sortOrder = if (orderParam.equals("desc", ignoreCase = true)) {
+                SortOrder.DESC
+            } else {
+                SortOrder.ASC
+            }
+            val serviceResult = tripService.getTripsBySubfleet(
+                subfleetId = subfleetId,
+                page = page,
+                limit = limit,
+                sortBy = sortByColumn,
+                sortOrder = sortOrder,
+                statusFilter = statusFilter,
+                startDateFilter = startDateFilter,
+                endDateFilter = endDateFilter,
+                driverNameFilter = driverNameFilter,
+                vehiclePlateFilter = vehiclePlateFilter
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getBySubfleet trip route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
 }

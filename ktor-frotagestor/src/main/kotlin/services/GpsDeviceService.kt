@@ -3,6 +3,7 @@ package com.frotagestor.services
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
+import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.*
 import com.frotagestor.protocols_devices_gps.suntech.BuildCommandResult
 import com.frotagestor.protocols_devices_gps.suntech.DeviceConnectionManager
@@ -339,6 +340,106 @@ class GpsDeviceService {
             ServiceResponse(
                 status = HttpStatusCode.ServiceUnavailable,
                 data = CommandResponse(false, "Falha ao enviar comando")
+            )
+        }
+    }
+
+    suspend fun getGpsDevicesBySubfleet(
+        subfleetId: Int
+    ): ServiceResponse<List<GpsDevice>> {
+        return DatabaseFactory.dbQuery {
+            val results = GpsDevicesTable
+                .join(
+                    VehiclesTable,
+                    JoinType.INNER,
+                    additionalConstraint = { GpsDevicesTable.vehicleId eq VehiclesTable.id }
+                )
+                .selectAll()
+                .where { VehiclesTable.subfleetId eq subfleetId }
+                .map { row ->
+                    GpsDevice(
+                        id = row[GpsDevicesTable.id],
+                        vehicleId = row[GpsDevicesTable.vehicleId],
+                        imei = row[GpsDevicesTable.imei],
+                        latitude = row[GpsDevicesTable.latitude].toDouble(),
+                        longitude = row[GpsDevicesTable.longitude].toDouble(),
+                        dateTime = row[GpsDevicesTable.dateTime],
+                        speed = row[GpsDevicesTable.speed].toDouble(),
+                        heading = row[GpsDevicesTable.heading].toDouble(),
+                        iconMapUrl = row[GpsDevicesTable.iconMapUrl],
+                        title = row[GpsDevicesTable.title],
+                        ignition = row[GpsDevicesTable.ignition]
+                    )
+                }
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = results
+            )
+        }
+    }
+
+    suspend fun getGpsHistoryBySubfleet(
+        subfleetId: Int,
+        startDate: LocalDateTime? = null,
+        endDate: LocalDateTime? = null,
+        page: Int = 1,
+        limit: Int = 20
+    ): ServiceResponse<PaginatedResponse<GpsHistory>> {
+        return DatabaseFactory.dbQuery {
+            val tz = TimeZone.currentSystemDefault()
+            val today = kotlinx.datetime.Clock.System.todayIn(tz)
+            val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
+            val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
+
+            // Validação de página e limite
+            val safePage = if (page < 1) 1 else page
+            val safeLimit = if (limit < 1) 20 else if (limit > 100) 100 else limit
+            val offset = ((safePage - 1) * safeLimit).toLong()
+
+            // Query com JOIN para filtrar por subfleetId
+            val baseQuery = GpsHistoryTable
+                .join(
+                    VehiclesTable,
+                    JoinType.INNER,
+                    additionalConstraint = { GpsHistoryTable.vehicleId eq VehiclesTable.id }
+                )
+                .selectAll()
+                .where {
+                    (VehiclesTable.subfleetId eq subfleetId) and
+                            (GpsHistoryTable.dateTime greaterEq todayStart) and
+                            (GpsHistoryTable.dateTime lessEq todayEnd)
+                }
+
+            val total = baseQuery.count()
+
+            val results = baseQuery
+                .orderBy(GpsHistoryTable.dateTime to SortOrder.DESC)
+                .limit(safeLimit)
+                .offset(offset)
+                .map { row ->
+                    GpsHistory(
+                        id = row[GpsHistoryTable.id],
+                        gpsDeviceId = row[GpsHistoryTable.gpsDeviceId],
+                        vehicleId = row[GpsHistoryTable.vehicleId],
+                        dateTime = row[GpsHistoryTable.dateTime],
+                        latitude = row[GpsHistoryTable.latitude].toDouble(),
+                        longitude = row[GpsHistoryTable.longitude].toDouble(),
+                        rawLog = row[GpsHistoryTable.rawLog]
+                    )
+                }
+
+            val totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = PaginatedResponse(
+                    data = results,
+                    total = total.toInt(),
+                    page = safePage,
+                    limit = safeLimit,
+                    totalPages = totalPages
+                )
             )
         }
     }
