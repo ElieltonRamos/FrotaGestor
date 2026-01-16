@@ -74,7 +74,6 @@ export interface ExpenseReport {
       totalCount: number;
     }[]; // Gastos por veículo
     byDriver: { driverName: string; totalAmount: number; totalCount: number }[]; // Gastos por motorista
-    byMonth: { month: string; totalAmount: number }[]; // Gastos por mês (para linha temporal)
   };
   summary: {
     totalAmount: number; // Valor total gasto

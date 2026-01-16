@@ -36,6 +36,15 @@
     >
       Relatório Despesas
     </button>
+
+    <button
+      (click)="selectTab('reportSubfleets')"
+      [class.border-b-2]="activeTab === 'reportSubfleets'"
+      [class.text-blue-600]="activeTab === 'reportSubfleets'"
+      class="pb-2 px-4 font-medium hover:text-blue-500"
+    >
+      Relatório Das Frotas
+    </button>
   </div>
 
   <!-- Conteúdo das abas -->
@@ -47,5 +56,7 @@
   <app-report-trip />
   } @else if (activeTab === 'reportExpenses') {
   <app-report-expenses />
+  } @else if (activeTab === 'reportSubfleets') {
+  <app-report-subfleets />
   }
 </div>
