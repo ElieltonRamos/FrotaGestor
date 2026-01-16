@@ -17,7 +17,7 @@ import { PaginatorComponent } from '../../../components/paginator/paginator.comp
 @Component({
   selector: 'app-details-subfleet',
   standalone: true,
-  imports: [CommonModule, DatePipe, BaseListComponent, PaginatorComponent],
+  imports: [CommonModule, BaseListComponent, PaginatorComponent],
   templateUrl: './details-subfleet.html',
 })
 export class DetailsSubfleet {

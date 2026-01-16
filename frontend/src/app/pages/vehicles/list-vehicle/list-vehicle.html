@@ -96,6 +96,44 @@
   (details)="onNavDetails($event)"
 ></app-base-list>
 
+
+<!-- Campo Subfrota FLUTUANTE (Compacto) -->
+@if (showModal) {
+<div 
+  class="fixed top-24 right-6 z-[60] bg-white p-3 rounded-lg shadow-xl border border-gray-200 w-72"
+>
+  <div class="flex items-center justify-between mb-3 pb-1">
+    <h5 class="font-medium text-xs text-gray-800">Subfrota</h5>
+    <button 
+      class="text-gray-400 hover:text-gray-600 text-lg"
+      (click)="showSubfleetModal = false"
+    >
+      ×
+    </button>
+  </div>
+  
+  <div class="flex gap-1 mb-2">
+    <input 
+      class="flex-1 p-2 border border-gray-300 rounded text-xs bg-gray-50"
+      [value]="selectedVehicle?.subfleetName || 'Nenhuma'"
+      readonly
+    />
+    <button 
+      class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs flex items-center"
+      (click)="showSubfleetModal = true"
+    >
+      🔍
+    </button>
+  </div>
+  
+  @if (selectedSubfleet) {
+  <div class="text-xs text-gray-500 bg-blue-50 p-1.5 rounded">
+    {{ selectedSubfleet.name }}
+  </div>
+  }
+</div>
+}
+
 <app-modal-edit-component
   [title]="'Editar Veiculo'"
   [show]="showModal"
@@ -104,3 +142,14 @@
   (close)="onCloseModal()"
   (save)="onSaveModal($event)"
 ></app-modal-edit-component>
+
+<!-- Modal Subfrota (dentro do app-modal-edit-component ou separado) -->
+<app-select-modal
+  [show]="showSubfleetModal"
+  title="Selecionar Subfrota"
+  [columns]="subfleetColumns"
+  [filtersConfig]="subfleetFilters"
+  [dataFetcher]="subfleetFetcher"
+  (select)="onSubfleetSelect($event)"
+  (close)="showSubfleetModal = false"
+></app-select-modal>

@@ -1,7 +1,9 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Vehicle, VehicleIndicators } from '../../../interfaces/vehicle';
+import { Subfleet } from '../../../interfaces/subfleet';
 import { VehicleService } from '../../../services/vehicle.service';
+import { SubfleetService } from '../../../services/subfleet.service';
 import { PaginatedResponse } from '../../../interfaces/paginator';
 import { Router } from '@angular/router';
 import { alertError, alertSuccess } from '../../../utils/custom-alerts';
@@ -16,6 +18,7 @@ import {
   FilterConfig,
 } from '../../../components/base-filter-component/base-filter-component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
+import { SelectModalComponent } from '../../../components/select-modal.component/select-modal.component';
 
 @Component({
   selector: 'app-list-vehicle',
@@ -26,11 +29,13 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
     PaginatorComponent,
     BaseFilterComponent,
     ModalEditComponent,
+    SelectModalComponent,
   ],
   templateUrl: './list-vehicle.html',
 })
 export class ListVehicle {
   private serviceVehicle = inject(VehicleService);
+  private subfleetService = inject(SubfleetService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
 
@@ -54,6 +59,7 @@ export class ListVehicle {
     { key: 'plate' as keyof Vehicle, label: 'Placa', sortable: true },
     { key: 'model' as keyof Vehicle, label: 'Modelo', sortable: true },
     { key: 'brand' as keyof Vehicle, label: 'Marca', sortable: true },
+    { key: 'subfleetName' as keyof Vehicle, label: 'Subfrota', sortable: true },  // ✅
     { key: 'year' as keyof Vehicle, label: 'Ano', sortable: true },
     {
       key: 'status' as keyof Vehicle,
@@ -63,10 +69,11 @@ export class ListVehicle {
     },
   ];
 
-  vehicleFilters = [
+  vehicleFilters: FilterConfig[] = [
     { key: 'plate', label: 'Placa', type: 'text', placeholder: 'Placa...' },
     { key: 'model', label: 'Modelo', type: 'text', placeholder: 'Modelo...' },
     { key: 'brand', label: 'Marca', type: 'text', placeholder: 'Marca...' },
+    { key: 'subfleetName', label: 'Subfrota', type: 'text', placeholder: 'Nome da subfrota...' },  // ✅
     { key: 'year', label: 'Ano', type: 'number', placeholder: 'Ano...' },
     {
       key: 'status',
@@ -74,7 +81,18 @@ export class ListVehicle {
       type: 'select',
       options: ['ATIVO', 'INATIVO', 'MANUTENCAO'],
     },
-  ] satisfies FilterConfig[];
+  ];
+
+  // Subfrota Modal
+  subfleetColumns: ColumnConfig<Subfleet>[] = [
+    { key: 'name', label: 'Nome', sortable: true },
+    { key: 'description', label: 'Descrição', sortable: false },
+    { key: 'vehicleCount', label: 'Veículos', sortable: true },
+  ];
+
+  subfleetFilters: FilterConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
+  ];
 
   vehicles: Vehicle[] = [];
   total = 0;
@@ -83,13 +101,16 @@ export class ListVehicle {
   totalPages = 1;
   selectedVehicle?: Vehicle;
   showModal = false;
+  showSubfleetModal = false;
+  selectedSubfleet?: Subfleet;
 
   // filtros
-  filter = {
+  filter: any = {
     plate: '',
     model: '',
     brand: '',
     year: '',
+    subfleetName: '',  // ✅
     status: 'ATIVO',
   };
 
@@ -104,7 +125,7 @@ export class ListVehicle {
 
   listVehicles(page: number, limit: number) {
     this.serviceVehicle
-      .getAll(page, limit, this.filter, this.sortKey, this.sortAsc)
+      .getAll(page, limit, this.filter, this.sortKey as string, this.sortAsc)
       .subscribe({
         next: (res: PaginatedResponse<Vehicle>) => {
           this.vehicles = res.data;
@@ -125,7 +146,7 @@ export class ListVehicle {
 
   loadIndicators() {
     this.loadingIndicators = true;
-    this.serviceVehicle.getIndicators().subscribe({
+    this.serviceVehicle.getIndicators({}).subscribe({
       next: (res: VehicleIndicators) => {
         this.indicators = res;
         this.loadingIndicators = false;
@@ -160,6 +181,7 @@ export class ListVehicle {
       model: '',
       brand: '',
       year: '',
+      subfleetName: '',
       status: 'ATIVO',
     };
     this.applyFilters();
@@ -171,23 +193,56 @@ export class ListVehicle {
 
   onEdit(vehicle: Vehicle) {
     this.selectedVehicle = { ...vehicle };
+    this.selectedSubfleet = vehicle.subfleetId 
+      ? { id: vehicle.subfleetId, name: vehicle.subfleetName || '' } as Subfleet 
+      : undefined;
     this.showModal = true;
   }
 
   onCloseModal() {
     this.showModal = false;
+    this.selectedSubfleet = undefined;
+  }
+
+  // Subfrota Modal
+  subfleetFetcher = (
+    page: number,
+    limit: number,
+    filters: any,
+    sortKey: keyof Subfleet,
+    sortAsc: boolean
+  ) => {
+    return this.subfleetService.getAll(page, limit, filters);
+  };
+
+  onSubfleetSelect(subfleet: Subfleet) {
+    this.selectedSubfleet = subfleet;
+    if (this.selectedVehicle) {
+      this.selectedVehicle.subfleetId = subfleet.id;
+      this.selectedVehicle.subfleetName = subfleet.name;
+    }
+    this.showSubfleetModal = false;
   }
 
   onSaveModal(vehicle: Vehicle) {
-    const id = vehicle.id;
-    delete vehicle.id;
+    const id = vehicle.id!;
 
-    this.serviceVehicle.update(id!, vehicle).subscribe({
+    const updateData = {
+      plate: vehicle.plate,
+      model: vehicle.model,
+      brand: vehicle.brand || null,
+      year: vehicle.year || null,
+      status: vehicle.status,
+      subfleetId: this.selectedSubfleet?.id || null,  // ✅
+    };
+
+    this.serviceVehicle.update(id, updateData).subscribe({
       next: () => {
-        this.listVehicles(1, 10);
+        this.listVehicles(this.page, this.limit);
         this.loadIndicators();
         this.showModal = false;
         this.selectedVehicle = undefined;
+        this.selectedSubfleet = undefined;
         alertSuccess('Veículo atualizado com Sucesso');
       },
       error: (err) => {
