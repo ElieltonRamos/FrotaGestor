@@ -20,7 +20,7 @@ fun Application.configureRouting() {
         staticResources("/", "static") {
             defaultResource("static/index.html")
         }
-        statusRoutes(appStartTime)
+        statusRoutes(appStartTime, application)
         userRoutes()
         driverRoutes()
         vehicleRoutes()

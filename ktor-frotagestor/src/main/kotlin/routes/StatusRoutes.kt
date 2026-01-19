@@ -1,53 +1,38 @@
 package com.frotagestor.routes
 
-import com.frotagestor.services.BackupResult
+import com.frotagestor.interfaces.BackupExecuteResponse
+import com.frotagestor.interfaces.BackupResult
+import com.frotagestor.interfaces.StatusResponse
 import com.frotagestor.services.BackupService
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.*
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 import kotlin.math.roundToInt
 
-@Serializable
-data class StatusResponse(
-    val version: String,
-    val uptime: String,
-    val cpu: String,
-    val cpuModel: String,
-    val memoryUsed: String,
-    val memoryTotal: String,
-    val dbStatus: String,
-    val dbDetails: String,
-    val backupStatus: String,
-    val backupLast: String?,
-    val backupCount: Int
-)
-
-@Serializable
-data class BackupExecuteResponse(
-    val success: Boolean,
-    val message: String,
-    val filename: String? = null,
-    val size: String? = null
-)
+private var autoBackupJob: Job? = null
 
 fun Route.statusRoutes(
     startTime: Instant,
+    application: Application
 ) {
     val backupService = BackupService()
+
+    startAutoBackup(backupService, application)
+
     get("/status") {
         val status = getStatusInfo(startTime, backupService)
         call.respond(status)
     }
 
     // Endpoint para executar backup manual
-    get("/backup/execute") {
+    get("/backup") {
         val result = backupService.executeBackup()
 
         when (result) {
@@ -72,6 +57,52 @@ fun Route.statusRoutes(
                 )
             }
         }
+    }
+}
+
+private fun startAutoBackup(backupService: BackupService, application: Application) {
+    autoBackupJob = CoroutineScope(Dispatchers.Default).launch {
+        println("✅ Backup automático iniciado - execução diária às 00:00")
+
+        while (isActive) {
+            val now = Calendar.getInstance()
+            val nextRun = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+
+                // Se já passou da meia-noite hoje, agendar para amanhã
+                if (before(now)) {
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+            }
+
+            val delayMillis = nextRun.timeInMillis - now.timeInMillis
+            val nextRunFormatted = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(nextRun.time)
+            println("⏰ Próximo backup automático agendado para: $nextRunFormatted")
+
+            delay(delayMillis)
+
+            // Executar backup
+            println("🔄 Executando backup automático agendado...")
+            val result = backupService.executeBackup()
+
+            when (result) {
+                is BackupResult.Success -> {
+                    println("✅ Backup automático concluído: ${result.filename}")
+                }
+                is BackupResult.Error -> {
+                    println("❌ Erro no backup automático: ${result.message}")
+                }
+            }
+        }
+    }
+
+    // Parar backup automático quando a aplicação for desligada
+    application.environment.monitor.subscribe(ApplicationStopped) {
+        autoBackupJob?.cancel()
+        println("🛑 Backup automático parado")
     }
 }
 
