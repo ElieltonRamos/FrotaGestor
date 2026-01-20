@@ -60,6 +60,7 @@ CREATE TABLE gps_devices (
     icon_map_url VARCHAR(255),
     title VARCHAR(255),
     ignition BOOLEAN DEFAULT FALSE,
+    last_communication DATETIME NOT NULL,
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
 );
 
@@ -116,13 +117,27 @@ CREATE TABLE gps_history (
     gps_device_id INT NOT NULL,
     vehicle_id INT NULL,
     date_time DATETIME NOT NULL,
-    speed DECIMAL(5,2) DEFAULT 0,
     latitude DECIMAL(9,6) NOT NULL,
     longitude DECIMAL(9,6) NOT NULL,
+    speed DECIMAL(5,2) DEFAULT 0,
+    heading DECIMAL(6,2) DEFAULT 0,
+    ignition BOOLEAN DEFAULT FALSE,
+    satellites INT NULL,
+    gps_fixed BOOLEAN DEFAULT FALSE,
+    odometer BIGINT NULL,
+    battery_voltage DECIMAL(5,2) NULL,
+    message_type VARCHAR(20) NOT NULL,
+    event_code INT NULL,
+    gps_quality VARCHAR(20) NOT NULL,
     raw_log TEXT NOT NULL,
 
-    FOREIGN KEY (gps_device_id) REFERENCES gps_devices(id) ON DELETE CASCADE,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL,
+    FOREIGN KEY (gps_device_id)
+        REFERENCES gps_devices(id)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (vehicle_id)
+        REFERENCES vehicles(id)
+        ON DELETE SET NULL,
 
     INDEX idx_device_time (gps_device_id, date_time),
     INDEX idx_datetime (date_time),

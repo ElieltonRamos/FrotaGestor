@@ -15,7 +15,8 @@ data class GpsDevice(
     val heading: Double = 0.0,             // Direção (opcional)
     val iconMapUrl: String? = null,        // Ícone para o mapa
     val title: String? = null,             // Modelo + placa
-    val ignition: Boolean = false          // Ignição ligada/desligada
+    val ignition: Boolean = false,          // Ignição ligada/desligada
+    val lastCommunication: LocalDateTime?
 )
 
 @Serializable
@@ -38,10 +39,19 @@ data class GpsHistory(
     val gpsDeviceId: Int,
     val vehicleId: Int?,
     val dateTime: LocalDateTime,
-    val speed: Double = 0.0,
     val latitude: Double,
     val longitude: Double,
-    val rawLog: String,
+    val speed: Double,
+    val heading: Double,
+    val ignition: Boolean,
+    val satellites: Int?,
+    val gpsFixed: Boolean,
+    val gpsQuality: String,
+    val odometer: Long?,
+    val batteryVoltage: Double?,
+    val messageType: String,
+    val eventCode: Int?,
+    val rawLog: String
 )
 
 @Serializable

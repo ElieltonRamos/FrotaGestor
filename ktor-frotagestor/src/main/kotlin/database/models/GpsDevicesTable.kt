@@ -15,6 +15,7 @@ object GpsDevicesTable : Table("gps_devices") {
     val iconMapUrl = varchar("icon_map_url", 255).nullable()
     val title = varchar("title", 255).nullable()
     val ignition = bool("ignition").default(false)
+    val lastCommunication = datetime("last_communication")
 
     override val primaryKey = PrimaryKey(id)
 }

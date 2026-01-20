@@ -13,6 +13,7 @@ import com.frotagestor.validations.validateCommandRequest
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -65,6 +66,8 @@ class GpsDeviceService {
                 row[iconMapUrl] = newDevice.iconMapUrl
                 row[title] = newDevice.title
                 row[ignition] = newDevice.ignition ?: false
+                row[lastCommunication] =
+                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             }
         }
 
@@ -175,7 +178,8 @@ class GpsDeviceService {
                         heading = row[GpsDevicesTable.heading].toDouble(),
                         iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                         title = row[GpsDevicesTable.title],
-                        ignition = row[GpsDevicesTable.ignition]
+                        ignition = row[GpsDevicesTable.ignition],
+                        lastCommunication = row[GpsDevicesTable.lastCommunication]
                     )
                 }
 
@@ -206,7 +210,8 @@ class GpsDeviceService {
                     heading = row[GpsDevicesTable.heading].toDouble(),
                     iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                     title = row[GpsDevicesTable.title],
-                    ignition = row[GpsDevicesTable.ignition]
+                    ignition = row[GpsDevicesTable.ignition],
+                    lastCommunication = row[GpsDevicesTable.lastCommunication]
                 )
             }
         }
@@ -232,7 +237,8 @@ class GpsDeviceService {
                     heading = row[GpsDevicesTable.heading].toDouble(),
                     iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                     title = row[GpsDevicesTable.title],
-                    ignition = row[GpsDevicesTable.ignition]
+                    ignition = row[GpsDevicesTable.ignition],
+                    lastCommunication = row[GpsDevicesTable.lastCommunication]
                 )
             }
         }
@@ -251,23 +257,24 @@ class GpsDeviceService {
         page: Int = 1,
         limit: Int = 20
     ): ServiceResponse<PaginatedResponse<GpsHistory>> {
+
         return DatabaseFactory.dbQuery {
             val tz = TimeZone.currentSystemDefault()
             val today = kotlinx.datetime.Clock.System.todayIn(tz)
             val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
             val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
 
-            // Validação de página e limite
             val safePage = if (page < 1) 1 else page
             val safeLimit = if (limit < 1) 20 else if (limit > 100) 100 else limit
             val offset = ((safePage - 1) * safeLimit).toLong()
 
-            // Query com filtros
-            val baseQuery = GpsHistoryTable.selectAll().where {
-                (GpsHistoryTable.vehicleId eq vehicleId) and
-                        (GpsHistoryTable.dateTime greaterEq todayStart) and
-                        (GpsHistoryTable.dateTime lessEq todayEnd)
-            }
+            val baseQuery = GpsHistoryTable
+                .selectAll()
+                .where {
+                    (GpsHistoryTable.vehicleId eq vehicleId) and
+                            (GpsHistoryTable.dateTime greaterEq todayStart) and
+                            (GpsHistoryTable.dateTime lessEq todayEnd)
+                }
 
             val total = baseQuery.count()
 
@@ -283,11 +290,22 @@ class GpsDeviceService {
                         dateTime = row[GpsHistoryTable.dateTime],
                         latitude = row[GpsHistoryTable.latitude].toDouble(),
                         longitude = row[GpsHistoryTable.longitude].toDouble(),
+                        speed = row[GpsHistoryTable.speed].toDouble(),
+                        heading = row[GpsHistoryTable.heading].toDouble(),
+                        ignition = row[GpsHistoryTable.ignition],
+                        satellites = row[GpsHistoryTable.satellites],
+                        gpsFixed = row[GpsHistoryTable.gpsFixed],
+                        gpsQuality = row[GpsHistoryTable.gpsQuality],
+                        odometer = row[GpsHistoryTable.odometer],
+                        batteryVoltage = row[GpsHistoryTable.batteryVoltage]?.toDouble(),
+                        messageType = row[GpsHistoryTable.messageType],
+                        eventCode = row[GpsHistoryTable.eventCode],
                         rawLog = row[GpsHistoryTable.rawLog]
                     )
                 }
 
-            val totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
+            val totalPages =
+                if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
 
             ServiceResponse(
                 status = HttpStatusCode.OK,
@@ -368,7 +386,8 @@ class GpsDeviceService {
                         heading = row[GpsDevicesTable.heading].toDouble(),
                         iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                         title = row[GpsDevicesTable.title],
-                        ignition = row[GpsDevicesTable.ignition]
+                        ignition = row[GpsDevicesTable.ignition],
+                        lastCommunication = row[GpsDevicesTable.lastCommunication]
                     )
                 }
 
@@ -425,6 +444,16 @@ class GpsDeviceService {
                         dateTime = row[GpsHistoryTable.dateTime],
                         latitude = row[GpsHistoryTable.latitude].toDouble(),
                         longitude = row[GpsHistoryTable.longitude].toDouble(),
+                        speed = row[GpsHistoryTable.speed].toDouble(),
+                        heading = row[GpsHistoryTable.heading].toDouble(),
+                        ignition = row[GpsHistoryTable.ignition],
+                        satellites = row[GpsHistoryTable.satellites],
+                        gpsFixed = row[GpsHistoryTable.gpsFixed],
+                        gpsQuality = row[GpsHistoryTable.gpsQuality],
+                        odometer = row[GpsHistoryTable.odometer],
+                        batteryVoltage = row[GpsHistoryTable.batteryVoltage]?.toDouble(),
+                        messageType = row[GpsHistoryTable.messageType],
+                        eventCode = row[GpsHistoryTable.eventCode],
                         rawLog = row[GpsHistoryTable.rawLog]
                     )
                 }
