@@ -1,25 +1,36 @@
 export interface GpsDevice {
-  id?: number; // ID do dispositivo
-  vehicleId?: number | null; // Veículo vinculado (NULLABLE - permite dispositivos sem veículos)
-  imei: string; // Identificador do GPS (obrigatório)
-  latitude?: number; // Última latitude (opcional para dispositivos novos)
-  longitude?: number; // Última longitude (opcional para dispositivos novos)
-  dateTime?: string | null; // Momento da leitura ISO string (opcional para dispositivos novos)
-  speed?: number; // Velocidade (opcional)
-  heading?: number; // Direção (opcional)
-  iconMapUrl?: string | null; // Ícone para o mapa
-  title?: string | null; // Modelo + placa
-  ignition?: boolean; // Ignição ligada/desligada
+  id?: number;                           // Int - opcional (vem do servidor)
+  vehicleId?: number | null;             // Int? - nullable OK
+  imei: string;                          // String - OBRIGATÓRIO
+  latitude?: number;                     // Double = 0.0 - opcional
+  longitude?: number;                    // Double = 0.0 - opcional
+  dateTime?: string | null;              // LocalDateTime? - ISO string nullable
+  speed?: number;                        // Double = 0.0 - opcional
+  heading?: number;                      // Double = 0.0 - opcional
+  iconMapUrl?: string | null;            // String? - nullable
+  title?: string | null;                 // String? - nullable
+  ignition?: boolean;                    // Boolean = false - opcional
+  lastCommunication?: string | null;     // LocalDateTime? - ISO string nullable (NOVO)
 }
 
 export interface GpsHistory {
-  id: number;
-  gpsDeviceId: number;
-  vehicleId?: number | null;
-  dateTime: string; // ISO 8601 string
-  latitude: number;
-  longitude: number;
-  rawLog: string;
+  id: number;                            // Long - OBRIGATÓRIO
+  gpsDeviceId: number;                   // Int - OBRIGATÓRIO (NOVO)
+  vehicleId?: number | null;             // Int? - nullable
+  dateTime: string;                      // LocalDateTime - ISO string OBRIGATÓRIO
+  latitude: number;                      // Double - OBRIGATÓRIO
+  longitude: number;                     // Double - OBRIGATÓRIO
+  speed: number;                         // Double - OBRIGATÓRIO (NOVO)
+  heading: number;                       // Double - OBRIGATÓRIO (NOVO)
+  ignition: boolean;                     // Boolean - OBRIGATÓRIO (NOVO)
+  satellites?: number | null;            // Int? - nullable (NOVO)
+  gpsFixed: boolean;                     // Boolean - OBRIGATÓRIO (NOVO)
+  gpsQuality: string;                    // String - OBRIGATÓRIO (NOVO)
+  odometer?: number | null;              // Long? - nullable (NOVO)
+  batteryVoltage?: number | null;        // Double? - nullable (NOVO)
+  messageType: string;                   // String - OBRIGATÓRIO (NOVO)
+  eventCode?: number | null;             // Int? - nullable (NOVO)
+  rawLog: string;                        // String - OBRIGATÓRIO
 }
 
 export interface ParsedGpsEvent {

@@ -251,7 +251,6 @@ export class ListTrip {
 
   onSaveModal(trip: Trip) {
     const id = trip.id;
-    delete trip.id;
 
     this.serviceTrip.update(id!, trip).subscribe({
       next: () => {

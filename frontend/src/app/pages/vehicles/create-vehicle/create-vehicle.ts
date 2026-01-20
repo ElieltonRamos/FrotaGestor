@@ -11,6 +11,8 @@ import { alertError, alertSuccess } from '../../../utils/custom-alerts';
 import { SelectModalComponent } from '../../../components/select-modal.component/select-modal.component';
 import { ColumnConfig } from '../../../components/base-list-component/base-list-component';
 import { FilterConfig } from '../../../components/base-filter-component/base-filter-component';
+import { Driver } from '../../../interfaces/driver';
+import { DriverService } from '../../../services/driver.service';
 
 @Component({
   selector: 'app-create-vehicle',
@@ -21,6 +23,7 @@ import { FilterConfig } from '../../../components/base-filter-component/base-fil
 export class CreateVehicle implements OnInit {
   private vehicleService = inject(VehicleService);
   private subfleetService = inject(SubfleetService);
+  private driverService = inject(DriverService);
 
   vehicleFields: FormField[] = [
     {
@@ -70,8 +73,48 @@ export class CreateVehicle implements OnInit {
     { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
   ];
 
+  driverColumns: ColumnConfig<Driver>[] = [
+    { key: 'name', label: 'Nome', sortable: true },
+    { key: 'cpf', label: 'CPF', sortable: true },
+    { key: 'cnh', label: 'CNH', sortable: true },
+    { key: 'cnhCategory', label: 'Categoria CNH', sortable: true },
+    {
+      key: 'cnhExpiration',
+      label: 'Validade CNH',
+      type: 'date',
+      sortable: true,
+    },
+    { key: 'status', label: 'Status', type: 'status', sortable: true },
+  ];
+
+  driverFilters: FilterConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
+    { key: 'cpf', label: 'CPF', type: 'text', placeholder: 'CPF...' },
+    { key: 'cnh', label: 'CNH', type: 'text', placeholder: 'CNH...' },
+    {
+      key: 'cnhCategory',
+      label: 'Categoria CNH',
+      type: 'text',
+      placeholder: 'Categoria CNH...',
+    },
+    {
+      key: 'cnhExpiration',
+      label: 'Validade CNH',
+      type: 'text',
+      placeholder: 'Validade CNH...',
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: ['ATIVO'],
+    },
+  ];
+
   selectedSubfleet?: Subfleet;
+  selectedDriver?: Driver;
   showSubfleetModal = false;
+  showDriverModal = false;
 
   onSubfleetSelect(subfleet: Subfleet) {
     this.selectedSubfleet = subfleet;
@@ -83,10 +126,31 @@ export class CreateVehicle implements OnInit {
     limit: number,
     filters: any,
     sortKey: keyof Subfleet,
-    sortAsc: boolean
+    sortAsc: boolean,
   ) => {
     return this.subfleetService.getAll(page, limit, filters);
   };
+
+  driverFetcher = (
+    page: number,
+    limit: number,
+    filters: any,
+    sortKey: keyof Driver,
+    sortAsc: boolean,
+  ) => {
+    return this.driverService.getAll(
+      page,
+      limit,
+      filters,
+      sortKey as string,
+      sortAsc,
+    );
+  };
+
+  onDriverSelect(driver: Driver) {
+    this.selectedDriver = driver;
+    this.showDriverModal = false;
+  }
 
   saveVehicle(data: any) {
     if (!data.plate || !data.model) {
@@ -100,7 +164,8 @@ export class CreateVehicle implements OnInit {
       brand: data.brand || null,
       year: data.year || null,
       status: data.status || 'ATIVO',
-      subfleetId: this.selectedSubfleet?.id || null,  // ✅ Opcional
+      defaultDriverId: this.selectedDriver?.id,
+      subfleetId: this.selectedSubfleet?.id || null, // ✅ Opcional
     };
 
     this.vehicleService.create(payload as Vehicle).subscribe({
@@ -111,7 +176,7 @@ export class CreateVehicle implements OnInit {
         alertError(
           `Erro ao cadastrar veículo: ${
             e.error?.message || 'Erro desconhecido'
-          }`
+          }`,
         );
       },
     });

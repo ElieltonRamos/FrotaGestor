@@ -19,6 +19,8 @@ import {
 } from '../../../components/base-filter-component/base-filter-component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
 import { SelectModalComponent } from '../../../components/select-modal.component/select-modal.component';
+import { Driver } from '../../../interfaces/driver';
+import { DriverService } from '../../../services/driver.service';
 
 @Component({
   selector: 'app-list-vehicle',
@@ -36,11 +38,14 @@ import { SelectModalComponent } from '../../../components/select-modal.component
 export class ListVehicle {
   private serviceVehicle = inject(VehicleService);
   private subfleetService = inject(SubfleetService);
+  private driverService = inject(DriverService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
 
   indicators?: VehicleIndicators;
   loadingIndicators = false;
+  showDriverModal = false;
+  selectedDriver?: Driver;
 
   vehicleFields = [
     { name: 'plate', label: 'Placa', type: 'text' },
@@ -59,7 +64,7 @@ export class ListVehicle {
     { key: 'plate' as keyof Vehicle, label: 'Placa', sortable: true },
     { key: 'model' as keyof Vehicle, label: 'Modelo', sortable: true },
     { key: 'brand' as keyof Vehicle, label: 'Marca', sortable: true },
-    { key: 'subfleetName' as keyof Vehicle, label: 'Subfrota', sortable: true },  // ✅
+    { key: 'subfleetName' as keyof Vehicle, label: 'Subfrota', sortable: true }, // ✅
     { key: 'year' as keyof Vehicle, label: 'Ano', sortable: true },
     {
       key: 'status' as keyof Vehicle,
@@ -73,7 +78,12 @@ export class ListVehicle {
     { key: 'plate', label: 'Placa', type: 'text', placeholder: 'Placa...' },
     { key: 'model', label: 'Modelo', type: 'text', placeholder: 'Modelo...' },
     { key: 'brand', label: 'Marca', type: 'text', placeholder: 'Marca...' },
-    { key: 'subfleetName', label: 'Subfrota', type: 'text', placeholder: 'Nome da subfrota...' },  // ✅
+    {
+      key: 'subfleetName',
+      label: 'Subfrota',
+      type: 'text',
+      placeholder: 'Nome da subfrota...',
+    }, // ✅
     { key: 'year', label: 'Ano', type: 'number', placeholder: 'Ano...' },
     {
       key: 'status',
@@ -94,6 +104,44 @@ export class ListVehicle {
     { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
   ];
 
+  driverColumns: ColumnConfig<Driver>[] = [
+    { key: 'name', label: 'Nome', sortable: true },
+    { key: 'cpf', label: 'CPF', sortable: true },
+    { key: 'cnh', label: 'CNH', sortable: true },
+    { key: 'cnhCategory', label: 'Categoria CNH', sortable: true },
+    {
+      key: 'cnhExpiration',
+      label: 'Validade CNH',
+      type: 'date',
+      sortable: true,
+    },
+    { key: 'status', label: 'Status', type: 'status', sortable: true },
+  ];
+
+  driverFilters: FilterConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
+    { key: 'cpf', label: 'CPF', type: 'text', placeholder: 'CPF...' },
+    { key: 'cnh', label: 'CNH', type: 'text', placeholder: 'CNH...' },
+    {
+      key: 'cnhCategory',
+      label: 'Categoria CNH',
+      type: 'text',
+      placeholder: 'Categoria CNH...',
+    },
+    {
+      key: 'cnhExpiration',
+      label: 'Validade CNH',
+      type: 'text',
+      placeholder: 'Validade CNH...',
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: ['ATIVO'],
+    },
+  ];
+
   vehicles: Vehicle[] = [];
   total = 0;
   page = 1;
@@ -110,7 +158,7 @@ export class ListVehicle {
     model: '',
     brand: '',
     year: '',
-    subfleetName: '',  // ✅
+    subfleetName: '', // ✅
     status: 'ATIVO',
   };
 
@@ -159,6 +207,27 @@ export class ListVehicle {
     });
   }
 
+  driverFetcher = (
+    page: number,
+    limit: number,
+    filters: any,
+    sortKey: keyof Driver,
+    sortAsc: boolean,
+  ) => {
+    return this.driverService.getAll(
+      page,
+      limit,
+      filters,
+      sortKey as string,
+      sortAsc,
+    );
+  };
+
+  onDriverSelect(driver: Driver) {
+    this.selectedDriver = driver;
+    this.showDriverModal = false;
+  }
+
   applyFilters() {
     this.page = 1;
     this.listVehicles(this.page, this.limit);
@@ -193,8 +262,11 @@ export class ListVehicle {
 
   onEdit(vehicle: Vehicle) {
     this.selectedVehicle = { ...vehicle };
-    this.selectedSubfleet = vehicle.subfleetId 
-      ? { id: vehicle.subfleetId, name: vehicle.subfleetName || '' } as Subfleet 
+    this.selectedSubfleet = vehicle.subfleetId
+      ? ({
+          id: vehicle.subfleetId,
+          name: vehicle.subfleetName || '',
+        } as Subfleet)
       : undefined;
     this.showModal = true;
   }
@@ -210,7 +282,7 @@ export class ListVehicle {
     limit: number,
     filters: any,
     sortKey: keyof Subfleet,
-    sortAsc: boolean
+    sortAsc: boolean,
   ) => {
     return this.subfleetService.getAll(page, limit, filters);
   };
@@ -233,7 +305,8 @@ export class ListVehicle {
       brand: vehicle.brand || null,
       year: vehicle.year || null,
       status: vehicle.status,
-      subfleetId: this.selectedSubfleet?.id || null,  // ✅
+      subfleetId: this.selectedSubfleet?.id || null, // ✅
+      defaultDriverId: this.selectedDriver?.id
     };
 
     this.serviceVehicle.update(id, updateData).subscribe({
@@ -249,7 +322,7 @@ export class ListVehicle {
         alertError(
           `Ocorreu um erro ao salvar o veículo. ${
             err?.error?.message || 'Erro desconhecido.'
-          }`
+          }`,
         );
       },
     });

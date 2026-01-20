@@ -16,8 +16,8 @@ export const SECTIONS: SectionConfig[] = [
       { key: 'startTime', label: 'Data de Início', sortable: true },
       { key: 'startLocation', label: 'Origem' },
       { key: 'endLocation', label: 'Destino' },
-      { key: 'driverName', label: 'Motorista' }
-    ]
+      { key: 'driverName', label: 'Motorista' },
+    ],
   },
   {
     key: 'expenses',
@@ -26,17 +26,17 @@ export const SECTIONS: SectionConfig[] = [
       { key: 'date', label: 'Data', sortable: true },
       { key: 'description', label: 'Descrição' },
       { key: 'amount', label: 'Valor', sortable: true },
-      { key: 'type', label: 'Categoria' }
-    ]
+      { key: 'type', label: 'Categoria' },
+    ],
   },
   {
     key: 'gpsEvents',
     title: 'Últimos Eventos GPS',
     columns: [
-      { key: 'type', label: 'Evento', sortable: true },
+      { key: 'messageType', label: 'Tipo Evento', sortable: true },
       { key: 'dateTime', label: 'Data/Hora', sortable: true },
       { key: 'speed', label: 'Velocidade km/h', sortable: true },
-      { key: 'description', label: 'Detalhes' }
-    ]
-  }
+      { key: 'ignition', label: 'Ignição', sortable: true },
+    ],
+  },
 ];

@@ -25,13 +25,13 @@ export interface DataLoader {
     type: DataSetKey,
     subfleetId: number,
     page?: number,
-    dateFilters?: DateFilters
+    dateFilters?: DateFilters,
   ) => void;
   loadMarkers: (subfleetId: number) => void;
   loadMapHistory: (
     subfleetId: number,
     startDateTime?: string,
-    endDateTime?: string
+    endDateTime?: string,
   ) => void;
 }
 
@@ -43,7 +43,7 @@ export function createDataLoader(
   cdr: ChangeDetectorRef,
   dataSets: Record<DataSetKey, DataSet<any>>,
   markers: GpsDevice[],
-  mapPoints: GpsHistory[]
+  mapPoints: GpsHistory[],
 ): DataLoader {
   const setData = (dataset: DataSet<any>, res: any) => {
     dataset.items = res.data;
@@ -62,7 +62,7 @@ export function createDataLoader(
     type: DataSetKey,
     subfleetId: number,
     page?: number,
-    dateFilters?: DateFilters
+    dateFilters?: DateFilters,
   ) => {
     const currentPage = page ?? dataSets[type].page;
     const limit = dataSets[type].limit;
@@ -75,7 +75,7 @@ export function createDataLoader(
             currentPage,
             limit,
             dateFilters?.startDate,
-            dateFilters?.endDate
+            dateFilters?.endDate,
           )
           .subscribe({
             next: (res) => setData(dataSets.gpsEvents, res),
@@ -112,23 +112,16 @@ export function createDataLoader(
     });
   };
 
-
   const loadMapHistory = (
     subfleetId: number,
     startDateTime?: string,
-    endDateTime?: string
+    endDateTime?: string,
   ) => {
     gpsService
-      .getGpsHistoryBySubfleet(subfleetId, 1, 200, startDateTime, endDateTime)
+      .getGpsHistoryBySubfleet(subfleetId, 1, 5, startDateTime, endDateTime)
       .subscribe({
         next: (res) => {
-          mapPoints.splice(
-            0,
-            mapPoints.length,
-            ...res.data.filter(
-              (p: GpsHistory) => p.latitude !== 0 && p.longitude !== 0
-            )
-          );
+          mapPoints.splice(0, mapPoints.length, ...res.data);
           cdr.detectChanges();
         },
       });
