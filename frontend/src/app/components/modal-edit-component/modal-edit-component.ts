@@ -18,7 +18,7 @@ export class ModalEditComponent {
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<any>();
 
-  showPassword = false
+  showPassword = false;
 
   onClose() {
     this.close.emit();
