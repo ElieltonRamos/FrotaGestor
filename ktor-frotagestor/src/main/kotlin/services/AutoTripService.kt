@@ -17,16 +17,28 @@ class AutoTripService(
 ) {
 
     companion object {
-        private const val MIN_IGNITION_ON_SECONDS = 30
-        private const val MIN_TRIP_DURATION_MINUTES = 2.0
-        private const val MIN_TRIP_DISTANCE_KM = 0.05
-        private const val MIN_MOVED_DISTANCE_KM = 0.02
+        // Timers de ignição
+        private const val MIN_IGNITION_ON_SECONDS = 60
+        private const val MIN_IGNITION_OFF_MINUTES = 10
+
+        // Validações rigorosas de viagem
+        private const val MIN_TRIP_DURATION_MINUTES = 3.0
+        private const val MIN_TRIP_DISTANCE_KM = 0.3
+        private const val MIN_MOVED_DISTANCE_KM = 0.15
+        private const val MIN_VALID_TRIP_DISTANCE_KM = 1.5
+
+        // Limpeza de viagens órfãs
         private const val PENDING_TRIP_CLEANUP_HOURS = 3
+
+        // API de geocodificação
         private const val GEOCODING_API_URL = "https://nominatim.openstreetmap.org/reverse"
     }
 
-    // Cache em memória → PRIMEIRO momento da ignição ligada
+    // Cache de ignição ligada (aguardando 60s)
     private val ignitionOnCache = mutableMapOf<Int, IgnitionOnEvent>()
+
+    // Cache de ignição desligada (aguardando 10 min)
+    private val ignitionOffCache = mutableMapOf<Int, IgnitionOffEvent>()
 
     data class IgnitionOnEvent(
         val vehicleId: Int,
@@ -36,12 +48,37 @@ class AutoTripService(
         val imei: String
     )
 
+    data class IgnitionOffEvent(
+        val vehicleId: Int,
+        val tripId: Int,
+        val latitude: Double,
+        val longitude: Double,
+        val dateTime: LocalDateTime,
+        val imei: String
+    )
+
     /**
-     * 🔥 NOVO: Verifica se o timer de 30s expirou e cria a viagem
+     * 🔥 Verifica timers pendentes e cria/finaliza viagens
      * Deve ser chamado em CADA pacote GPS recebido
-     * IMPORTANTE: currentTime deve ser a hora do SERVIDOR (Clock.System.now())
      */
-    suspend fun checkPendingTripStart(
+    suspend fun checkPendingTimers(
+        vehicleId: Int,
+        latitude: Double,
+        longitude: Double,
+        currentTime: LocalDateTime,
+        speed: Double
+    ) {
+        // Verifica timer de ignição ON (60s)
+        checkPendingTripStart(vehicleId, latitude, longitude, currentTime, speed)
+
+        // Verifica timer de ignição OFF (10 min)
+        checkPendingTripEnd(vehicleId, latitude, longitude, currentTime)
+    }
+
+    /**
+     * Verifica se o timer de 60s expirou e cria a viagem
+     */
+    private suspend fun checkPendingTripStart(
         vehicleId: Int,
         latitude: Double,
         longitude: Double,
@@ -50,21 +87,41 @@ class AutoTripService(
     ) {
         val pending = ignitionOnCache[vehicleId] ?: return
 
-        // Calcula tempo decorrido em segundos
         val elapsedSeconds = calculateDuration(pending.dateTime, currentTime) * 60
 
-        println("⏱️ Verificando timer: veículo=$vehicleId, decorrido=${elapsedSeconds.toInt()}s")
+        println("⏱️ Timer ignição ON: veículo=$vehicleId, decorrido=${elapsedSeconds.toInt()}s/${MIN_IGNITION_ON_SECONDS}s")
 
-        // Se passaram 30 segundos, cria a viagem
         if (elapsedSeconds >= MIN_IGNITION_ON_SECONDS) {
             createTripInDatabase(pending)
             ignitionOnCache.remove(vehicleId)
-            println("✅ Timer expirou - viagem criada após ${elapsedSeconds.toInt()}s")
+            println("✅ Timer ON expirou - viagem criada após ${elapsedSeconds.toInt()}s")
         }
     }
 
     /**
-     * Detecta mudança de estado da ignição e cria/finaliza viagens automaticamente
+     * Verifica se o timer de 10 min expirou e finaliza a viagem
+     */
+    private suspend fun checkPendingTripEnd(
+        vehicleId: Int,
+        latitude: Double,
+        longitude: Double,
+        currentTime: LocalDateTime
+    ) {
+        val pending = ignitionOffCache[vehicleId] ?: return
+
+        val elapsedMinutes = calculateDuration(pending.dateTime, currentTime)
+
+        println("⏱️ Timer ignição OFF: veículo=$vehicleId, decorrido=${elapsedMinutes.toInt()}min/${MIN_IGNITION_OFF_MINUTES}min")
+
+        if (elapsedMinutes >= MIN_IGNITION_OFF_MINUTES) {
+            finalizeTripInDatabase(pending, latitude, longitude, currentTime)
+            ignitionOffCache.remove(vehicleId)
+            println("✅ Timer OFF expirou - finalizando viagem após ${elapsedMinutes.toInt()} min")
+        }
+    }
+
+    /**
+     * Detecta mudança de estado da ignição e gerencia timers
      */
     suspend fun processIgnitionChange(
         imei: String,
@@ -86,6 +143,7 @@ class AutoTripService(
 
     /**
      * Atualiza viagem em andamento com novos dados GPS
+     * Continua atualizando mesmo durante timer de 10 min
      */
     suspend fun updateActiveTrip(
         imei: String,
@@ -118,9 +176,6 @@ class AutoTripService(
 
                 val currentMaxSpeed = activeTrip[TripsTable.maxSpeedKmh]?.toDouble() ?: 0.0
                 val newMaxSpeed = maxOf(currentMaxSpeed, speed)
-                val avgSpeed = if (durationMinutes > 0) {
-                    (distanceKm / durationMinutes) * 60
-                } else 0.0
 
                 TripsTable.update({ TripsTable.id eq tripId }) {
                     it[endLatitude] = latitude.toBigDecimal()
@@ -128,16 +183,15 @@ class AutoTripService(
                     it[endTime] = dateTime
                     it[TripsTable.distanceKm] = distanceKm.toBigDecimal()
                     it[maxSpeedKmh] = newMaxSpeed.toBigDecimal()
-//                    it[avgSpeedKmh] = avgSpeed.toBigDecimal()
                 }
 
-                println("🔄 Viagem #$tripId atualizada (${distanceKm.format(2)} km)")
+                println("🔄 Viagem #$tripId atualizada (${distanceKm.format(2)} km, ${durationMinutes.format(1)} min)")
             }
         }
     }
 
     /**
-     * Registra ignição ligada, mas SÓ cria viagem após 30 segundos
+     * Registra ignição ligada e inicia timer de 60s
      */
     private suspend fun handleIgnitionOn(
         imei: String,
@@ -146,12 +200,21 @@ class AutoTripService(
         longitude: Double,
         dateTime: LocalDateTime
     ) {
-        // Já existe ignição pendente → NÃO resetar o timer
-        if (ignitionOnCache.containsKey(vehicleId)) {
+        // Se existe timer de finalização pendente → CANCELA e retoma viagem
+        if (ignitionOffCache.containsKey(vehicleId)) {
+            val offEvent = ignitionOffCache.remove(vehicleId)!!
+            val elapsedMinutes = calculateDuration(offEvent.dateTime, dateTime)
+            println("🔄 Ignição religada após ${elapsedMinutes.format(1)} min - timer OFF cancelado, viagem continua #${offEvent.tripId}")
             return
         }
 
-        // Já existe viagem ativa → ignora
+        // Se já existe timer de ignição ON → mantém o original (não reseta)
+        if (ignitionOnCache.containsKey(vehicleId)) {
+            println("⏳ Timer de ignição ON já em andamento (veículo $vehicleId)")
+            return
+        }
+
+        // Verifica se já existe viagem ativa
         val existingTrip = DatabaseFactory.dbQuery {
             TripsTable
                 .selectAll()
@@ -163,16 +226,18 @@ class AutoTripService(
                 .singleOrNull()
         }
 
-        if (existingTrip != null) return
+        if (existingTrip != null) {
+            println("⚠️ Viagem já existe em andamento #${existingTrip[TripsTable.id]} (veículo $vehicleId)")
+            return
+        }
 
-        ignitionOnCache[vehicleId] =
-            IgnitionOnEvent(vehicleId, latitude, longitude, dateTime, imei)
-
+        // Cria novo timer de 60s
+        ignitionOnCache[vehicleId] = IgnitionOnEvent(vehicleId, latitude, longitude, dateTime, imei)
         println("⏳ Ignição ligada - aguardando ${MIN_IGNITION_ON_SECONDS}s (veículo $vehicleId)")
     }
 
     /**
-     * Cria viagem no banco de dados (após validação de tempo)
+     * Cria viagem no banco de dados após validação de 60s
      */
     private suspend fun createTripInDatabase(event: IgnitionOnEvent) {
         DatabaseFactory.dbQuery {
@@ -202,15 +267,15 @@ class AutoTripService(
                 it[status] = TripStatus.EM_ANDAMENTO
                 it[autoGenerated] = true
                 it[maxSpeedKmh] = 0.toBigDecimal()
-//                it[avgSpeedKmh] = 0.toBigDecimal()
             }[TripsTable.id]
 
             println("🚗 Viagem criada #$tripId (veículo ${event.vehicleId})")
+            println("   📍 Início: ${startAddress ?: "Não disponível"}")
         }
     }
 
     /**
-     * Finaliza viagem com validação inteligente
+     * Registra ignição desligada e inicia timer de 10 min
      */
     private suspend fun handleIgnitionOff(
         imei: String,
@@ -219,17 +284,22 @@ class AutoTripService(
         longitude: Double,
         dateTime: LocalDateTime
     ) {
-        // 1. Se havia ignição pendente (ligou/desligou rápido), simplesmente descartar
+        // Se existe timer de ignição ON pendente → CANCELA e descarta
         if (ignitionOnCache.containsKey(vehicleId)) {
-            val pending = ignitionOnCache[vehicleId]!!
+            val pending = ignitionOnCache.remove(vehicleId)!!
             val elapsedSeconds = calculateDuration(pending.dateTime, dateTime) * 60
-            ignitionOnCache.remove(vehicleId)
-            println("🚫 Ignição descartada - Tempo insuficiente: ${elapsedSeconds.toInt()}s (veículo $vehicleId)")
+            println("🚫 Ignição descartada - ligou/desligou em ${elapsedSeconds.toInt()}s (< ${MIN_IGNITION_ON_SECONDS}s)")
             return
         }
 
-        // 2. Buscar viagem ativa no banco
-        DatabaseFactory.dbQuery {
+        // Se já existe timer de finalização → mantém o original
+        if (ignitionOffCache.containsKey(vehicleId)) {
+            println("⏳ Timer de finalização já em andamento (veículo $vehicleId)")
+            return
+        }
+
+        // 🔥 CORREÇÃO: Busca viagem ativa E extrai tripId DENTRO do dbQuery
+        val tripId = DatabaseFactory.dbQuery {
             val activeTrip = TripsTable
                 .selectAll()
                 .where {
@@ -239,50 +309,77 @@ class AutoTripService(
                 }
                 .singleOrNull()
 
+            // Retorna o ID da viagem (ou null)
+            activeTrip?.get(TripsTable.id)
+        }
+
+        if (tripId == null) {
+            println("⚠️ Nenhuma viagem ativa para iniciar timer de finalização (veículo $vehicleId)")
+            return
+        }
+
+        // Cria timer de 10 minutos
+        ignitionOffCache[vehicleId] = IgnitionOffEvent(vehicleId, tripId, latitude, longitude, dateTime, imei)
+        println("⏳ Ignição desligada - aguardando ${MIN_IGNITION_OFF_MINUTES} min para finalizar viagem #$tripId")
+    }
+
+    /**
+     * Finaliza viagem após timer de 10 min com validações rigorosas
+     */
+    private suspend fun finalizeTripInDatabase(
+        event: IgnitionOffEvent,
+        currentLatitude: Double,
+        currentLongitude: Double,
+        currentTime: LocalDateTime
+    ) {
+        DatabaseFactory.dbQuery {
+            val activeTrip = TripsTable
+                .selectAll()
+                .where { TripsTable.id eq event.tripId }
+                .singleOrNull()
+
             if (activeTrip == null) {
-                println("⚠️ Nenhuma viagem ativa para finalizar (veículo $vehicleId)")
+                println("⚠️ Viagem #${event.tripId} não encontrada para finalização")
                 return@dbQuery
             }
 
             val tripId = activeTrip[TripsTable.id]
-            val startLat = activeTrip[TripsTable.startLatitude]?.toDouble() ?: latitude
-            val startLon = activeTrip[TripsTable.startLongitude]?.toDouble() ?: longitude
+            val startLat = activeTrip[TripsTable.startLatitude]?.toDouble() ?: currentLatitude
+            val startLon = activeTrip[TripsTable.startLongitude]?.toDouble() ?: currentLongitude
             val startTime = activeTrip[TripsTable.startTime]
 
-            // Calcular métricas finais
-            val totalDistanceKm = calculateDistance(startLat, startLon, latitude, longitude)
-            val durationMinutes = calculateDuration(startTime, dateTime)
+            // Usa coordenadas mais recentes do banco (atualizadas durante os 10 min)
+            val endLat = activeTrip[TripsTable.endLatitude]?.toDouble() ?: currentLatitude
+            val endLon = activeTrip[TripsTable.endLongitude]?.toDouble() ?: currentLongitude
 
-            // 3. VALIDAÇÃO CRITERIOSA
-            val hasMovement = totalDistanceKm >= MIN_MOVED_DISTANCE_KM
-            val isMinimalTrip = durationMinutes < MIN_TRIP_DURATION_MINUTES &&
-                    totalDistanceKm < MIN_TRIP_DISTANCE_KM
+            // Calcula métricas finais
+            val totalDistanceKm = calculateDistance(startLat, startLon, endLat, endLon)
+            val durationMinutes = calculateDuration(startTime, currentTime)
 
-            if (!hasMovement && isMinimalTrip) {
-                // Viagem SEM movimentação significativa E muito curta → DESCARTAR
+            // 🔥 VALIDAÇÃO RIGOROSA FINAL
+            if (totalDistanceKm < MIN_VALID_TRIP_DISTANCE_KM) {
                 TripsTable.deleteWhere { TripsTable.id eq tripId }
-                println("🗑️ Viagem #$tripId DESCARTADA")
-                println("   📏 Distância: ${totalDistanceKm.format(3)} km (< ${MIN_MOVED_DISTANCE_KM} km)")
-                println("   ⏱️  Duração: ${durationMinutes.format(1)} min (< ${MIN_TRIP_DURATION_MINUTES} min)")
+                println("🗑️ Viagem #$tripId DELETADA - distância insuficiente")
+                println("   📏 Distância: ${totalDistanceKm.format(3)} km (< ${MIN_VALID_TRIP_DISTANCE_KM} km)")
+                println("   ⏱️  Duração: ${durationMinutes.format(1)} min")
                 return@dbQuery
             }
 
-            // 4. VIAGEM VÁLIDA → Salvar com todos os dados
-            val endAddress = getAddressFromCoordinates(latitude, longitude)
+            // Viagem válida → finaliza e salva
+            val endAddress = getAddressFromCoordinates(endLat, endLon)
             val maxSpeed = activeTrip[TripsTable.maxSpeedKmh]?.toDouble() ?: 0.0
             val avgSpeed = if (durationMinutes > 0) {
                 (totalDistanceKm / durationMinutes) * 60
             } else 0.0
 
             TripsTable.update({ TripsTable.id eq tripId }) {
-                it[TripsTable.endLatitude] = latitude.toBigDecimal()
-                it[TripsTable.endLongitude] = longitude.toBigDecimal()
+                it[TripsTable.endLatitude] = endLat.toBigDecimal()
+                it[TripsTable.endLongitude] = endLon.toBigDecimal()
                 it[TripsTable.endLocation] = endAddress ?: "Localização não disponível"
-                it[TripsTable.endTime] = dateTime
+                it[TripsTable.endTime] = currentTime
                 it[TripsTable.distanceKm] = totalDistanceKm.toBigDecimal()
                 it[TripsTable.status] = TripStatus.CONCLUIDA
                 it[TripsTable.maxSpeedKmh] = maxSpeed.toBigDecimal()
-//                it[TripsTable.avgSpeedKmh] = avgSpeed.toBigDecimal()
             }
 
             println("✅ Viagem #$tripId FINALIZADA E SALVA")
@@ -302,7 +399,6 @@ class AutoTripService(
                 .minus(PENDING_TRIP_CLEANUP_HOURS, DateTimeUnit.HOUR, TimeZone.currentSystemDefault())
                 .toLocalDateTime(TimeZone.currentSystemDefault())
 
-            // Buscar viagens órfãs
             val orphanTrips = TripsTable
                 .selectAll()
                 .where {
@@ -321,16 +417,14 @@ class AutoTripService(
                 val distance = calculateDistance(startLat, startLon, endLat, endLon)
 
                 if (distance < MIN_MOVED_DISTANCE_KM) {
-                    // Sem movimentação → descartar
                     TripsTable.deleteWhere { TripsTable.id eq tripId }
-                    println("🧹 Viagem órfã #$tripId descartada (sem movimento)")
+                    println("🧹 Viagem órfã #$tripId descartada (distância: ${distance.format(3)} km)")
                 } else {
-                    // Com movimentação → finalizar forçadamente
                     TripsTable.update({ TripsTable.id eq tripId }) {
                         it[TripsTable.status] = TripStatus.CONCLUIDA
                         it[TripsTable.distanceKm] = distance.toBigDecimal()
                     }
-                    println("🧹 Viagem órfã #$tripId finalizada automaticamente")
+                    println("🧹 Viagem órfã #$tripId finalizada automaticamente (${distance.format(2)} km)")
                 }
             }
         }
@@ -381,6 +475,9 @@ class AutoTripService(
         }
     }
 
+    /**
+     * Calcula distância entre dois pontos usando fórmula de Haversine
+     */
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadiusKm = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
@@ -392,6 +489,9 @@ class AutoTripService(
         return earthRadiusKm * c
     }
 
+    /**
+     * Calcula duração entre dois momentos em minutos
+     */
     private fun calculateDuration(start: LocalDateTime, end: LocalDateTime): Double {
         val startInstant = start.toInstant(TimeZone.currentSystemDefault())
         val endInstant = end.toInstant(TimeZone.currentSystemDefault())
@@ -399,5 +499,8 @@ class AutoTripService(
         return durationMs / 60000.0
     }
 
+    /**
+     * Formata número com casas decimais específicas
+     */
     private fun Double.format(decimals: Int) = "%.${decimals}f".format(this)
 }

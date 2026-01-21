@@ -1,5 +1,6 @@
 package com.frotagestor.protocols_devices_gps.suntech
 
+import com.frotagestor.services.DailyTripService
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.*
 import io.ktor.utils.io.readAvailable
@@ -7,13 +8,17 @@ import kotlinx.coroutines.*
 import kotlin.time.Duration.Companion.minutes
 
 private val serverScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+private val dailyTripService = DailyTripService()
+private val portTcp = 1150
 
+@OptIn(DelicateCoroutinesApi::class)
 suspend fun startTcpServerSuntech() {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
-        .bind("0.0.0.0", 3003)
+        .bind("0.0.0.0", portTcp)
+    dailyTripService.startDailyCleanup(GlobalScope)
 
-    println("[${generateDate()}] Servidor TCP rodando na porta 3003 – protocolo Suntech ST310/ST300")
+    println("[${generateDate()}] Servidor TCP rodando na porta $portTcp – protocolo Suntech ST310/ST300")
 
     try {
         while (true) {
@@ -41,7 +46,6 @@ fun logPacket(remote: String, message: String) {
         |Remote   : $remote
         |Timestamp: ${generateDate()}
         |Message  : $message
-        |Hex      : $hex
         |========================
         """.trimMargin()
     )

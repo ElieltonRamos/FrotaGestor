@@ -52,6 +52,14 @@ export class BaseListComponent<T extends { id?: number }> {
   }
 
   safeDateString(value: unknown): string | null {
-    return typeof value === 'string' ? value : null;
+    if (typeof value === 'string') {
+      const dateStr = value.trim();
+      // Só adiciona T00 para YYYY-MM-DD puro
+      if (dateStr.match(/^(\d{4}-\d{2}-\d{2})$/)) {
+        return dateStr + 'T00:00:00';
+      }
+      return dateStr; // Outros já OK
+    }
+    return null;
   }
 }

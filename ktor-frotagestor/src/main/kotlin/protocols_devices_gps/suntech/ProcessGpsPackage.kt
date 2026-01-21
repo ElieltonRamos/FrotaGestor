@@ -5,12 +5,14 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
 import com.frotagestor.services.AutoTripService
+import com.frotagestor.services.DailyTripService
 import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 
 private val autoTripService = AutoTripService()
+private val dailyTripService = DailyTripService()
 
 enum class GpsQuality {
     EXCELLENT,  // 8+ satélites, GPS fixed
@@ -167,33 +169,42 @@ suspend fun saveOrUpdateGps(
             it[GpsHistoryTable.rawLog] = rawMessage
         }
     }
-
-    autoTripService.checkPendingTripStart(
-        vehicleId = vehicleId,
-        latitude = gps.latitude,
-        longitude = gps.longitude,
-        currentTime = gps.serverDateTime,
-        speed = gps.speed
-    )
-
-    autoTripService.processIgnitionChange(
-        imei = imei,
-        vehicleId = vehicleId,
-        latitude = gps.latitude,
-        longitude = gps.longitude,
-        ignition = gps.ignition,
-        dateTime = gps.serverDateTime,
-        speed = gps.speed
-    )
-
-    autoTripService.updateActiveTrip(
+    dailyTripService.processGpsData(
         imei = imei,
         vehicleId = vehicleId,
         latitude = gps.latitude,
         longitude = gps.longitude,
         dateTime = gps.serverDateTime,
-        speed = gps.speed
+        speed = gps.speed,
+        ignition = gps.ignition
     )
+//
+//    autoTripService.processIgnitionChange(
+//        imei = imei,
+//        vehicleId = vehicleId,
+//        latitude = gps.latitude,
+//        longitude = gps.longitude,
+//        ignition = gps.ignition,
+//        dateTime = gps.serverDateTime,
+//        speed = gps.speed
+//    )
+//
+//    autoTripService.checkPendingTimers(
+//        vehicleId = vehicleId,
+//        latitude = gps.latitude,
+//        longitude = gps.longitude,
+//        currentTime = gps.serverDateTime,
+//        speed = gps.speed
+//    )
+//
+//    autoTripService.updateActiveTrip(
+//        imei = imei,
+//        vehicleId = vehicleId,
+//        latitude = gps.latitude,
+//        longitude = gps.longitude,
+//        dateTime = gps.serverDateTime,
+//        speed = gps.speed
+//    )
 }
 
 suspend fun updateDeviceLastSeen(imei: String) {
