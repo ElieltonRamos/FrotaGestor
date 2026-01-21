@@ -12,6 +12,7 @@ fun Route.gpsDeviceRoutes() {
         route("gps-devices") {
             get { controller.getAll(call) }
             post { controller.create(call) }
+            get("warnings") { controller.getWarnings(call) }
             get("{id}") { controller.getById(call) }
             patch("{id}") { controller.update(call) }
             delete("/{id}") { controller.delete(call) }

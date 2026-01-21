@@ -58,7 +58,7 @@ export class GpsDeviceService {
     limit: number = 10,
     filters: Record<string, any> = {},
     sortKey: string = 'id',
-    sortAsc: boolean = true
+    sortAsc: boolean = true,
   ): Observable<PaginatedResponse<GpsDevice>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -76,8 +76,12 @@ export class GpsDeviceService {
 
     return this.http.get<PaginatedResponse<GpsDevice>>(
       `${API_URL}/gps-devices`,
-      { params }
+      { params },
     );
+  }
+
+  getDevicesWithoutPower(): Observable<GpsDevice[]> {
+    return this.http.get<GpsDevice[]>(`${API_URL}/gps-devices/warnings`);
   }
 
   /**
@@ -94,7 +98,7 @@ export class GpsDeviceService {
    */
   getGpsDeviceByVehicle(vehicleId: number): Observable<GpsDevice> {
     return this.http.get<GpsDevice>(
-      `${API_URL}/gps-devices/vehicle/${vehicleId}`
+      `${API_URL}/gps-devices/vehicle/${vehicleId}`,
     );
   }
 
@@ -113,7 +117,7 @@ export class GpsDeviceService {
     limit: number = 10,
     startDate?: string,
     endDate?: string,
-    sortAsc: boolean = false
+    sortAsc: boolean = false,
   ): Observable<PaginatedResponse<GpsHistory>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -130,25 +134,23 @@ export class GpsDeviceService {
 
     return this.http.get<PaginatedResponse<GpsHistory>>(
       `${API_URL}/gps-devices/vehicle/${deviceId}/history`,
-      { params }
+      { params },
     );
   }
 
-/**
- * Busca dispositivos GPS vinculados a veículos de uma subfrota específica
- * Última localização ATUAL de todos os veículos da subfrota (não paginado)
- * @param subfleetId - ID da subfrota
- */
-getGpsDevicesBySubfleet(
-  subfleetId: number
-): Observable<GpsDevice[]> {
-  const params = new HttpParams().set('subfleetId', subfleetId.toString());
+  /**
+   * Busca dispositivos GPS vinculados a veículos de uma subfrota específica
+   * Última localização ATUAL de todos os veículos da subfrota (não paginado)
+   * @param subfleetId - ID da subfrota
+   */
+  getGpsDevicesBySubfleet(subfleetId: number): Observable<GpsDevice[]> {
+    const params = new HttpParams().set('subfleetId', subfleetId.toString());
 
-  return this.http.get<GpsDevice[]>(
-    `${API_URL}/gps-devices/subfleet/${subfleetId}/current`,
-    { params }
-  );
-}
+    return this.http.get<GpsDevice[]>(
+      `${API_URL}/gps-devices/subfleet/${subfleetId}/current`,
+      { params },
+    );
+  }
 
   /**
    * Busca histórico GPS agregado de todos dispositivos/veículos de uma subfrota
@@ -165,7 +167,7 @@ getGpsDevicesBySubfleet(
     limit: number = 10,
     startDate?: string,
     endDate?: string,
-    sortAsc: boolean = false
+    sortAsc: boolean = false,
   ): Observable<PaginatedResponse<GpsHistory>> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -182,7 +184,7 @@ getGpsDevicesBySubfleet(
 
     return this.http.get<PaginatedResponse<GpsHistory>>(
       `${API_URL}/gps-devices/subfleet/${subfleetId}/history`,
-      { params }
+      { params },
     );
   }
 
@@ -228,7 +230,7 @@ getGpsDevicesBySubfleet(
       const day = parseInt(dateYMD.substring(6, 8));
       const [hours, minutes, seconds] = timeHMS.split(':').map(Number);
       const dateObjUTC = new Date(
-        Date.UTC(year, month, day, hours, minutes, seconds)
+        Date.UTC(year, month, day, hours, minutes, seconds),
       );
       const options = { timeZone: 'America/Sao_Paulo', hour12: false };
       dateTime = dateObjUTC.toLocaleString('pt-BR', options);

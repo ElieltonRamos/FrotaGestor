@@ -16,7 +16,8 @@ data class GpsDevice(
     val iconMapUrl: String? = null,        // Ícone para o mapa
     val title: String? = null,             // Modelo + placa
     val ignition: Boolean = false,          // Ignição ligada/desligada
-    val lastCommunication: LocalDateTime?
+    val lastCommunication: LocalDateTime?,
+    val batteryVoltage: Double?
 )
 
 @Serializable

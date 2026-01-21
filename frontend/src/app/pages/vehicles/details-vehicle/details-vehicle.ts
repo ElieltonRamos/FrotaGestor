@@ -61,7 +61,7 @@ export class DetailsVehicle {
     this.serviceVehicle,
     this.serviceGpsDevice,
     this.cdr,
-    this.dataSets
+    this.dataSets,
   );
 
   ngOnInit() {
@@ -69,6 +69,17 @@ export class DetailsVehicle {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) this.router.navigate(['/veiculos']);
     this.loadAll(id);
+  }
+
+  getBatteryDisplay(): string {
+    const device = this.gpsDevice();
+    const voltage = device?.batteryVoltage;
+
+    if (voltage == null || voltage < 1) {
+      return '📴 Desconectada';
+    }
+
+    return `🔋 ${voltage}V`;
   }
 
   private initializeDates() {
@@ -112,24 +123,26 @@ export class DetailsVehicle {
       },
       error: (e) => alertError(`Erro ao buscar GPS: ${e.error.message}`),
     });
-    
+
     this.loadMapHistory(vehicleId);
 
     (Object.keys(this.dataSets) as DataSetKey[]).forEach((key) =>
-      this.loadData(key, vehicleId, undefined, this.getDateFilters(key))
+      this.loadData(key, vehicleId, undefined, this.getDateFilters(key)),
     );
   }
 
   private loadMapHistory(vehicleId: number) {
-    const startDateTime = this.startDate ? `${this.startDate}T00:00:00` : undefined;
+    const startDateTime = this.startDate
+      ? `${this.startDate}T00:00:00`
+      : undefined;
     const endDateTime = this.endDate ? `${this.endDate}T23:59:59` : undefined;
-    
+
     this.serviceGpsDevice
       .getHistoryDevice(vehicleId, 1, 200, startDateTime, endDateTime)
       .subscribe({
         next: (res) => {
           this.mapPoints = res.data.filter(
-            (p: GpsHistory) => p.latitude !== 0 && p.longitude !== 0
+            (p: GpsHistory) => p.latitude !== 0 && p.longitude !== 0,
           );
           this.cdr.detectChanges();
         },
@@ -153,7 +166,7 @@ export class DetailsVehicle {
 
   applyDateFilter() {
     if (!this.vehicle?.id) return;
-    
+
     if (this.startDate && this.endDate && this.startDate > this.endDate) {
       alertError('A data inicial não pode ser maior que a data final.');
       return;
@@ -164,7 +177,7 @@ export class DetailsVehicle {
       startDate: this.startDate ? `${this.startDate}T00:00:00` : undefined,
       endDate: this.endDate ? `${this.endDate}T23:59:59` : undefined,
     });
-    
+
     // Atualiza também o mapa com o filtro de data
     this.loadMapHistory(this.vehicle.id);
   }
@@ -177,7 +190,7 @@ export class DetailsVehicle {
       startDate: this.startDate ? `${this.startDate}T00:00:00` : undefined,
       endDate: this.endDate ? `${this.endDate}T23:59:59` : undefined,
     });
-    
+
     // Atualiza também o mapa voltando para a data do dia
     this.loadMapHistory(this.vehicle.id);
   }
@@ -221,7 +234,7 @@ export class DetailsVehicle {
         this.loading = false;
         if (res.success) {
           alertSuccess(
-            `Comando "${this.selectedCommand}" enviado com sucesso!`
+            `Comando "${this.selectedCommand}" enviado com sucesso!`,
           );
           this.loadAll(this.vehicle!.id!);
         } else {
@@ -231,7 +244,7 @@ export class DetailsVehicle {
       error: (err) => {
         this.loading = false;
         alertError(
-          `Erro ao enviar comando: ${err?.error?.message || 'Desconhecido'}`
+          `Erro ao enviar comando: ${err?.error?.message || 'Desconhecido'}`,
         );
       },
     });

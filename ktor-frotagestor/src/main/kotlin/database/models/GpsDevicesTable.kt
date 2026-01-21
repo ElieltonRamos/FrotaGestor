@@ -16,6 +16,7 @@ object GpsDevicesTable : Table("gps_devices") {
     val title = varchar("title", 255).nullable()
     val ignition = bool("ignition").default(false)
     val lastCommunication = datetime("last_communication")
+    val batteryVoltage = decimal("battery_voltage", 5, 2).nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

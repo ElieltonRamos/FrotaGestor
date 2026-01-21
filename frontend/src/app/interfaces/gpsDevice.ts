@@ -11,6 +11,7 @@ export interface GpsDevice {
   title?: string | null;                 // String? - nullable
   ignition?: boolean;                    // Boolean = false - opcional
   lastCommunication?: string | null;     // LocalDateTime? - ISO string nullable (NOVO)
+  batteryVoltage?: number | null;
 }
 
 export interface GpsHistory {

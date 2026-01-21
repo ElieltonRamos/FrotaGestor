@@ -25,6 +25,40 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 class GpsDeviceService {
 
+    suspend fun getDevicesWithoutPower(): ServiceResponse<List<GpsDevice>> {
+        return DatabaseFactory.dbQuery {
+            val results = GpsDevicesTable
+                .selectAll()
+                .where {
+                    (GpsDevicesTable.batteryVoltage.isNull()) or
+                            (GpsDevicesTable.batteryVoltage less 1.toBigDecimal())
+                }
+                .orderBy(GpsDevicesTable.lastCommunication to SortOrder.DESC)
+                .map { row ->
+                    GpsDevice(
+                        id = row[GpsDevicesTable.id],
+                        vehicleId = row[GpsDevicesTable.vehicleId],
+                        imei = row[GpsDevicesTable.imei],
+                        latitude = row[GpsDevicesTable.latitude].toDouble(),
+                        longitude = row[GpsDevicesTable.longitude].toDouble(),
+                        dateTime = row[GpsDevicesTable.dateTime],
+                        speed = row[GpsDevicesTable.speed].toDouble(),
+                        heading = row[GpsDevicesTable.heading].toDouble(),
+                        iconMapUrl = row[GpsDevicesTable.iconMapUrl],
+                        title = row[GpsDevicesTable.title],
+                        ignition = row[GpsDevicesTable.ignition],
+                        lastCommunication = row[GpsDevicesTable.lastCommunication],
+                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
+                    )
+                }
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = results
+            )
+        }
+    }
+
     suspend fun createGpsDevice(req: String): ServiceResponse<Message> {
         val newDevice = validateGpsDevice(req).getOrReturn { msg ->
             return ServiceResponse(HttpStatusCode.BadRequest, Message(msg))
@@ -68,6 +102,7 @@ class GpsDeviceService {
                 row[ignition] = newDevice.ignition ?: false
                 row[lastCommunication] =
                     Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                row[batteryVoltage] = 0.toBigDecimal()
             }
         }
 
@@ -179,7 +214,8 @@ class GpsDeviceService {
                         iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                         title = row[GpsDevicesTable.title],
                         ignition = row[GpsDevicesTable.ignition],
-                        lastCommunication = row[GpsDevicesTable.lastCommunication]
+                        lastCommunication = row[GpsDevicesTable.lastCommunication],
+                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
                     )
                 }
 
@@ -211,7 +247,8 @@ class GpsDeviceService {
                     iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                     title = row[GpsDevicesTable.title],
                     ignition = row[GpsDevicesTable.ignition],
-                    lastCommunication = row[GpsDevicesTable.lastCommunication]
+                    lastCommunication = row[GpsDevicesTable.lastCommunication],
+                    batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
                 )
             }
         }
@@ -238,7 +275,8 @@ class GpsDeviceService {
                     iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                     title = row[GpsDevicesTable.title],
                     ignition = row[GpsDevicesTable.ignition],
-                    lastCommunication = row[GpsDevicesTable.lastCommunication]
+                    lastCommunication = row[GpsDevicesTable.lastCommunication],
+                    batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
                 )
             }
         }
@@ -387,7 +425,8 @@ class GpsDeviceService {
                         iconMapUrl = row[GpsDevicesTable.iconMapUrl],
                         title = row[GpsDevicesTable.title],
                         ignition = row[GpsDevicesTable.ignition],
-                        lastCommunication = row[GpsDevicesTable.lastCommunication]
+                        lastCommunication = row[GpsDevicesTable.lastCommunication],
+                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
                     )
                 }
 

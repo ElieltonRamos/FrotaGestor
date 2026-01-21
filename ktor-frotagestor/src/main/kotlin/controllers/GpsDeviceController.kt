@@ -25,6 +25,17 @@ class GpsDeviceController(private val gpsDeviceService: GpsDeviceService) {
         }
     }
 
+    suspend fun getWarnings(call: ApplicationCall) {
+        try {
+            val serviceResult = gpsDeviceService.getDevicesWithoutPower()
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getWarnings route: ${e.message}")
+            e.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
+        }
+    }
+
     suspend fun update(call: ApplicationCall) {
         try {
             val id = call.parameters["id"]?.toIntOrNull()

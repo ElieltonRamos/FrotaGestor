@@ -144,6 +144,7 @@ suspend fun saveOrUpdateGps(
             it[dateTime] = gps.serverDateTime
             it[ignition] = gps.ignition
             it[lastCommunication] = gps.serverDateTime
+            it[batteryVoltage] = gps.batteryVoltage?.toBigDecimal()
         }
 
         // Salva no histórico com TODOS os dados

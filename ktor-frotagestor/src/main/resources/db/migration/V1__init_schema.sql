@@ -61,6 +61,7 @@ CREATE TABLE gps_devices (
     title VARCHAR(255),
     ignition BOOLEAN DEFAULT FALSE,
     last_communication DATETIME NOT NULL,
+    battery_voltage DECIMAL(5,2) NULL,
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
 );
 

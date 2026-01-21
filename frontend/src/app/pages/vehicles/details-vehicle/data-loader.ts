@@ -56,7 +56,10 @@ export function createDataLoader(
             dateFilters?.endDate
           )
           .subscribe({
-            next: (res) => setData(res, (e) => gpsService.parse(e.rawLog, e.id)),
+            next: (res) => {
+              console.log(res)
+              setData(res, (e) => gpsService.parse(e.rawLog, e.id))
+            },
             error: handleError,
           }),
       trips: () =>
