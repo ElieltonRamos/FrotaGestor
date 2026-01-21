@@ -43,6 +43,7 @@ export class ExpenseService {
     });
 
     const url = `${API_URL}/expenses?${params.toString()}`;
+    console.log(url)
     return this.http.get<PaginatedResponse<Expense>>(url);
   }
 

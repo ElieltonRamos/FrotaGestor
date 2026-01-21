@@ -170,67 +170,91 @@ class ReportsService {
         val startDateTime = start.atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
         val endDateTime = end.plus(DatePeriod(days = 1)).atStartOfDayIn(timeZone).toLocalDateTime(timeZone)
 
-        val sql = """
-        SELECT
-            t.status,
-            v.plate AS vehicle_plate,
-            d.name AS driver_name,
-            t.end_location AS destination,
-            COUNT(*) AS total_trips,
-            COALESCE(SUM(t.distance_km), 0) AS total_distance
-        FROM trips t
-        LEFT JOIN vehicles v ON t.vehicle_id = v.id
-        LEFT JOIN drivers d ON t.driver_id = d.id
-        WHERE t.start_time BETWEEN '$startDateTime' AND '$endDateTime'
-        GROUP BY t.status, v.plate, d.name, t.end_location
-    """.trimIndent()
-
-        val byStatus = mutableListOf<StatusDistribution>()
-        val byVehicle = mutableListOf<VehicleDistribution>()
-        val byDriver = mutableListOf<DriverDistribution>()
-        val byDestination = mutableListOf<DestinationDistribution>()
+        // Maps para agregar os dados
+        val statusMap = mutableMapOf<TripStatus, Int>()
+        val vehicleMap = mutableMapOf<String, Pair<Int, Double>>() // count, totalCost
+        val driverMap = mutableMapOf<String, Pair<Int, Double>>()
+        val destinationMap = mutableMapOf<String, Pair<Int, Double>>()
 
         transaction {
-            exec(sql) { rs ->
+            // Query para Status
+            val statusSql = """
+            SELECT status, COUNT(*) as total_trips
+            FROM trips
+            WHERE start_time >= '$startDateTime' AND start_time < '$endDateTime'
+            GROUP BY status
+        """.trimIndent()
+
+            exec(statusSql) { rs ->
                 while (rs.next()) {
-                    val status = rs.getString("status")
-                    val vehiclePlate = rs.getString("vehicle_plate") ?: "Desconhecido"
-                    val driverName = rs.getString("driver_name") ?: "Desconhecido"
-                    val destination = rs.getString("destination") ?: "Desconhecido"
-                    val totalTrips = rs.getLong("total_trips").toInt()
-                    val totalDistance = rs.getDouble("total_distance")
+                    val status = TripStatus.valueOf(rs.getString("status"))
+                    val count = rs.getInt("total_trips")
+                    statusMap[status] = count
+                }
+            }
 
-                    // Distribuições
-                    byStatus.add(
-                        StatusDistribution(
-                            status = TripStatus.valueOf(status),
-                            count = totalTrips
-                        )
-                    )
+            // Query para Veículos
+            val vehicleSql = """
+            SELECT 
+                COALESCE(v.plate, 'Desconhecido') AS vehicle_plate,
+                COUNT(*) AS total_trips,
+                COALESCE(SUM(e.amount), 0) AS total_cost
+            FROM trips t
+            LEFT JOIN vehicles v ON t.vehicle_id = v.id
+            LEFT JOIN expenses e ON e.trip_id = t.id
+            WHERE t.start_time >= '$startDateTime' AND t.start_time < '$endDateTime'
+            GROUP BY v.plate
+        """.trimIndent()
 
-                    byVehicle.add(
-                        VehicleDistribution(
-                            vehiclePlate = vehiclePlate,
-                            count = totalTrips,
-                            totalCost = totalDistance // Se quiser custo real, precisa somar despesas associadas
-                        )
-                    )
+            exec(vehicleSql) { rs ->
+                while (rs.next()) {
+                    val plate = rs.getString("vehicle_plate")
+                    val count = rs.getInt("total_trips")
+                    val cost = rs.getDouble("total_cost")
+                    vehicleMap[plate] = Pair(count, cost)
+                }
+            }
 
-                    byDriver.add(
-                        DriverDistribution(
-                            driverName = driverName,
-                            count = totalTrips,
-                            totalCost = totalDistance
-                        )
-                    )
+            // Query para Motoristas
+            val driverSql = """
+            SELECT 
+                COALESCE(d.name, 'Desconhecido') AS driver_name,
+                COUNT(*) AS total_trips,
+                COALESCE(SUM(e.amount), 0) AS total_cost
+            FROM trips t
+            LEFT JOIN drivers d ON t.driver_id = d.id
+            LEFT JOIN expenses e ON e.trip_id = t.id
+            WHERE t.start_time >= '$startDateTime' AND t.start_time < '$endDateTime'
+            GROUP BY d.name
+        """.trimIndent()
 
-                    byDestination.add(
-                        DestinationDistribution(
-                            destination = destination,
-                            totalTrips = totalTrips,
-                            totalCost = totalDistance
-                        )
-                    )
+            exec(driverSql) { rs ->
+                while (rs.next()) {
+                    val name = rs.getString("driver_name")
+                    val count = rs.getInt("total_trips")
+                    val cost = rs.getDouble("total_cost")
+                    driverMap[name] = Pair(count, cost)
+                }
+            }
+
+            // Query para Destinos
+            val destinationSql = """
+            SELECT 
+                COALESCE(t.end_location, 'Desconhecido') AS destination,
+                COUNT(*) AS total_trips,
+                COALESCE(SUM(e.amount), 0) AS total_cost
+            FROM trips t
+            LEFT JOIN expenses e ON e.trip_id = t.id
+            WHERE t.start_time >= '$startDateTime' AND t.start_time < '$endDateTime'
+            GROUP BY t.end_location
+        """.trimIndent()
+
+            exec(destinationSql) { rs ->
+                while (rs.next()) {
+                    val destination = rs.getString("destination")
+                    val count = rs.getInt("total_trips")
+                    val cost = rs.getDouble("total_cost")
+                    destinationMap[destination] = Pair(count, cost)
                 }
             }
         }
@@ -239,11 +263,31 @@ class ReportsService {
             status = HttpStatusCode.OK,
             data = TripReport(
                 distributions = TripDistributions(
-                    byStatus = byStatus,
-                    byVehicle = byVehicle,
-                    byDriver = byDriver,
-                    byDestination = byDestination
-                ),
+                    byStatus = statusMap.map { (status, count) ->
+                        StatusDistribution(status = status, count = count)
+                    },
+                    byVehicle = vehicleMap.map { (plate, data) ->
+                        VehicleDistribution(
+                            vehiclePlate = plate,
+                            count = data.first,
+                            totalCost = data.second
+                        )
+                    },
+                    byDriver = driverMap.map { (name, data) ->
+                        DriverDistribution(
+                            driverName = name,
+                            count = data.first,
+                            totalCost = data.second
+                        )
+                    },
+                    byDestination = destinationMap.map { (destination, data) ->
+                        DestinationDistribution(
+                            destination = destination,
+                            totalTrips = data.first,
+                            totalCost = data.second
+                        )
+                    }
+                )
             )
         )
     }

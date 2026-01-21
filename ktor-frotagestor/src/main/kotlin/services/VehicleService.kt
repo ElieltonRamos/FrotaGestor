@@ -190,13 +190,14 @@ class VehicleService {
         brandFilter: String? = null,
         yearFilter: Int? = null,
         statusFilter: VehicleStatus? = null,
-        subfleetIdFilter: Int? = null  // ✨ NOVO FILTRO
+        subfleetIdFilter: Int? = null,
+        subfleetNameFilter: String? = null  // ✨ NOVO FILTRO
     ): ServiceResponse<PaginatedResponse<Vehicle>> {
         return DatabaseFactory.dbQuery {
             val query = VehiclesTable
                 .leftJoin(DriversTable, { defaultDriverId }, { DriversTable.id })
-                .leftJoin(SubfleetsTable, { subfleetId }, { SubfleetsTable.id })  // ✨ NOVO JOIN
-                .select(VehiclesTable.columns + listOf(DriversTable.name, SubfleetsTable.name))  // ✨ NOVO
+                .leftJoin(SubfleetsTable, { subfleetId }, { SubfleetsTable.id })
+                .select(VehiclesTable.columns + listOf(DriversTable.name, SubfleetsTable.name))
                 .apply {
                     // Lógica de soft delete
                     when (statusFilter) {
@@ -228,9 +229,13 @@ class VehicleService {
                         andWhere { VehiclesTable.status eq statusFilter }
                     }
 
-                    // ✨ NOVO FILTRO
                     if (subfleetIdFilter != null) {
                         andWhere { VehiclesTable.subfleetId eq subfleetIdFilter }
+                    }
+
+                    // ✨ NOVO FILTRO POR NOME DA SUBFROTA
+                    if (!subfleetNameFilter.isNullOrBlank()) {
+                        andWhere { SubfleetsTable.name like "%${subfleetNameFilter}%" }
                     }
                 }
 
@@ -248,7 +253,7 @@ class VehicleService {
                 .map {
                     Vehicle(
                         id = it[VehiclesTable.id],
-                        subfleetId = it[VehiclesTable.subfleetId],  // ✨ NOVO
+                        subfleetId = it[VehiclesTable.subfleetId],
                         plate = it[VehiclesTable.plate],
                         model = it[VehiclesTable.model],
                         brand = it[VehiclesTable.brand],
@@ -256,7 +261,7 @@ class VehicleService {
                         status = it[VehiclesTable.status],
                         defaultDriverId = it[VehiclesTable.defaultDriverId],
                         defaultDriverName = it.getOrNull(DriversTable.name),
-                        subfleetName = it.getOrNull(SubfleetsTable.name)  // ✨ NOVO
+                        subfleetName = it.getOrNull(SubfleetsTable.name)
                     )
                 }
 

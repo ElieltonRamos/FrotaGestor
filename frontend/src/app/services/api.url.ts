@@ -1,6 +1,6 @@
 // export const API_URL = 'https://api-frota-gestor.portfoliostudio.cfd/';
 export const API_URL = 'http://localhost:3001';
-export const VERSION = 0.7
+export const VERSION = '1.0.0'
 
 export function mapNetworkError(
   err: any,

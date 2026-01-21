@@ -59,10 +59,10 @@ class ExpenseController(private val expenseService: ExpenseService) {
             val driverIdFilter = call.request.queryParameters["driverId"]?.toIntOrNull()
             val tripIdFilter = call.request.queryParameters["tripId"]?.toIntOrNull()
 
-            val dateStartFilter = call.request.queryParameters["dateStart"]?.let {
+            val dateStartFilter = call.request.queryParameters["startDate"]?.let {
                 runCatching { LocalDate.parse(it) }.getOrNull()
             }
-            val dateEndFilter = call.request.queryParameters["dateEnd"]?.let {
+            val dateEndFilter = call.request.queryParameters["endDate"]?.let {
                 runCatching { LocalDate.parse(it) }.getOrNull()
             }
 
