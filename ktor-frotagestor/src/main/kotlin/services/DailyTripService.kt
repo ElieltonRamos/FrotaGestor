@@ -12,7 +12,6 @@ import io.ktor.client.statement.*
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import kotlinx.coroutines.*
-import java.util.concurrent.TimeUnit
 
 class DailyTripService(
     private val httpClient: HttpClient = HttpClient()
@@ -25,9 +24,21 @@ class DailyTripService(
         private const val END_OF_DAY_MINUTE = 0
     }
 
-    /**
-     * 🌅 Inicia observador para finalizar viagens às 23h
-     */
+    private val farthestPointCache = mutableMapOf<Int, FarthestPoint>()
+    private val lastPositionCache = mutableMapOf<Int, LastPosition>()
+
+    data class FarthestPoint(
+        val latitude: Double,
+        val longitude: Double,
+        val distanceFromStart: Double,
+        val dateTime: LocalDateTime
+    )
+
+    data class LastPosition(
+        val latitude: Double,
+        val longitude: Double
+    )
+
     fun startDailyCleanup(scope: CoroutineScope) {
         scope.launch {
             while (true) {
@@ -44,9 +55,6 @@ class DailyTripService(
         }
     }
 
-    /**
-     * Calcula horário da próxima execução (23h)
-     */
     private fun calculateNextCleanupTime(now: LocalDateTime): LocalDateTime {
         val today23h = LocalDateTime(
             now.date,
@@ -54,18 +62,13 @@ class DailyTripService(
         )
 
         return if (now >= today23h) {
-            // Já passou das 23h hoje, agenda para amanhã
             today23h.date.plus(1, DateTimeUnit.DAY)
                 .atTime(END_OF_DAY_HOUR, END_OF_DAY_MINUTE)
         } else {
-            // Ainda não são 23h, agenda para hoje
             today23h
         }
     }
 
-    /**
-     * 🚗 Processa GPS: cria ou atualiza viagem do dia
-     */
     suspend fun processGpsData(
         imei: String,
         vehicleId: Int,
@@ -75,14 +78,11 @@ class DailyTripService(
         speed: Double,
         ignition: Boolean
     ) {
-        // Ignição desligada = não faz nada
         if (!ignition) return
 
         val today = dateTime.date
 
-        // Busca ou cria viagem do dia
         val tripId = DatabaseFactory.dbQuery {
-            // Busca viagem do dia
             val existingTrip = TripsTable
                 .selectAll()
                 .where {
@@ -94,28 +94,21 @@ class DailyTripService(
                 .limit(1)
                 .singleOrNull()
 
-            // Se existe viagem do MESMO dia, retorna ID
             if (existingTrip != null) {
                 val tripDate = existingTrip[TripsTable.startTime].date
                 if (tripDate == today) {
                     return@dbQuery existingTrip[TripsTable.id]
                 } else {
-                    // Viagem é de outro dia, finaliza antes
-                    finalizeTrip(existingTrip[TripsTable.id], latitude, longitude, dateTime)
+                    finalizeTrip(existingTrip[TripsTable.id])
                 }
             }
 
-            // Cria nova viagem do dia
             createDailyTrip(imei, vehicleId, latitude, longitude, dateTime)
         }
 
-        // Atualiza viagem com novos dados
         updateDailyTrip(tripId, latitude, longitude, dateTime, speed)
     }
 
-    /**
-     * Cria nova viagem diária
-     */
     private suspend fun createDailyTrip(
         imei: String,
         vehicleId: Int,
@@ -151,15 +144,24 @@ class DailyTripService(
             it[maxSpeedKmh] = 0.toBigDecimal()
         }[TripsTable.id]
 
+        farthestPointCache[tripId] = FarthestPoint(
+            latitude = latitude,
+            longitude = longitude,
+            distanceFromStart = 0.0,
+            dateTime = dateTime
+        )
+
+        lastPositionCache[tripId] = LastPosition(
+            latitude = latitude,
+            longitude = longitude
+        )
+
         println("🚗 Viagem diária criada #$tripId (veículo $vehicleId - ${dateTime.date})")
         println("   📍 Início: ${startAddress ?: "Não disponível"}")
 
         return tripId
     }
 
-    /**
-     * Atualiza viagem com novos dados GPS
-     */
     private suspend fun updateDailyTrip(
         tripId: Int,
         latitude: Double,
@@ -176,10 +178,33 @@ class DailyTripService(
             val startLat = trip[TripsTable.startLatitude]?.toDouble() ?: latitude
             val startLon = trip[TripsTable.startLongitude]?.toDouble() ?: longitude
             val startTime = trip[TripsTable.startTime]
+            val currentTotalDistance = trip[TripsTable.distanceKm]?.toDouble() ?: 0.0
 
-            val distanceKm = calculateDistance(startLat, startLon, latitude, longitude)
+            val lastPos = lastPositionCache[tripId]
+            val incrementalDistance = if (lastPos != null) {
+                calculateDistance(lastPos.latitude, lastPos.longitude, latitude, longitude)
+            } else {
+                0.0
+            }
+
+            val newTotalDistance = currentTotalDistance + incrementalDistance
+
+            lastPositionCache[tripId] = LastPosition(latitude, longitude)
+
+            val distanceFromStart = calculateDistance(startLat, startLon, latitude, longitude)
+
+            val currentFarthest = farthestPointCache[tripId]
+            if (currentFarthest == null || distanceFromStart > currentFarthest.distanceFromStart) {
+                farthestPointCache[tripId] = FarthestPoint(
+                    latitude = latitude,
+                    longitude = longitude,
+                    distanceFromStart = distanceFromStart,
+                    dateTime = dateTime
+                )
+                println("📍 Novo ponto mais distante: ${distanceFromStart.format(2)} km do início (viagem #$tripId)")
+            }
+
             val durationMinutes = calculateDuration(startTime, dateTime)
-
             val currentMaxSpeed = trip[TripsTable.maxSpeedKmh]?.toDouble() ?: 0.0
             val newMaxSpeed = maxOf(currentMaxSpeed, speed)
 
@@ -187,17 +212,14 @@ class DailyTripService(
                 it[endLatitude] = latitude.toBigDecimal()
                 it[endLongitude] = longitude.toBigDecimal()
                 it[endTime] = dateTime
-                it[TripsTable.distanceKm] = distanceKm.toBigDecimal()
+                it[TripsTable.distanceKm] = newTotalDistance.toBigDecimal()
                 it[maxSpeedKmh] = newMaxSpeed.toBigDecimal()
             }
 
-            println("🔄 Viagem diária #$tripId atualizada (${distanceKm.format(2)} km, ${durationMinutes.toInt()} min)")
+            println("🔄 Viagem #$tripId atualizada (${newTotalDistance.format(2)} km percorridos, ${durationMinutes.toInt()} min)")
         }
     }
 
-    /**
-     * 🌙 Finaliza TODAS as viagens às 23h
-     */
     private suspend fun finalizeAllDailyTrips() {
         println("🌙 Finalizando todas as viagens diárias...")
 
@@ -213,15 +235,8 @@ class DailyTripService(
             var count = 0
             activeTrips.forEach { trip ->
                 val tripId = trip[TripsTable.id]
-                val endLat = trip[TripsTable.endLatitude]?.toDouble()
-                val endLon = trip[TripsTable.endLongitude]?.toDouble()
-                val endTime = trip[TripsTable.endTime]
-
-                if (endLat != null && endLon != null && endTime != null) {
-                    val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                    finalizeTrip(tripId, endLat, endLon, now)
-                    count++
-                }
+                finalizeTrip(tripId)
+                count++
             }
             count
         }
@@ -229,58 +244,66 @@ class DailyTripService(
         println("✅ $finalized viagens finalizadas às 23h")
     }
 
-    /**
-     * Finaliza viagem individual com validação de distância
-     */
-    private suspend fun finalizeTrip(
-        tripId: Int,
-        endLatitude: Double,
-        endLongitude: Double,
-        endTime: LocalDateTime
-    ) {
-        val trip = TripsTable
-            .selectAll()
-            .where { TripsTable.id eq tripId }
-            .singleOrNull() ?: return
+    private suspend fun finalizeTrip(tripId: Int) {
+        DatabaseFactory.dbQuery {
+            val trip = TripsTable
+                .selectAll()
+                .where { TripsTable.id eq tripId }
+                .singleOrNull() ?: return@dbQuery
 
-        val startLat = trip[TripsTable.startLatitude]?.toDouble() ?: endLatitude
-        val startLon = trip[TripsTable.startLongitude]?.toDouble() ?: endLongitude
-        val startTime = trip[TripsTable.startTime]
+            val startLat = trip[TripsTable.startLatitude]?.toDouble() ?: return@dbQuery
+            val startLon = trip[TripsTable.startLongitude]?.toDouble() ?: return@dbQuery
+            val startTime = trip[TripsTable.startTime]
+            val totalDistanceKm = trip[TripsTable.distanceKm]?.toDouble() ?: 0.0
 
-        val totalDistanceKm = calculateDistance(startLat, startLon, endLatitude, endLongitude)
-        val durationMinutes = calculateDuration(startTime, endTime)
+            val farthestPoint = farthestPointCache[tripId]
 
-        // Validação: menos de 1km = DELETE
-        if (totalDistanceKm < MIN_VALID_TRIP_DISTANCE_KM) {
-            TripsTable.deleteWhere { TripsTable.id eq tripId }
-            println("🗑️ Viagem #$tripId DELETADA - sem movimentação significativa")
-            println("   📏 Distância: ${totalDistanceKm.format(3)} km (< ${MIN_VALID_TRIP_DISTANCE_KM} km)")
-            return
+            if (farthestPoint == null) {
+                println("⚠️ Viagem #$tripId sem cache de ponto distante - usando coordenadas finais")
+                return@dbQuery
+            }
+
+            val endLat = farthestPoint.latitude
+            val endLon = farthestPoint.longitude
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val durationMinutes = calculateDuration(startTime, now)
+
+            if (totalDistanceKm < MIN_VALID_TRIP_DISTANCE_KM) {
+                TripsTable.deleteWhere { TripsTable.id eq tripId }
+                farthestPointCache.remove(tripId)
+                lastPositionCache.remove(tripId)
+                println("🗑️ Viagem #$tripId DELETADA - sem movimentação significativa")
+                println("   📏 Distância percorrida: ${totalDistanceKm.format(3)} km (< ${MIN_VALID_TRIP_DISTANCE_KM} km)")
+                return@dbQuery
+            }
+
+            val endAddress = getAddressFromCoordinates(endLat, endLon)
+            val maxSpeed = trip[TripsTable.maxSpeedKmh]?.toDouble() ?: 0.0
+            val avgSpeed = if (durationMinutes > 0) {
+                (totalDistanceKm / durationMinutes) * 60
+            } else 0.0
+
+            TripsTable.update({ TripsTable.id eq tripId }) {
+                it[TripsTable.endLatitude] = endLat.toBigDecimal()
+                it[TripsTable.endLongitude] = endLon.toBigDecimal()
+                it[TripsTable.endLocation] = endAddress ?: "Localização não disponível"
+                it[TripsTable.endTime] = now
+                it[TripsTable.status] = TripStatus.CONCLUIDA
+            }
+
+            farthestPointCache.remove(tripId)
+            lastPositionCache.remove(tripId)
+
+            println("✅ Viagem diária #$tripId FINALIZADA")
+            println("   📏 Distância percorrida: ${totalDistanceKm.format(2)} km")
+            println("   📍 Ponto mais distante: ${farthestPoint.distanceFromStart.format(2)} km do início")
+            println("   ⏱️  Duração: ${durationMinutes.toInt()} min")
+            println("   🚀 Vel. máx: ${maxSpeed.format(1)} km/h | Vel. média: ${avgSpeed.format(1)} km/h")
+            println("   🎯 Destino: ${endAddress ?: "Não disponível"}")
+            println("   🕐 Ponto mais distante registrado em: ${farthestPoint.dateTime}")
         }
-
-        // Viagem válida: finaliza e salva
-        val endAddress = getAddressFromCoordinates(endLatitude, endLongitude)
-        val maxSpeed = trip[TripsTable.maxSpeedKmh]?.toDouble() ?: 0.0
-        val avgSpeed = if (durationMinutes > 0) {
-            (totalDistanceKm / durationMinutes) * 60
-        } else 0.0
-
-        TripsTable.update({ TripsTable.id eq tripId }) {
-            it[TripsTable.endLocation] = endAddress ?: "Localização não disponível"
-            it[TripsTable.endTime] = endTime
-            it[TripsTable.status] = TripStatus.CONCLUIDA
-        }
-
-        println("✅ Viagem diária #$tripId FINALIZADA")
-        println("   📏 Distância: ${totalDistanceKm.format(2)} km")
-        println("   ⏱️  Duração: ${durationMinutes.toInt()} min")
-        println("   🚀 Vel. máx: ${maxSpeed.format(1)} km/h | Vel. média: ${avgSpeed.format(1)} km/h")
-        println("   📍 Fim: ${endAddress ?: "Não disponível"}")
     }
 
-    /**
-     * Geocoding Reverso
-     */
     private suspend fun getAddressFromCoordinates(latitude: Double, longitude: Double): String? {
         return try {
             val response: HttpResponse = httpClient.get(GEOCODING_API_URL) {
@@ -323,9 +346,6 @@ class DailyTripService(
         }
     }
 
-    /**
-     * Calcula distância entre dois pontos
-     */
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadiusKm = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
@@ -337,9 +357,6 @@ class DailyTripService(
         return earthRadiusKm * c
     }
 
-    /**
-     * Calcula duração em minutos
-     */
     private fun calculateDuration(start: LocalDateTime, end: LocalDateTime): Double {
         val startInstant = start.toInstant(TimeZone.currentSystemDefault())
         val endInstant = end.toInstant(TimeZone.currentSystemDefault())
@@ -347,8 +364,5 @@ class DailyTripService(
         return durationMs / 60000.0
     }
 
-    /**
-     * Formata número
-     */
     private fun Double.format(decimals: Int) = "%.${decimals}f".format(this)
 }
