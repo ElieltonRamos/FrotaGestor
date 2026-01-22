@@ -1,0 +1,119 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total de subfrotas -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-blue-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1"
+      >Total de Subfrotas</span
+    >
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-blue-600">
+        {{ indicators?.totalActive ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Total de veículos -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-green-500"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Total de Veículos</span>
+    <div class="min-h-[32px] flex items-center">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else {
+      <span class="text-lg font-bold text-green-600">
+        {{ indicators?.totalVehicles ?? 0 }}
+      </span>
+      }
+    </div>
+  </div>
+
+  <!-- Última subfrota cadastrada -->
+  <div
+    class="bg-gradient-to-br from-slate-50 to-slate-100 shadow-md rounded-xl px-4 py-4 border-l-4 border-slate-500 col-span-1 sm:col-span-2 lg:col-span-4"
+  >
+    <span class="text-[11px] text-slate-500 mb-1">Última Cadastrada</span>
+    <div class="min-h-[32px] flex flex-col">
+      @if (loadingIndicators) {
+      <div
+        class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
+      ></div>
+      } @else if (indicators?.lastSubfleet) {
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-bold text-slate-800">
+          {{ indicators?.lastSubfleet?.name }}
+        </span>
+      </div>
+      @if (indicators?.lastSubfleet?.description) {
+      <span class="text-[10px] text-slate-400 mt-1">
+        {{ indicators?.lastSubfleet?.description }}
+      </span>
+      }
+      @if (indicators?.lastSubfleet?.vehicleCount) {
+      <span class="text-[10px] text-slate-400">
+        {{ indicators?.lastSubfleet?.vehicleCount }} veículos
+      </span>
+      }
+      } @else {
+      <span class="text-sm text-slate-400">Nenhum dado</span>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Filtros e lista -->
+<div class="flex flex-wrap justify-between mb-4 gap-4">
+  <!-- Filtros dinâmicos -->
+  <app-base-filter
+    [filtersConfig]="subfleetFilters"
+    [(filter)]="filter"
+    (apply)="applyFilters()"
+    (clear)="clearFilters()"
+  ></app-base-filter>
+
+  <!-- Paginador -->
+  <div class="flex items-center">
+    <app-paginator
+      [totalItems]="total"
+      [itemsPerPage]="limit"
+      [totalPages]="totalPages"
+      [page]="page"
+      (pageChanged)="onPageChange($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<!-- Lista -->
+<app-base-list
+  [columns]="subfleetColumns"
+  [data]="subfleets"
+  [page]="page"
+  [limit]="limit"
+  [total]="total"
+  [totalPages]="totalPages"
+  [sortKey]="sortKey"
+  [sortAsc]="sortAsc"
+  (sortChange)="sortBy($event)"
+  (pageChange)="onPageChange($event)"
+  (edit)="onEdit($event)"
+  (details)="onNavDetails($event)"
+></app-base-list>
+
+<!-- Modal -->
+<app-modal-edit-component
+  [title]="'Editar Subfrota'"
+  [show]="showModal"
+  [entity]="selectedSubfleet"
+  [fields]="subfleetFields"
+  (close)="onCloseModal()"
+  (save)="onSaveModal($event)"
+></app-modal-edit-component>

@@ -1,0 +1,225 @@
+<div
+  class="max-w-5xl mx-auto mt-8 p-6 bg-white shadow rounded-lg border border-gray-200"
+>
+  <!-- Coluna principal -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 flex flex-col justify-between">
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-6 gap-4">
+        <h2 class="text-xl font-semibold text-gray-800">
+          Detalhes da Subfrota
+        </h2>
+        <button
+          class="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded hover:bg-gray-600"
+          (click)="goBack()"
+        >
+          Voltar
+        </button>
+      </div>
+
+      <!-- Conteúdo -->
+      <div class="flex-1">
+        @if (subfleet) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Nome</label
+            >
+            <p class="text-gray-800 text-sm">{{ subfleet.name }}</p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Descrição</label
+            >
+            <p class="text-gray-800 text-sm">
+              {{ subfleet.description || "-" }}
+            </p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Veículos Totais</label
+            >
+            <p class="text-gray-800 text-sm">
+              {{ subfleet.vehicleCount ?? "-" }}
+            </p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-semibold text-gray-500 uppercase mb-1"
+              >Veículos Ativos</label
+            >
+            <p class="text-gray-800 text-sm">
+              {{ subfleet.activeVehicleCount ?? "-" }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Mini relatório -->
+        @if (report) {
+        <div class="mt-6 border-t border-gray-200 pt-4">
+          <h3 class="text-sm font-semibold text-gray-800 mb-3">Resumo</h3>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div class="p-3 border rounded">
+              <p class="text-xs text-gray-500 uppercase">Total Veículos</p>
+              <p class="text-sm font-semibold text-gray-800">
+                {{ report.totalVehicles }}
+              </p>
+            </div>
+            <div class="p-3 border rounded">
+              <p class="text-xs text-gray-500 uppercase">Ativos</p>
+              <p class="text-sm font-semibold text-gray-800">
+                {{ report.activeVehicles }}
+              </p>
+            </div>
+            <div class="p-3 border rounded">
+              <p class="text-xs text-gray-500 uppercase">Manutenção</p>
+              <p class="text-sm font-semibold text-gray-800">
+                {{ report.maintenanceVehicles }}
+              </p>
+            </div>
+          </div>
+        </div>
+        } } @else {
+        <p class="text-gray-500 text-sm italic">Carregando subfrota...</p>
+        }
+      </div>
+    </div>
+
+    <div class="hidden lg:flex items-center justify-center">
+      <img
+        src="vehicle-details.png"
+        alt="Ilustração de subfrota"
+        class="max-h-64 opacity-90"
+        style="filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.25))"
+      />
+    </div>
+  </div>
+
+  <!-- Veículos da subfrota -->
+  <div class="mt-10 border-t border-gray-200 pt-6">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Veículos da Subfrota ({{ vehiclesTotal }})
+    </h3>
+
+    <div class="flex-1 overflow-y-auto">
+      <app-base-list
+        [columns]="vehiclesColumns"
+        [data]="vehicles"
+        (rowClick)="onVehicleSelect($event)"
+        [showActions]="false"
+      ></app-base-list>
+    </div>
+
+    @if (vehiclesTotalPages > 1) {
+    <div class="border-t border-gray-200 pt-3 flex justify-end">
+      <app-paginator
+        [totalItems]="vehiclesTotal"
+        [itemsPerPage]="vehiclesLimit"
+        [totalPages]="vehiclesTotalPages"
+        [page]="vehiclesPage"
+        (pageChanged)="onVehiclesPageChange($event)"
+      ></app-paginator>
+    </div>
+    }
+  </div>
+
+  <!-- Seções unificadas -->
+  <div class="space-y-12">
+    @for (section of sections; track section.key) {
+    <div class="pt-6 border-t border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-800 mb-4">
+        {{ section.title }}
+      </h3>
+
+      <!-- Filtro de data apenas para eventos GPS -->
+      @if (section.key === 'gpsEvents') {
+      <div class="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex-1 min-w-[200px]">
+            <label
+              for="startDate"
+              class="block text-xs font-semibold text-gray-600 uppercase mb-1"
+            >
+              Data Inicial
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              [(ngModel)]="startDate"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <div class="flex-1 min-w-[200px]">
+            <label
+              for="endDate"
+              class="block text-xs font-semibold text-gray-600 uppercase mb-1"
+            >
+              Data Final
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              [(ngModel)]="endDate"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <button
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded"
+            (click)="applyDateFilter()"
+          >
+            Filtrar
+          </button>
+
+          <button
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded"
+            (click)="clearDateFilter()"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+      }
+
+      <div class="bg-gray-50 rounded-lg border border-gray-100 p-4">
+        <app-base-list
+          [columns]="section.columns"
+          [data]="getDataSet(section.key).items"
+          [showActions]="false"
+        ></app-base-list>
+      </div>
+
+      <div class="mt-4 flex justify-end">
+        <app-paginator
+          [totalItems]="getDataSet(section.key).total"
+          [itemsPerPage]="getDataSet(section.key).limit"
+          [totalPages]="getDataSet(section.key).totalPages"
+          [page]="getDataSet(section.key).page"
+          (pageChanged)="onPageChange(section.key, $event)"
+        ></app-paginator>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Mapa (subfleet - múltiplos veículos) -->
+  <div class="border-t border-gray-200 pt-8">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+      Localização da Frota no Mapa
+    </h3>
+    <app-map
+      [markers]="markers"
+      [mapMode]="'vehicles'"
+      [showUserMarker]="false"
+    >
+    </app-map>
+  </div>
+</div>

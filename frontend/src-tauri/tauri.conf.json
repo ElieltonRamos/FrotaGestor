@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Gestor de Frota",
-  "version": "0.1.0",
-  "identifier": "com.frota-gestor.app",
+  "version": "1.0.0",
+  "identifier": "com.redenorte.frotagestor",
   "build": {
     "frontendDist": "../dist/frontend/browser",
     "devUrl": "http://localhost:4200",

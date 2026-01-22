@@ -4,6 +4,7 @@ import com.frotagestor.interfaces.Trip
 import com.frotagestor.interfaces.PartialTrip
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 
 fun validateTrip(rawBody: String): ValidationResult<Trip> {
     if (rawBody.isBlank()) {
@@ -18,7 +19,7 @@ fun validateTrip(rawBody: String): ValidationResult<Trip> {
 
     val missingFields = mutableListOf<String>()
     if (trip.vehicleId <= 0) missingFields.add("vehicleId")
-    if (trip.driverId <= 0) missingFields.add("driverId")
+    trip.driverId?.let { if (it <= 0) missingFields.add("driverId") }
     if (trip.startTime == null) missingFields.add("startTime")
 
     return if (missingFields.isNotEmpty()) {
@@ -38,12 +39,22 @@ fun validatePartialTrip(rawBody: String): ValidationResult<PartialTrip> {
         return ValidationResult.Error("Body da requisição está vazio")
     }
 
-    val trip = try {
-        Json.decodeFromString<PartialTrip>(rawBody)
-    } catch (e: SerializationException) {
-        return ValidationResult.Error("JSON inválido")
+    val lenientJson = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
     }
 
+    val trip = try {
+        lenientJson.decodeFromString<PartialTrip>(rawBody)
+    } catch (e: SerializationException) {
+        println("❌ ERRO SERIALIZAÇÃO:")
+        println("Mensagem: ${e.message}")
+        println("Causa: ${e.cause}")
+        return ValidationResult.Error("JSON inválido: Verifique a Estrutura dos dados")
+    } catch (e: Exception) {
+        println("❌ ERRO GERAL: ${e.message}")
+        return ValidationResult.Error("Erro de parsing: Servidor")
+    }
     if (
         trip.vehicleId == null &&
         trip.driverId == null &&
@@ -59,3 +70,4 @@ fun validatePartialTrip(rawBody: String): ValidationResult<PartialTrip> {
 
     return ValidationResult.Success(trip)
 }
+

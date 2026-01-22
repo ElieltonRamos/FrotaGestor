@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BrDatePipe } from '../../utils/date.pipe';
 
 export interface ColumnConfig<T> {
   key: keyof T;
@@ -10,7 +11,7 @@ export interface ColumnConfig<T> {
 
 @Component({
   selector: 'app-base-list',
-  imports: [CommonModule],
+  imports: [CommonModule, BrDatePipe],
   templateUrl: './base-list-component.html',
 })
 export class BaseListComponent<T extends { id?: number }> {
@@ -50,8 +51,15 @@ export class BaseListComponent<T extends { id?: number }> {
     if (id) this.details.emit(id);
   }
 
-  formatDate(value: unknown): Date | null {
-    if (!value) return null;
-    return new Date(value as any);
+  safeDateString(value: unknown): string | null {
+    if (typeof value === 'string') {
+      const dateStr = value.trim();
+      // Só adiciona T00 para YYYY-MM-DD puro
+      if (dateStr.match(/^(\d{4}-\d{2}-\d{2})$/)) {
+        return dateStr + 'T00:00:00';
+      }
+      return dateStr; // Outros já OK
+    }
+    return null;
   }
 }

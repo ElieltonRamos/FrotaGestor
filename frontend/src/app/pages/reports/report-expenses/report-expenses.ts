@@ -40,7 +40,6 @@ export class ReportExpense implements OnInit {
       ],
       byVehicle: [{ vehiclePlate: '', totalAmount: 0, totalCount: 0 }],
       byDriver: [{ driverName: '', totalAmount: 0, totalCount: 0 }],
-      byMonth: [{ month: '', totalAmount: 0 }],
     },
     summary: {
       totalAmount: 0,
@@ -179,6 +178,7 @@ export class ReportExpense implements OnInit {
     this.expenseService.getReportExpense(this.filter).subscribe({
       next: (res) => {
         this.expenseReport = res;
+        console.log(res)
         this.updateCharts();
         this.loadingIndicators = false;
         this.cdr.detectChanges();
@@ -239,21 +239,6 @@ export class ReportExpense implements OnInit {
           ),
           label: 'Valor Total (R$)',
           backgroundColor: '#FBBF24',
-        },
-      ],
-    };
-
-    // Mês
-    this.monthChartData = {
-      labels: this.expenseReport.distributions.byMonth.map((m) => m.month),
-      datasets: [
-        {
-          data: this.expenseReport.distributions.byMonth.map(
-            (m) => m.totalAmount
-          ),
-          label: 'Valor Total (R$)',
-          borderColor: '#E11D48',
-          fill: false,
         },
       ],
     };

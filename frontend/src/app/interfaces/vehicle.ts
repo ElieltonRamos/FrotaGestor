@@ -6,9 +6,12 @@ export interface Vehicle {
   brand?: string | null;
   year?: number | null;
   status: VehicleStatus;
-  iconMapUrl: string;
+  subfleetId?: number | null;
+  subfleetName?: string | null;  // Campo de JOIN (não persistido)
+  defaultDriverId?: number | null;        // ✨ NOVO CAMPO
+  defaultDriverName?: string | null;      // ✨ NOVO CAMPO (somente leitura)
+  iconMapUrl?: string | null;
 }
-
 export enum VehicleStatus {
   ATIVO = 'ATIVO',
   INATIVO = 'INATIVO',

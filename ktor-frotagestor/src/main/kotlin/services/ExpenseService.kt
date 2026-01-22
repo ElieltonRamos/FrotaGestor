@@ -18,6 +18,7 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.let
 
@@ -486,5 +487,69 @@ class ExpenseService {
                 lastExpense = null
             )
         )
+    }
+
+    suspend fun getExpensesBySubfleet(
+        subfleetId: Int,
+        page: Int = 1,
+        limit: Int = 10,
+        sortBy: Column<*> = ExpensesTable.id,
+        sortOrder: SortOrder = SortOrder.ASC,
+        typeFilter: String? = null,
+        dateStartFilter: LocalDate? = null,
+        dateEndFilter: LocalDate? = null,
+        descriptionFilter: String? = null,
+        minAmountFilter: Double? = null,
+        maxAmountFilter: Double? = null
+    ): ServiceResponse<PaginatedResponse<Expense>> {
+        return DatabaseFactory.dbQuery {
+            val query = ExpensesTable
+                .join(DriversTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.driverId eq DriversTable.id })
+                .join(VehiclesTable, JoinType.LEFT, additionalConstraint = { ExpensesTable.vehicleId eq VehiclesTable.id })
+                .selectAll()
+                .where { VehiclesTable.subfleetId eq subfleetId }
+                .apply {
+                    if (!typeFilter.isNullOrBlank()) andWhere { ExpensesTable.type like "%$typeFilter%" }
+                    if (!descriptionFilter.isNullOrBlank()) andWhere { ExpensesTable.description like "%$descriptionFilter%" }
+                    if (dateStartFilter != null) andWhere { ExpensesTable.date greaterEq dateStartFilter }
+                    if (dateEndFilter != null) andWhere { ExpensesTable.date lessEq dateEndFilter }
+                    if (minAmountFilter != null) andWhere { ExpensesTable.amount greaterEq minAmountFilter.toBigDecimal() }
+                    if (maxAmountFilter != null) andWhere { ExpensesTable.amount lessEq maxAmountFilter.toBigDecimal() }
+                }
+
+            val total = query.count()
+
+            val results = query
+                .orderBy(sortBy to sortOrder)
+                .limit(limit, offset = ((page - 1) * limit).toLong())
+                .map {
+                    Expense(
+                        id = it[ExpensesTable.id],
+                        vehicleId = it[ExpensesTable.vehicleId],
+                        driverId = it[ExpensesTable.driverId],
+                        tripId = it[ExpensesTable.tripId],
+                        date = it[ExpensesTable.date],
+                        type = it[ExpensesTable.type],
+                        description = it[ExpensesTable.description],
+                        amount = it[ExpensesTable.amount].toDouble(),
+                        liters = it[ExpensesTable.liters]?.toDouble(),
+                        pricePerLiter = it[ExpensesTable.pricePerLiter]?.toDouble(),
+                        odometer = it[ExpensesTable.odometer],
+                        driverName = it[DriversTable.name],
+                        vehiclePlate = it[VehiclesTable.plate]
+                    )
+                }
+
+            ServiceResponse(
+                status = HttpStatusCode.OK,
+                data = PaginatedResponse(
+                    data = results,
+                    total = total.toInt(),
+                    page = page,
+                    limit = limit,
+                    totalPages = if (total == 0L) 0 else ((total + limit - 1) / limit).toInt()
+                )
+            )
+        }
     }
 }

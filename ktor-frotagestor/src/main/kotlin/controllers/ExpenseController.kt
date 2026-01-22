@@ -59,10 +59,10 @@ class ExpenseController(private val expenseService: ExpenseService) {
             val driverIdFilter = call.request.queryParameters["driverId"]?.toIntOrNull()
             val tripIdFilter = call.request.queryParameters["tripId"]?.toIntOrNull()
 
-            val dateStartFilter = call.request.queryParameters["dateStart"]?.let {
+            val dateStartFilter = call.request.queryParameters["startDate"]?.let {
                 runCatching { LocalDate.parse(it) }.getOrNull()
             }
-            val dateEndFilter = call.request.queryParameters["dateEnd"]?.let {
+            val dateEndFilter = call.request.queryParameters["endDate"]?.let {
                 runCatching { LocalDate.parse(it) }.getOrNull()
             }
 
@@ -252,6 +252,30 @@ class ExpenseController(private val expenseService: ExpenseService) {
                 HttpStatusCode.InternalServerError,
                 mapOf("message" to "Erro interno ao gerar indicadores de despesas.")
             )
+        }
+    }
+
+    suspend fun getBySubfleet(call: ApplicationCall) {
+        try {
+            val subfleetId = call.parameters["subfleetId"]?.toIntOrNull()
+                ?: return call.respond(
+                    HttpStatusCode.BadRequest,
+                    mapOf("message" to "Parâmetro 'subfleetId' inválido ou ausente")
+                )
+
+            val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+            val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: 10
+
+            val serviceResult = expenseService.getExpensesBySubfleet(
+                subfleetId = subfleetId,
+                page = page,
+                limit = limit
+            )
+
+            call.respond(serviceResult.status, serviceResult.data)
+        } catch (e: Exception) {
+            println("Error in getBySubfleet expense route: ${e.message}")
+            call.respond(HttpStatusCode.InternalServerError, mapOf("message" to internalMsgError))
         }
     }
 }

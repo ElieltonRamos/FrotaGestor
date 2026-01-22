@@ -84,7 +84,7 @@
       <span class="text-xs text-slate-500">
         Preço por Litro (calculado):
         <span class="font-semibold text-blue-600">
-          {{ pricePerLiter | number : "1.2-2" }} R$/L
+          {{ pricePerLiter | number: "1.2-2" }} R$/L
         </span>
       </span>
     </div>
@@ -98,3 +98,34 @@
     />
   </div>
 </div>
+
+<!-- Modais -->
+<app-select-modal
+  [show]="showVehicleModal"
+  title="Selecionar Veiculo"
+  [columns]="vehicleColumns"
+  [filtersConfig]="vehicleFilters"
+  [dataFetcher]="vehicleFetcher"
+  (select)="onVehicleSelect($event)"
+  (close)="showVehicleModal = false"
+></app-select-modal>
+
+<app-select-modal
+  [show]="showDriverModal"
+  title="Selecionar Motorista"
+  [columns]="driverColumns"
+  [filtersConfig]="driverFilters"
+  [dataFetcher]="driverFetcher"
+  (select)="onDriverSelect($event)"
+  (close)="showDriverModal = false"
+></app-select-modal>
+
+<app-select-modal
+  [show]="showTripModal"
+  title="Selecionar Viagem"
+  [columns]="tripColumns"
+  [filtersConfig]="tripFilters"
+  [dataFetcher]="tripFetcher"
+  (select)="onTripSelect($event)"
+  (close)="showTripModal = false"
+></app-select-modal>

@@ -7,13 +7,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Ativos</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-green-600">
-        {{ indicators?.active ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-green-600">
+          {{ indicators?.active ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -25,13 +25,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Em Manutenção</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-yellow-600">
-        {{ indicators?.maintenance ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-yellow-600">
+          {{ indicators?.maintenance ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -43,18 +43,18 @@
     <span class="text-[11px] text-slate-500 mb-1">Último Cadastrado</span>
     <div class="min-h-[32px] flex flex-col">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else if (indicators?.lastVehicle) {
-      <span class="text-sm font-bold text-slate-800">
-        {{ indicators?.lastVehicle?.plate }}
-      </span>
-      <span class="text-[10px] text-slate-400 mt-1">
-        {{ indicators?.lastVehicle?.date | date : "dd/MM/yyyy" }}
-      </span>
+        <span class="text-sm font-bold text-slate-800">
+          {{ indicators?.lastVehicle?.plate }}
+        </span>
+        <span class="text-[10px] text-slate-400 mt-1">
+          {{ indicators?.lastVehicle?.date | date: "dd/MM/yyyy" }}
+        </span>
       } @else {
-      <span class="text-sm text-slate-400">Nenhum dado</span>
+        <span class="text-sm text-slate-400">Nenhum dado</span>
       }
     </div>
   </div>
@@ -96,11 +96,91 @@
   (details)="onNavDetails($event)"
 ></app-base-list>
 
+<!-- Modal de Edição com campos customizados -->
 <app-modal-edit-component
-  [title]="'Editar Veiculo'"
+  [title]="'Editar Veículo'"
   [show]="showModal"
   [entity]="selectedVehicle"
   [fields]="vehicleFields"
   (close)="onCloseModal()"
   (save)="onSaveModal($event)"
-></app-modal-edit-component>
+>
+  <!-- Campo Subfrota -->
+  <div class="mb-4">
+    <label class="block mb-1 text-sm font-medium text-gray-700">
+      Subfrota
+    </label>
+    <div class="flex gap-2">
+      <input
+        type="text"
+        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        [value]="selectedVehicle?.subfleetName || selectedSubfleet?.name || ''"
+        placeholder="Nenhuma subfrota selecionada"
+        readonly
+      />
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
+        (click)="showSubfleetModal = true"
+      >
+        <span>🔍</span>
+        Selecionar
+      </button>
+    </div>
+  </div>
+
+  <!-- Campo Motorista Padrão -->
+  <div class="mb-4">
+    <label class="block mb-1 text-sm font-medium text-gray-700">
+      Motorista Padrão
+    </label>
+    <div class="flex gap-2">
+      <input
+        type="text"
+        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        [value]="
+          selectedVehicle?.defaultDriverName || selectedDriver?.name || ''
+        "
+        placeholder="Nenhum motorista selecionado"
+        readonly
+      />
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
+        (click)="showDriverModal = true"
+      >
+        <span>🔍</span>
+        Selecionar
+      </button>
+    </div>
+    @if (selectedDriver) {
+      <div class="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+        <span class="text-xs font-medium text-green-800">
+          {{ selectedDriver.name }}
+        </span>
+      </div>
+    }
+  </div>
+</app-modal-edit-component>
+
+<!-- Modal Seleção de Subfrota -->
+<app-select-modal
+  [show]="showSubfleetModal"
+  title="Selecionar Subfrota"
+  [columns]="subfleetColumns"
+  [filtersConfig]="subfleetFilters"
+  [dataFetcher]="subfleetFetcher"
+  (select)="onSubfleetSelect($event)"
+  (close)="showSubfleetModal = false"
+></app-select-modal>
+
+<!-- Modal Seleção de Motorista -->
+<app-select-modal
+  [show]="showDriverModal"
+  title="Selecionar Motorista Padrão"
+  [columns]="driverColumns"
+  [filtersConfig]="driverFilters"
+  [dataFetcher]="driverFetcher"
+  (select)="onDriverSelect($event)"
+  (close)="showDriverModal = false"
+></app-select-modal>

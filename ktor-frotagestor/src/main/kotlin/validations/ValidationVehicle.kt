@@ -43,12 +43,15 @@ fun validatePartialVehicle(rawBody: String): ValidationResult<PartialVehicle> {
         return ValidationResult.Error("JSON inválido")
     }
 
+    // ✨ Verificar se pelo menos um campo foi fornecido
     if (
         vehicle.plate?.isBlank() == true &&
         vehicle.model?.isBlank() == true &&
         vehicle.brand.isNullOrBlank() &&
         vehicle.year == null &&
-        vehicle.status == null
+        vehicle.status == null &&
+        vehicle.defaultDriverId == null &&
+        vehicle.subfleetId == null  // ✨ NOVO CAMPO ADICIONADO
     ) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
     }

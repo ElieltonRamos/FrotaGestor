@@ -18,6 +18,7 @@ fun Route.expenseRoutes() {
             get("refueling-indicators") { controller.getRefuelingIndicators(call) }
             get("maintenance-indicators") { controller.getMaintenanceIndicators(call) }
             get("expense-indicators") { controller.getExpenseIndicators(call) }
+            get("subfleet/{subfleetId}") { controller.getBySubfleet(call) }
         }
     }
 }

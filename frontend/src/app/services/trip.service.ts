@@ -3,11 +3,7 @@ import { API_URL } from './api.url';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { PaginatedResponse } from '../interfaces/paginator';
-import {
-  Trip,
-  TripIndicators,
-  TripReport,
-} from '../interfaces/trip';
+import { Trip, TripIndicators, TripReport } from '../interfaces/trip';
 import { Message } from '../interfaces/user';
 
 @Injectable({
@@ -80,5 +76,27 @@ export class TripService {
     return this.http.get<TripReport>(`${API_URL}/reports/trips`, {
       params,
     });
+  }
+
+  /**
+   * Busca viagens dos veículos de uma subfrota específica (agregado)
+   * @param subfleetId - ID da subfrota
+   * @param page - Número da página (padrão: 1)
+   * @param limit - Itens por página (padrão: 10)
+   */
+  getTripsBySubfleet(
+    subfleetId: number,
+    page: number = 1,
+    limit: number = 10
+  ): Observable<PaginatedResponse<Trip>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString())
+      .set('subfleetId', subfleetId.toString());
+
+    return this.http.get<PaginatedResponse<Trip>>(
+      `${API_URL}/trips/subfleet/${subfleetId}`,
+      { params }
+    );
   }
 }

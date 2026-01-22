@@ -7,13 +7,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Total de Viagens (Mês)</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-blue-600">
-        {{ indicators?.totalTrips ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-blue-600">
+          {{ indicators?.totalTrips ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -25,13 +25,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Em Andamento</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-yellow-600">
-        {{ indicators?.inProgress ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-yellow-600">
+          {{ indicators?.inProgress ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -43,13 +43,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Concluídas</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-green-600">
-        {{ indicators?.completed ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-green-600">
+          {{ indicators?.completed ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -61,13 +61,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Canceladas</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-red-600">
-        {{ indicators?.canceled ?? 0 }}
-      </span>
+        <span class="text-lg font-bold text-red-600">
+          {{ indicators?.canceled ?? 0 }}
+        </span>
       }
     </div>
   </div>
@@ -79,13 +79,13 @@
     <span class="text-[11px] text-slate-500 mb-1">Distância Total</span>
     <div class="min-h-[32px] flex items-center">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else {
-      <span class="text-lg font-bold text-indigo-600">
-        {{ indicators?.totalDistance ?? 0 }} km
-      </span>
+        <span class="text-lg font-bold text-indigo-600">
+          {{ indicators?.totalDistance ?? 0 }} km
+        </span>
       }
     </div>
   </div>
@@ -97,20 +97,20 @@
     <span class="text-[11px] text-slate-500 mb-1">Última Viagem</span>
     <div class="min-h-[32px] flex flex-col">
       @if (loadingIndicators) {
-      <div
-        class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
-      ></div>
+        <div
+          class="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
+        ></div>
       } @else if (indicators?.lastTrip) {
-      <span class="text-sm font-bold text-slate-800">
-        {{ indicators?.lastTrip?.date | date : "dd/MM/yyyy" }}
-      </span>
-      <span class="text-[10px] text-slate-400">
-        {{ indicators?.lastTrip?.driverName }} ({{
-          indicators?.lastTrip?.vehiclePlate
-        }})
-      </span>
+        <span class="text-sm font-bold text-slate-800">
+          {{ indicators?.lastTrip?.date | date: "dd/MM/yyyy" }}
+        </span>
+        <span class="text-[10px] text-slate-400">
+          {{ indicators?.lastTrip?.driverName }} ({{
+            indicators?.lastTrip?.vehiclePlate
+          }})
+        </span>
       } @else {
-      <span class="text-sm text-slate-400">Nenhum dado</span>
+        <span class="text-sm text-slate-400">Nenhum dado</span>
       }
     </div>
   </div>
@@ -152,6 +152,7 @@
   (details)="onNavDetails($event)"
 ></app-base-list>
 
+<!-- Modal de Edição com Seleção de Motorista -->
 <app-modal-edit-component
   [title]="'Editar Viagem'"
   [show]="showModal"
@@ -159,4 +160,39 @@
   [fields]="tripFields"
   (close)="onCloseModal()"
   (save)="onSaveModal($event)"
-></app-modal-edit-component>
+>
+  <!-- Campo Motorista com botão de seleção -->
+  <div>
+    <label class="block mb-1 text-sm font-medium text-gray-700"
+      >Motorista</label
+    >
+    <div class="flex gap-2">
+      <input
+        type="text"
+        [value]="selectedTrip?.driverName || ''"
+        class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
+        placeholder="Motorista selecionado"
+        readonly
+      />
+
+      <button
+        type="button"
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors"
+        (click)="showDriverModal = true"
+      >
+        Selecionar
+      </button>
+    </div>
+  </div>
+</app-modal-edit-component>
+
+<!-- Modal Seleção Motorista -->
+<app-select-modal
+  [show]="showDriverModal"
+  title="Selecionar Motorista"
+  [columns]="driverColumns"
+  [filtersConfig]="driverFilters"
+  [dataFetcher]="driverFetcherForEdit"
+  (select)="onDriverSelectForEdit($event)"
+  (close)="showDriverModal = false"
+></app-select-modal>

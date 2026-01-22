@@ -382,7 +382,6 @@ class DriverService {
                 v.brand,
                 v.year,
                 v.status,
-                v.icon_map_url,
                 v.deleted_at,
                 (SELECT COUNT(*) 
                  FROM vehicles v2 

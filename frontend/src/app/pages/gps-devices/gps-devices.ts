@@ -103,6 +103,11 @@ export class GpsDevices {
     { key: 'speed' as keyof GpsDevice, label: 'Velocidade', sortable: true },
     { key: 'heading' as keyof GpsDevice, label: 'Direção', sortable: true },
     {
+      key: 'batteryVoltage' as keyof GpsDevice,
+      label: 'Alimentação',
+      sortable: true,
+    },
+    {
       key: 'ignition' as keyof GpsDevice,
       label: 'Ignição',
       type: 'text',
@@ -160,6 +165,7 @@ export class GpsDevices {
   vehicleSearchTerm: string = '';
   vehicleInitialFilter: any = {};
   editingDevice?: GpsDevice; // Device sendo editado no modal customizado
+  devicesWithoutPower: GpsDevice[] = [];
 
   sortKey: keyof GpsDevice = 'imei';
   sortAsc: boolean = true;
@@ -171,6 +177,19 @@ export class GpsDevices {
 
   ngOnInit() {
     this.listDevices(1, 10);
+    this.loadDevicesWithoutPower();
+  }
+
+  loadDevicesWithoutPower() {
+    this.service.getDevicesWithoutPower().subscribe({
+      next: (devices) => {
+        this.devicesWithoutPower = devices;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.devicesWithoutPower = [];
+      },
+    });
   }
 
   listDevices(page: number, limit: number) {
@@ -256,7 +275,7 @@ export class GpsDevices {
         alertError(
           `Erro ao atualizar dispositivo: ${
             err?.error?.message || 'Erro desconhecido.'
-          }`
+          }`,
         );
       },
     });
@@ -281,14 +300,14 @@ export class GpsDevices {
         alertSuccess(
           id
             ? 'Dispositivo atualizado com sucesso'
-            : 'Dispositivo cadastrado com sucesso'
+            : 'Dispositivo cadastrado com sucesso',
         );
       },
       error: (err) => {
         alertError(
           `Ocorreu um erro ao salvar o dispositivo. ${
             err?.error?.message || 'Erro desconhecido.'
-          }`
+          }`,
         );
       },
     });
@@ -316,7 +335,7 @@ export class GpsDevices {
         alertError(
           `Erro ao cadastrar dispositivo: ${
             err?.error?.message || 'Erro desconhecido.'
-          }`
+          }`,
         );
       },
     });
@@ -343,14 +362,14 @@ export class GpsDevices {
     limit: number,
     filters: any,
     sortKey: keyof Vehicle,
-    sortAsc: boolean
+    sortAsc: boolean,
   ) => {
     return this.vehicleService.getAll(
       page,
       limit,
       filters,
       sortKey as string,
-      sortAsc
+      sortAsc,
     );
   };
 

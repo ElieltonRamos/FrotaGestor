@@ -16,6 +16,9 @@ import {
   FilterConfig,
 } from '../../../components/base-filter-component/base-filter-component';
 import { ModalEditComponent } from '../../../components/modal-edit-component/modal-edit-component';
+import { Driver } from '../../../interfaces/driver';
+import { DriverService } from '../../../services/driver.service';
+import { SelectModalComponent } from "../../../components/select-modal.component/select-modal.component";
 
 @Component({
   selector: 'app-list-trip',
@@ -26,12 +29,15 @@ import { ModalEditComponent } from '../../../components/modal-edit-component/mod
     PaginatorComponent,
     BaseFilterComponent,
     ModalEditComponent,
-  ],
+    SelectModalComponent,
+    FormsModule
+],
   templateUrl: './list-trip.html',
 })
 export class ListTrip {
   private serviceTrip = inject(TripService);
   private cdr = inject(ChangeDetectorRef);
+  private driverService = inject(DriverService);
   private router = inject(Router);
 
   tripColumns: ColumnConfig<Trip>[] = [
@@ -103,7 +109,6 @@ export class ListTrip {
 
   tripFields = [
     { name: 'vehiclePlate', label: 'Placa do Veículo', type: 'text' },
-    { name: 'driverName', label: 'Motorista', type: 'text' },
     { name: 'startLocation', label: 'Origem', type: 'text' },
     { name: 'endLocation', label: 'Destino', type: 'text' },
     { name: 'startTime', label: 'Data/Hora Início', type: 'datetime-local' },
@@ -115,6 +120,45 @@ export class ListTrip {
       type: 'select',
       options: Object.values(TripStatus),
     },
+  ];
+
+  // Configuração para seleção de motorista
+  showDriverModal = false;
+  selectedDriverForEdit?: Driver;
+  driverColumns: ColumnConfig<Driver>[] = [
+    { key: 'name' as keyof Driver, label: 'Nome', sortable: true },
+    { key: 'cpf' as keyof Driver, label: 'CPF', sortable: true },
+    { key: 'cnh' as keyof Driver, label: 'CNH', sortable: true },
+    {
+      key: 'cnhCategory' as keyof Driver,
+      label: 'Categoria CNH',
+      sortable: true,
+    },
+    {
+      key: 'cnhExpiration' as keyof Driver,
+      label: 'Validade CNH',
+      type: 'date',
+      sortable: true,
+    },
+    {
+      key: 'status' as keyof Driver,
+      label: 'Status',
+      type: 'status',
+      sortable: true,
+    },
+  ];
+
+  driverFilters: FilterConfig[] = [
+    { key: 'name', label: 'Nome', type: 'text', placeholder: 'Nome...' },
+    { key: 'cpf', label: 'CPF', type: 'text', placeholder: 'CPF...' },
+    { key: 'cnh', label: 'CNH', type: 'text', placeholder: 'CNH...' },
+    {
+      key: 'cnhCategory',
+      label: 'Categoria CNH',
+      type: 'text',
+      placeholder: 'Categoria CNH...',
+    },
+    { key: 'status', label: 'Status', type: 'select', options: ['ATIVO'] },
   ];
 
   trips: Trip[] = [];
@@ -242,6 +286,7 @@ export class ListTrip {
 
   onEdit(trip: Trip) {
     this.selectedTrip = { ...trip };
+    this.selectedDriverForEdit = undefined;
     this.showModal = true;
   }
 
@@ -251,7 +296,6 @@ export class ListTrip {
 
   onSaveModal(trip: Trip) {
     const id = trip.id;
-    delete trip.id;
 
     this.serviceTrip.update(id!, trip).subscribe({
       next: () => {
@@ -265,10 +309,35 @@ export class ListTrip {
         alertError(
           `Ocorreu um erro ao salvar a viagem. ${
             err?.error?.message || 'Erro desconhecido.'
-          }`
+          }`,
         );
       },
     });
+  }
+
+  driverFetcherForEdit = (
+    page: number,
+    limit: number,
+    filters: any,
+    sortKey: keyof Driver,
+    sortAsc: boolean,
+  ) => {
+    return this.driverService.getAll(
+      page,
+      limit,
+      filters,
+      sortKey as string,
+      sortAsc,
+    );
+  };
+
+  onDriverSelectForEdit(driver: Driver) {
+    this.selectedDriverForEdit = driver;
+    if (this.selectedTrip) {
+      this.selectedTrip.driverName = driver.name;
+      this.selectedTrip.driverId = driver.id;
+    }
+    this.showDriverModal = false;
   }
 
   onNavDetails(id?: number) {

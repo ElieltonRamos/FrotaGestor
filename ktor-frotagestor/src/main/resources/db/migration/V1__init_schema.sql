@@ -1,98 +1,146 @@
 -- Tabela de usuários do sistema
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,         -- Identificador único de cada usuário
-    username VARCHAR(50) UNIQUE NOT NULL,      -- Nome de login (deve ser único)
-    password VARCHAR(255) NOT NULL,            -- Senha (armazenada de forma criptografada)
-    role VARCHAR(20) NOT NULL                  -- Papel do usuário (ex.: admin, gestor, motorista)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL
 );
 
 -- Tabela de motoristas da frota
 CREATE TABLE drivers (
-    id INT AUTO_INCREMENT PRIMARY KEY,                          -- Identificador único do motorista
-    name VARCHAR(100) NOT NULL,                                 -- Nome completo do motorista
-    cpf VARCHAR(14) UNIQUE NOT NULL,                            -- CPF (deve ser único)
-    cnh VARCHAR(20) UNIQUE NOT NULL,                            -- Número da CNH (deve ser único)
-    cnh_category VARCHAR(5),                                    -- Categoria da CNH (ex.: B, C, D, E)
-    cnh_expiration DATE,                                        -- Data de validade da CNH
-    phone VARCHAR(20),                                          -- Telefone do motorista
-    email VARCHAR(100),                                         -- E-mail do motorista
-    status ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO', -- Situação do motorista
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    cpf VARCHAR(14) UNIQUE NOT NULL,
+    cnh VARCHAR(20) UNIQUE NOT NULL,
+    cnh_category VARCHAR(5),
+    cnh_expiration DATE,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    status ENUM('ATIVO', 'INATIVO') NOT NULL DEFAULT 'ATIVO',
     deleted_at DATETIME NULL
 );
 
--- Tabela de veículos da frota
+-- ✨ NOVA TABELA: Subfrotas (organização da frota)
+CREATE TABLE subfleets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT 'Nome da subfrota (ex: Regional Sul)',
+    description TEXT COMMENT 'Descricao detalhada da subfrota',
+
+    INDEX idx_subfleets_name (name)
+);
+
+-- Tabela de veículos (✨ COM SUBFROTA)
 CREATE TABLE vehicles (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                         -- Identificador único do veículo
-    plate VARCHAR(10) UNIQUE NOT NULL,                                         -- Placa do veículo (única)
-    model VARCHAR(100) NOT NULL,                                               -- Modelo do veículo
-    brand VARCHAR(100),                                                        -- Marca/fabricante do veículo
-    year INT,                                                                  -- Ano de fabricação
-    status ENUM('ATIVO', 'INATIVO', 'MANUTENCAO') DEFAULT 'ATIVO',          -- Situação do veículo
-    deleted_at DATETIME NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subfleet_id INT NULL COMMENT 'Subfrota a qual o veiculo pertence', -- ✨ NOVO CAMPO
+    plate VARCHAR(10) UNIQUE NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    brand VARCHAR(100),
+    year INT,
+    status ENUM('ATIVO', 'INATIVO', 'MANUTENCAO') DEFAULT 'ATIVO',
+    default_driver_id INT NULL COMMENT 'Motorista padrao/principal do veiculo',
+    deleted_at DATETIME NULL,
+
+    FOREIGN KEY (subfleet_id) REFERENCES subfleets(id) ON DELETE SET NULL, -- ✨ NOVO
+    FOREIGN KEY (default_driver_id) REFERENCES drivers(id) ON DELETE SET NULL,
+    INDEX idx_vehicles_subfleet (subfleet_id), -- ✨ NOVO ÍNDICE
+    INDEX idx_vehicles_default_driver (default_driver_id)
 );
 
--- Tabela de viagens/rotas realizadas
+-- ✅ MOVER gps_devices PARA CÁ (antes de trips)
+CREATE TABLE gps_devices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NULL,
+    imei VARCHAR(50) UNIQUE NOT NULL,
+    latitude DECIMAL(9,6) DEFAULT 0,
+    longitude DECIMAL(9,6) DEFAULT 0,
+    date_time DATETIME,
+    speed DECIMAL(5,2) DEFAULT 0,
+    heading DECIMAL(5,2) DEFAULT 0,
+    icon_map_url VARCHAR(255),
+    title VARCHAR(255),
+    ignition BOOLEAN DEFAULT FALSE,
+    last_communication DATETIME NOT NULL,
+    battery_voltage DECIMAL(5,2) NULL,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
+);
+
+-- Tabela de viagens (agora gps_devices já existe)
 CREATE TABLE trips (
-    id INT AUTO_INCREMENT PRIMARY KEY,                                         -- Identificador único da viagem
-    vehicle_id INT NOT NULL,                                                   -- Referência ao veículo utilizado
-    driver_id INT NOT NULL,                                                    -- Referência ao motorista responsável
-    start_location VARCHAR(255),                                               -- Local de início da viagem
-    end_location VARCHAR(255),                                                 -- Local de destino da viagem
-    start_time DATETIME NOT NULL,                                              -- Data e hora de início
-    end_time DATETIME,                                                         -- Data e hora de término
-    distance_km DECIMAL(10,2),                                                 -- Distância percorrida em km
-    status ENUM('PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA') DEFAULT 'PLANEJADA', -- Status da viagem
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),                          -- Relacionamento com veículos
-    FOREIGN KEY (driver_id) REFERENCES drivers(id)                             -- Relacionamento com motoristas
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    driver_id INT NULL COMMENT 'Motorista responsavel (pode ser NULL se nao identificado)',
+    start_location VARCHAR(255),
+    end_location VARCHAR(255),
+    start_latitude DECIMAL(10, 8) NULL COMMENT 'Latitude do ponto de inicio',
+    start_longitude DECIMAL(11, 8) NULL COMMENT 'Longitude do ponto de inicio',
+    end_latitude DECIMAL(10, 8) NULL COMMENT 'Latitude do ponto de fim',
+    end_longitude DECIMAL(11, 8) NULL COMMENT 'Longitude do ponto de fim',
+    start_time DATETIME NOT NULL,
+    end_time DATETIME,
+    distance_km DECIMAL(10,2),
+    auto_generated BOOLEAN DEFAULT FALSE COMMENT 'Viagem criada automaticamente pelo GPS',
+    gps_device_id INT NULL COMMENT 'Dispositivo GPS que gerou a viagem',
+    max_speed_kmh DECIMAL(5, 2) NULL COMMENT 'Velocidade maxima atingida (km/h)',
+    avg_speed_kmh DECIMAL(5, 2) NULL COMMENT 'Velocidade media (km/h)',
+    status ENUM('PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA') DEFAULT 'PLANEJADA',
+
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (driver_id) REFERENCES drivers(id),
+    FOREIGN KEY (gps_device_id) REFERENCES gps_devices(id) ON DELETE SET NULL,
+    INDEX idx_trips_auto_generated (auto_generated),
+    INDEX idx_trips_gps_device (gps_device_id),
+    INDEX idx_trips_start_time (start_time)
 );
 
 -- Tabela de despesas gerais relacionadas à frota
 CREATE TABLE expenses (
-    id INT AUTO_INCREMENT PRIMARY KEY,       -- Identificador único da despesa
-    vehicle_id INT,                          -- Veículo relacionado à despesa (opcional)
-    driver_id INT,                           -- Motorista relacionado à despesa (opcional)
-    trip_id INT,                             -- Viagem relacionada à despesa (opcional)
-    date DATE NOT NULL,                      -- Data da despesa
-    type VARCHAR(50) NOT NULL,               -- Tipo da despesa (ex.: Pedágio, Estacionamento, Lavagem, Outro)
-    amount DECIMAL(10,2) NOT NULL,           -- Valor da despesa
-    description TEXT,                        -- Descrição detalhada da despesa
-    liters DECIMAL(10,2),                        -- Quantidade de litros abastecidos
-    price_per_liter DECIMAL(10,2),               -- Preço por litro de combustível
-    odometer INT,                                -- Quilometragem do veículo no momento do abastecimento
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT,
+    driver_id INT,
+    trip_id INT,
+    date DATE NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    description TEXT,
+    liters DECIMAL(10,2),
+    price_per_liter DECIMAL(10,2),
+    odometer INT,
 
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id), -- Relacionamento com veículos
-    FOREIGN KEY (driver_id) REFERENCES drivers(id),   -- Relacionamento com motoristas
-    FOREIGN KEY (trip_id) REFERENCES trips(id)        -- Relacionamento com viagens
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (driver_id) REFERENCES drivers(id),
+    FOREIGN KEY (trip_id) REFERENCES trips(id)
 );
 
-CREATE TABLE gps_devices (
-    id INT AUTO_INCREMENT PRIMARY KEY,        -- ID do dispositivo
-    vehicle_id INT NULL,                      -- Veículo vinculado (AGORA PODE SER NULL)
-    imei VARCHAR(50) UNIQUE NOT NULL,         -- Identificador do GPS
-    latitude DECIMAL(9,6) DEFAULT 0,          -- Última latitude
-    longitude DECIMAL(9,6) DEFAULT 0,         -- Última longitude
-    date_time DATETIME,                       -- Momento da leitura
-    speed DECIMAL(5,2) DEFAULT 0,             -- Velocidade (opcional)
-    heading DECIMAL(5,2) DEFAULT 0,           -- Direção (opcional)
-    icon_map_url VARCHAR(255),                -- Ícone para o mapa
-    title VARCHAR(255),                       -- Modelo + placa
-    ignition BOOLEAN DEFAULT FALSE,           -- Ignition ligada/desligada
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL
-);
-
+-- Histórico de posições GPS
 CREATE TABLE gps_history (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,      -- Identificador único do registro
-    gps_device_id INT NOT NULL,                -- Referência ao dispositivo GPS
-    vehicle_id INT NULL,                       -- Referência opcional ao veículo
-    date_time DATETIME NOT NULL,               -- Data e hora do ponto
-    latitude DECIMAL(9,6) NOT NULL,           -- Latitude
-    longitude DECIMAL(9,6) NOT NULL,          -- Longitude
-    raw_log TEXT NOT NULL,                     -- Log bruto recebido do rastreador (JSON, NMEA, etc.)
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    gps_device_id INT NOT NULL,
+    vehicle_id INT NULL,
+    date_time DATETIME NOT NULL,
+    latitude DECIMAL(9,6) NOT NULL,
+    longitude DECIMAL(9,6) NOT NULL,
+    speed DECIMAL(5,2) DEFAULT 0,
+    heading DECIMAL(6,2) DEFAULT 0,
+    ignition BOOLEAN DEFAULT FALSE,
+    satellites INT NULL,
+    gps_fixed BOOLEAN DEFAULT FALSE,
+    odometer BIGINT NULL,
+    battery_voltage DECIMAL(5,2) NULL,
+    message_type VARCHAR(20) NOT NULL,
+    event_code INT NULL,
+    gps_quality VARCHAR(20) NOT NULL,
+    raw_log TEXT NOT NULL,
 
-    FOREIGN KEY (gps_device_id) REFERENCES gps_devices(id) ON DELETE CASCADE,
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id) ON DELETE SET NULL,
+    FOREIGN KEY (gps_device_id)
+        REFERENCES gps_devices(id)
+        ON DELETE CASCADE,
 
-    INDEX idx_device_time (gps_device_id, date_time),  -- Consultas por dispositivo e tempo
-    INDEX idx_datetime (date_time),                    -- Consultas globais por tempo
-    INDEX idx_vehicle_time (vehicle_id, date_time)    -- Consultas por veículo e tempo
+    FOREIGN KEY (vehicle_id)
+        REFERENCES vehicles(id)
+        ON DELETE SET NULL,
+
+    INDEX idx_device_time (gps_device_id, date_time),
+    INDEX idx_datetime (date_time),
+    INDEX idx_vehicle_time (vehicle_id, date_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

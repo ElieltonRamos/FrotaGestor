@@ -22,6 +22,8 @@ import { DetailsUsers } from './pages/users/details-users/details-users';
 import { Reports } from './pages/reports/reports';
 import { GpsDevices } from './pages/gps-devices/gps-devices';
 import { GpsDetails } from './pages/gps-devices/details-gps-device/details-gps-device';
+import { Subfleet } from './pages/subfleet/subfleet';
+import { DetailsSubfleet } from './pages/subfleet/details-subfleet/details-subfleet';
 
 export const routes: Routes = [
   {
@@ -117,12 +119,22 @@ export const routes: Routes = [
   {
     path: 'dispositivos',
     component: GpsDevices,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
   },
   {
     path: 'dispositivos/:id',
     component: GpsDetails,
-    canActivate: [authGuard]
+    canActivate: [authGuard],
+  },
+  {
+    path: 'frotas',
+    component: Subfleet,
+    canActivate: [authGuard],
+  },
+  {
+    path: 'frotas/:id',
+    component: DetailsSubfleet,
+    canActivate: [authGuard],
   },
   { path: '**', component: NotFound },
 ];
