@@ -176,7 +176,8 @@ suspend fun saveOrUpdateGps(
         longitude = gps.longitude,
         dateTime = gps.serverDateTime,
         speed = gps.speed,
-        ignition = gps.ignition
+        ignition = gps.ignition,
+        odometer = gps.odometer
     )
 //
 //    autoTripService.processIgnitionChange(
