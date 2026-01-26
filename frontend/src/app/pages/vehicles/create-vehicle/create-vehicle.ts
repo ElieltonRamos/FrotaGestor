@@ -47,9 +47,15 @@ export class CreateVehicle implements OnInit {
       type: 'text',
     },
     {
-      placeholder: 'Ano',
-      name: 'year',
-      label: 'Ano',
+      placeholder: 'Ano Fabricação',
+      name: 'manufacturingYear',
+      label: 'Ano Fabricação',
+      type: 'number',
+    },
+    {
+      placeholder: 'Ano Modelo',
+      name: 'modelYear',
+      label: 'Ano Modelo',
       type: 'number',
     },
     {
@@ -162,7 +168,8 @@ export class CreateVehicle implements OnInit {
       plate: data.plate,
       model: data.model,
       brand: data.brand || null,
-      year: data.year || null,
+      modelYear: data.modelYear || null,
+      manufacturingYear: data.manufacturingYear || null,
       status: data.status || 'ATIVO',
       defaultDriverId: this.selectedDriver?.id,
       subfleetId: this.selectedSubfleet?.id || null, // ✅ Opcional

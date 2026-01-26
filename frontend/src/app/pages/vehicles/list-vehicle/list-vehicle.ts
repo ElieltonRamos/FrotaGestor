@@ -51,7 +51,8 @@ export class ListVehicle {
     { name: 'plate', label: 'Placa', type: 'text' },
     { name: 'model', label: 'Modelo', type: 'text' },
     { name: 'brand', label: 'Marca', type: 'text' },
-    { name: 'year', label: 'Ano', type: 'number' },
+    { name: 'modelYear', label: 'Ano Modelo', type: 'number' },
+    { name: 'manufacturingYear', label: 'Ano Fabricação', type: 'number' },
     {
       name: 'status',
       label: 'Status',
@@ -299,11 +300,12 @@ export class ListVehicle {
   onSaveModal(vehicle: Vehicle) {
     const id = vehicle.id!;
 
-    const updateData = {
+    const updateData: Vehicle = {
       plate: vehicle.plate,
       model: vehicle.model,
       brand: vehicle.brand || null,
-      year: vehicle.year || null,
+      modelYear: vehicle.modelYear || null,
+      manufacturingYear: vehicle.manufacturingYear,
       status: vehicle.status,
       subfleetId: this.selectedSubfleet?.id || null, // ✅
       defaultDriverId: this.selectedDriver?.id

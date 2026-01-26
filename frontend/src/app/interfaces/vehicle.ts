@@ -4,14 +4,16 @@ export interface Vehicle {
   plate: string;
   model: string;
   brand?: string | null;
-  year?: number | null;
+  manufacturingYear?: number | null;
+  modelYear?: number | null;
   status: VehicleStatus;
   subfleetId?: number | null;
-  subfleetName?: string | null;  // Campo de JOIN (não persistido)
-  defaultDriverId?: number | null;        // ✨ NOVO CAMPO
-  defaultDriverName?: string | null;      // ✨ NOVO CAMPO (somente leitura)
+  subfleetName?: string | null;
+  defaultDriverId?: number | null;
+  defaultDriverName?: string | null;
   iconMapUrl?: string | null;
 }
+
 export enum VehicleStatus {
   ATIVO = 'ATIVO',
   INATIVO = 'INATIVO',
