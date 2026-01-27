@@ -5,7 +5,7 @@ Sistema completo de **gestão de frotas** com rastreamento GPS em tempo real, re
 - **Backend:** Kotlin + Ktor  
 - **Frontend:** Angular  
 - **Integração GPS:** TCP (Suntech ST300/ST310, GT-06)  
-- **Versão atual:** `v1.0.0-prod`
+- **Versão atual:** `v1.1.0-prod`
 
 ---
 

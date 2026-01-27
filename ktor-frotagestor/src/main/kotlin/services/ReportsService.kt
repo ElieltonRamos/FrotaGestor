@@ -58,7 +58,7 @@ class ReportsService {
             v.id AS vehicle_id,
             v.plate,
             v.brand,
-            v.`year`,
+            v.`model_year`,
             v.status,
             COUNT(DISTINCT t.id) AS total_trips,
             COALESCE(SUM(t.distance_km),0) AS total_km,
@@ -71,7 +71,7 @@ class ReportsService {
         LEFT JOIN trips t ON v.id = t.vehicle_id AND t.start_time BETWEEN '$startDateTime' AND '$endDateTime'
         LEFT JOIN drivers d ON t.driver_id = d.id
         LEFT JOIN expenses e ON v.id = e.vehicle_id
-        GROUP BY v.id, v.plate, v.brand, v.`year`, v.status, d.name
+        GROUP BY v.id, v.plate, v.brand, v.`model_year`, v.status, d.name
     """.trimIndent()
 
         val vehiclesData = mutableListOf<VehicleReport.UsageStats.TotalDistanceByVehicle>()
@@ -84,7 +84,7 @@ class ReportsService {
                 while (rs.next()) {
                     val plate = rs.getString("plate")
                     val brand = rs.getString("brand") ?: "Desconhecida"
-                    val year = rs.getInt("year")
+                    val year = rs.getInt("model_year")
                     val status = rs.getString("status") ?: "ATIVO"
                     val totalTrips = rs.getLong("total_trips")
                     val totalKm = rs.getDouble("total_km").toInt()
@@ -699,9 +699,9 @@ class ReportsService {
                  WHERE e.vehicle_id IN (SELECT id FROM vehicles WHERE subfleet_id = s.id AND deleted_at IS NULL)
                  AND e.date >= '$startDateStr' 
                  AND e.date < '$endDateStr') AS total_expenses,
-                (SELECT COALESCE(AVG(YEAR(CURRENT_DATE()) - v.year), 0) 
+                (SELECT COALESCE(AVG(YEAR(CURRENT_DATE()) - v.model_year), 0) 
                  FROM vehicles v WHERE v.subfleet_id = s.id AND v.deleted_at IS NULL 
-                 AND v.year IS NOT NULL) AS avg_vehicle_age,
+                 AND v.model_year IS NOT NULL) AS avg_vehicle_age,
                 (SELECT e2.type FROM expenses e2 
                  WHERE e2.vehicle_id IN (SELECT id FROM vehicles WHERE subfleet_id = s.id AND deleted_at IS NULL)
                  AND e2.date >= '$startDateStr' 
