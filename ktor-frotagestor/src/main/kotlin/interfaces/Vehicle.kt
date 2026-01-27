@@ -8,12 +8,13 @@ data class Vehicle(
     val plate: String,
     val model: String,
     val brand: String? = null,
-    val year: Int? = null,
+    val manufacturingYear: Int? = null,
+    val modelYear: Int? = null,
     val status: VehicleStatus = VehicleStatus.ATIVO,
     val subfleetId: Int? = null,
     val subfleetName: String? = null,
-    val defaultDriverId: Int? = null,        // ✨ NOVO CAMPO
-    val defaultDriverName: String? = null    // ✨ NOVO CAMPO (somente leitura)
+    val defaultDriverId: Int? = null,
+    val defaultDriverName: String? = null
 )
 
 @Serializable
@@ -29,10 +30,11 @@ data class PartialVehicle(
     val plate: String? = null,
     val model: String? = null,
     val brand: String? = null,
-    val year: Int? = null,
+    val manufacturingYear: Int? = null,
+    val modelYear: Int? = null,
     val subfleetId: Int? = null,
-    val status: VehicleStatus? = null,       // ✨ CORRIGIDO: era obrigatório, agora é opcional
-    val defaultDriverId: Int? = null         // ✨ NOVO CAMPO
+    val status: VehicleStatus? = null,
+    val defaultDriverId: Int? = null
 )
 
 @Serializable

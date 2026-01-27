@@ -66,7 +66,7 @@ export class ListVehicle {
     { key: 'model' as keyof Vehicle, label: 'Modelo', sortable: true },
     { key: 'brand' as keyof Vehicle, label: 'Marca', sortable: true },
     { key: 'subfleetName' as keyof Vehicle, label: 'Subfrota', sortable: true }, // ✅
-    { key: 'year' as keyof Vehicle, label: 'Ano', sortable: true },
+    { key: 'modelYear' as keyof Vehicle, label: 'Ano Modelo', sortable: true },
     {
       key: 'status' as keyof Vehicle,
       label: 'Status',

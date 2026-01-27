@@ -148,7 +148,7 @@ private fun getPackageVersion(): String = try {
     if (packageJson.exists()) {
         val content = packageJson.readText()
         Regex("\"version\"\\s*:\\s*\"([^\"]+)\"").find(content)?.groupValues?.get(1) ?: "1.0.0"
-    } else "1.0.0"
+    } else "1.1.0"
 } catch (e: Exception) { "dev" }
 
 private fun formatUptime(start: Instant): String {

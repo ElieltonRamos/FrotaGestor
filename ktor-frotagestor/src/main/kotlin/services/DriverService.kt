@@ -341,7 +341,9 @@ class DriverService {
             "plate" -> "v.plate"
             "model" -> "v.model"
             "brand" -> "v.brand"
-            "year" -> "v.year"
+            "manufacturingyear" -> "v.manufacturing_year"
+            "modelyear" -> "v.model_year"
+            "year" -> "v.model_year"
             "status" -> "v.status"
             else -> "v.id"
         }
@@ -361,7 +363,7 @@ class DriverService {
                     filterConditions.add("v.brand LIKE '%$value%'")
                 }
                 "year" -> if (value is Int) {
-                    filterConditions.add("v.year = $value")
+                    filterConditions.add("(v.manufacturing_year = $value OR v.model_year = $value)")
                 }
                 "status" -> if (value is String && value in listOf("ATIVO", "INATIVO", "MANUTENCAO")) {
                     filterConditions.add("v.status = '$value'")
@@ -375,33 +377,34 @@ class DriverService {
         }
 
         val sql = """
-            SELECT 
-                v.id,
-                v.plate,
-                v.model,
-                v.brand,
-                v.year,
-                v.status,
-                v.deleted_at,
-                (SELECT COUNT(*) 
-                 FROM vehicles v2 
-                 INNER JOIN trips t2 ON v2.id = t2.vehicle_id 
-                 WHERE t2.driver_id = $driverId 
-                 AND v2.deleted_at IS NULL $filterClause) AS total_count
-            FROM vehicles v
-            INNER JOIN trips t ON v.id = t.vehicle_id
-            WHERE t.driver_id = $driverId 
-            AND v.deleted_at IS NULL
-            AND EXISTS (
-                SELECT 1 
-                FROM drivers d 
-                WHERE d.id = $driverId 
-                AND d.deleted_at IS NULL
-            )
-            $filterClause
-            ORDER BY $sortColumn $orderDirection
-            LIMIT $limit OFFSET ${(page - 1) * limit}
-        """.trimIndent()
+        SELECT 
+            v.id,
+            v.plate,
+            v.model,
+            v.brand,
+            v.manufacturing_year,
+            v.model_year,
+            v.status,
+            v.deleted_at,
+            (SELECT COUNT(*) 
+             FROM vehicles v2 
+             INNER JOIN trips t2 ON v2.id = t2.vehicle_id 
+             WHERE t2.driver_id = $driverId 
+             AND v2.deleted_at IS NULL $filterClause) AS total_count
+        FROM vehicles v
+        INNER JOIN trips t ON v.id = t.vehicle_id
+        WHERE t.driver_id = $driverId 
+        AND v.deleted_at IS NULL
+        AND EXISTS (
+            SELECT 1 
+            FROM drivers d 
+            WHERE d.id = $driverId 
+            AND d.deleted_at IS NULL
+        )
+        $filterClause
+        ORDER BY $sortColumn $orderDirection
+        LIMIT $limit OFFSET ${(page - 1) * limit}
+    """.trimIndent()
 
         var results = emptyList<Vehicle>()
         var total = 0
@@ -422,7 +425,8 @@ class DriverService {
                             plate = rs.getString("plate"),
                             model = rs.getString("model"),
                             brand = rs.getString("brand"),
-                            year = rs.getInt("year"),
+                            manufacturingYear = rs.getInt("manufacturing_year"),
+                            modelYear = rs.getInt("model_year"),
                             status = status,
                         )
                     )

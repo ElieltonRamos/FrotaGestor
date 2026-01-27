@@ -359,9 +359,9 @@ class SubfleetService {
                         plate = row[VehiclesTable.plate],
                         model = row[VehiclesTable.model],
                         brand = row[VehiclesTable.brand],
-                        year = row[VehiclesTable.year],
+                        modelYear = row[VehiclesTable.modelYear],
+                        manufacturingYear = row[VehiclesTable.manufacturingYear],
                         status = row[VehiclesTable.status],
-                        // outros campos...
                     )
                 }
 

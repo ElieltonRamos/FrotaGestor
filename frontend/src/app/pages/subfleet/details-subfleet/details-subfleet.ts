@@ -53,7 +53,7 @@ export class DetailsSubfleet {
     { key: 'plate', label: 'Placa', sortable: true },
     { key: 'model', label: 'Modelo' },
     { key: 'brand', label: 'Marca' },
-    { key: 'year', label: 'Ano' },
+    { key: 'modelYear', label: 'Ano Modelo' },
   ];
   vehiclesPage = 1;
   vehiclesLimit = 5;
