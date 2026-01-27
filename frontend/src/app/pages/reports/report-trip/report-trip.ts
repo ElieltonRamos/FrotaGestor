@@ -231,7 +231,7 @@ export class ReportTrip implements OnInit {
     // Veículo
     this.vehicleChartData = {
       labels: this.tripReport.distributions.byVehicle.map(
-        (v) => v.vehiclePlate
+        (v) => v.vehiclePlate,
       ),
       datasets: [
         {
@@ -254,15 +254,25 @@ export class ReportTrip implements OnInit {
       ],
     };
 
-    // Destino (Viagens)
+    const truncateDestination = (dest: string): [string, string] => {
+      if (dest.length <= 15) {
+        return [dest, dest]; // [truncado, completo]
+      }
+      const truncated = dest.substring(0, 12) + '...';
+      return [truncated, dest];
+    };
+
+    // Destino (Viagens) - ✅ TRUNCADO
+    const destinations = this.tripReport.distributions.byDestination.map((d) =>
+      truncateDestination(d.destination),
+    );
+
     this.destinationChartData = {
-      labels: this.tripReport.distributions.byDestination.map(
-        (d) => d.destination
-      ),
+      labels: destinations.map(([truncated]) => truncated),
       datasets: [
         {
           data: this.tripReport.distributions.byDestination.map(
-            (d) => d.totalTrips
+            (d) => d.totalTrips,
           ),
           label: 'Viagens',
           backgroundColor: '#E11D48',
@@ -270,15 +280,13 @@ export class ReportTrip implements OnInit {
       ],
     };
 
-    // Custo por Destino
+    // Custo por Destino - ✅ TRUNCADO
     this.destinationCostChartData = {
-      labels: this.tripReport.distributions.byDestination.map(
-        (d) => d.destination
-      ),
+      labels: destinations.map(([truncated]) => truncated),
       datasets: [
         {
           data: this.tripReport.distributions.byDestination.map(
-            (d) => d.totalCost
+            (d) => d.totalCost,
           ),
           label: 'Custo Total (R$)',
           backgroundColor: '#14B8A6',
