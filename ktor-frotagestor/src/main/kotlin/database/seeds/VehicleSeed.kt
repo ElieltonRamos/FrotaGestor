@@ -26,7 +26,8 @@ object VehicleSeed {
                         it[VehiclesTable.plate] = plate
                         it[VehiclesTable.model] = model
                         it[VehiclesTable.brand] = listOf("Ford", "Honda", "Chevrolet", "Toyota").random()
-                        it[VehiclesTable.year] = (2015..2022).random()
+                        it[VehiclesTable.manufacturingYear] = (2015..2022).random()
+                        it[VehiclesTable.modelYear] = (2015..2022).random()
                         it[VehiclesTable.status] = status
                     }
                 } else {

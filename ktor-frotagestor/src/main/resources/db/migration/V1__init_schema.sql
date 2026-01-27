@@ -83,6 +83,7 @@ CREATE TABLE trips (
     gps_device_id INT NULL COMMENT 'Dispositivo GPS que gerou a viagem',
     max_speed_kmh DECIMAL(5, 2) NULL COMMENT 'Velocidade maxima atingida (km/h)',
     avg_speed_kmh DECIMAL(5, 2) NULL COMMENT 'Velocidade media (km/h)',
+    start_odometer BIGINT NULL,
     status ENUM('PLANEJADA', 'EM_ANDAMENTO', 'CONCLUIDA', 'CANCELADA') DEFAULT 'PLANEJADA',
 
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),

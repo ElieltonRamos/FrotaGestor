@@ -48,10 +48,11 @@ fun validatePartialVehicle(rawBody: String): ValidationResult<PartialVehicle> {
         vehicle.plate?.isBlank() == true &&
         vehicle.model?.isBlank() == true &&
         vehicle.brand.isNullOrBlank() &&
-        vehicle.year == null &&
+        vehicle.manufacturingYear == null &&
+        vehicle.modelYear == null &&
         vehicle.status == null &&
         vehicle.defaultDriverId == null &&
-        vehicle.subfleetId == null  // ✨ NOVO CAMPO ADICIONADO
+        vehicle.subfleetId == null
     ) {
         return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
     }

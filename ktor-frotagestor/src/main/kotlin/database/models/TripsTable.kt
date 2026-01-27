@@ -22,6 +22,7 @@ object TripsTable : Table("trips") {
     val gpsDeviceId = integer("gps_device_id").references(GpsDevicesTable.id).nullable()
     val maxSpeedKmh = decimal("max_speed_kmh", 5, 2).nullable()
     val avgSpeedKmh = decimal("avg_speed_kmh", 5, 2).nullable()
+    val startOdometer = long("start_odometer").nullable()
 
     override val primaryKey = PrimaryKey(id)
 }

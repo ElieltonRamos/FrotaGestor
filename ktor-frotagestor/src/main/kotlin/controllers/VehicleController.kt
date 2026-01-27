@@ -55,19 +55,21 @@ class VehicleController(private val vehicleService: VehicleService) {
             val plateFilter = call.request.queryParameters["plate"]
             val modelFilter = call.request.queryParameters["model"]
             val brandFilter = call.request.queryParameters["brand"]
-            val yearFilter = call.request.queryParameters["year"]?.toIntOrNull()
+            val yearFilter = call.request.queryParameters["year"]?.toIntOrNull()  // ✨ Funciona para AMBOS anos
             val statusFilter = call.request.queryParameters["status"]?.let {
                 runCatching { VehicleStatus.valueOf(it.uppercase()) }.getOrNull()
             }
             val subfleetIdFilter = call.request.queryParameters["subfleetId"]?.toIntOrNull()
-            val subfleetNameFilter = call.request.queryParameters["subfleetName"]  // ✨ NOVO FILTRO
+            val subfleetNameFilter = call.request.queryParameters["subfleetName"]
 
-            // 📌 Mapeia string -> coluna
+            // 📌 Mapeia string -> coluna (atualizado para novos anos)
             val sortByColumn = when (sortByParam.lowercase()) {
                 "plate" -> VehiclesTable.plate
                 "model" -> VehiclesTable.model
                 "brand" -> VehiclesTable.brand
-                "year" -> VehiclesTable.year
+                "manufacturingyear" -> VehiclesTable.manufacturingYear
+                "modelyear" -> VehiclesTable.modelYear
+                "year" -> VehiclesTable.modelYear  // ✨ Default para ?year=2025
                 "status" -> VehiclesTable.status
                 else -> VehiclesTable.id
             }
@@ -90,7 +92,7 @@ class VehicleController(private val vehicleService: VehicleService) {
                 yearFilter = yearFilter,
                 statusFilter = statusFilter,
                 subfleetIdFilter = subfleetIdFilter,
-                subfleetNameFilter = subfleetNameFilter  // ✨ NOVO
+                subfleetNameFilter = subfleetNameFilter
             )
 
             call.respond(serviceResult.status, serviceResult.data)

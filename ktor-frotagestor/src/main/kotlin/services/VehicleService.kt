@@ -80,11 +80,12 @@ class VehicleService {
 
         DatabaseFactory.dbQuery {
             VehiclesTable.insert {
-                it[subfleetId] = newVehicle.subfleetId  // ✨ NOVO
+                it[subfleetId] = newVehicle.subfleetId
                 it[plate] = newVehicle.plate
                 it[model] = newVehicle.model
                 it[brand] = newVehicle.brand
-                it[year] = newVehicle.year
+                it[manufacturingYear] = newVehicle.manufacturingYear
+                it[modelYear] = newVehicle.modelYear
                 it[status] = newVehicle.status
                 it[defaultDriverId] = newVehicle.defaultDriverId
                 it[deletedAt] = null
@@ -167,7 +168,8 @@ class VehicleService {
                 updatedVehicle.plate?.let { p -> it[plate] = p }
                 updatedVehicle.model?.let { m -> it[model] = m }
                 updatedVehicle.brand?.let { b -> it[brand] = b }
-                updatedVehicle.year?.let { y -> it[year] = y }
+                updatedVehicle.modelYear?.let { y -> it[modelYear] = y }
+                updatedVehicle.manufacturingYear?.let { y -> it[manufacturingYear] = y }
                 updatedVehicle.status?.let { s -> it[status] = s }
                 updatedVehicle.defaultDriverId?.let { d -> it[defaultDriverId] = d }
             }
@@ -222,7 +224,9 @@ class VehicleService {
                     }
 
                     if (yearFilter != null) {
-                        andWhere { VehiclesTable.year eq yearFilter }
+                        andWhere {
+                            (VehiclesTable.modelYear eq yearFilter) or (VehiclesTable.manufacturingYear eq yearFilter)
+                        }
                     }
 
                     if (statusFilter != null) {
@@ -257,7 +261,8 @@ class VehicleService {
                         plate = it[VehiclesTable.plate],
                         model = it[VehiclesTable.model],
                         brand = it[VehiclesTable.brand],
-                        year = it[VehiclesTable.year],
+                        modelYear = it[VehiclesTable.modelYear],
+                        manufacturingYear = it[VehiclesTable.manufacturingYear],
                         status = it[VehiclesTable.status],
                         defaultDriverId = it[VehiclesTable.defaultDriverId],
                         defaultDriverName = it.getOrNull(DriversTable.name),
@@ -295,7 +300,8 @@ class VehicleService {
                         plate = it[VehiclesTable.plate],
                         model = it[VehiclesTable.model],
                         brand = it[VehiclesTable.brand],
-                        year = it[VehiclesTable.year],
+                        modelYear = it[VehiclesTable.modelYear],
+                        manufacturingYear = it[VehiclesTable.manufacturingYear],
                         status = it[VehiclesTable.status],
                         defaultDriverId = it[VehiclesTable.defaultDriverId],
                         defaultDriverName = it.getOrNull(DriversTable.name),
@@ -345,7 +351,8 @@ class VehicleService {
                     plate = it[VehiclesTable.plate],
                     model = it[VehiclesTable.model],
                     brand = it[VehiclesTable.brand],
-                    year = it[VehiclesTable.year],
+                    modelYear = it[VehiclesTable.modelYear],
+                    manufacturingYear = it[VehiclesTable.manufacturingYear],
                     status = it[VehiclesTable.status],
                     defaultDriverId = it[VehiclesTable.defaultDriverId],        // ✨ NOVO
                     defaultDriverName = it.getOrNull(DriversTable.name)         // ✨ NOVO
