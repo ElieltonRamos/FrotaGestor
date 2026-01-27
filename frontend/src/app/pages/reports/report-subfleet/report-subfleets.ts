@@ -101,7 +101,6 @@ export class ReportSubfleetsComponent implements OnInit {
     // Ordena por costPerKm (melhor primeiro)
     const sortedSubfleets = [...this.report.subfleets]
       .sort((a, b) => a.costPerKm - b.costPerKm)
-      .slice(0, 5);
 
     this.rankingChartData = {
       labels: sortedSubfleets.map(s => s.name),

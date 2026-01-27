@@ -262,7 +262,6 @@ export class GpsDetails {
       )
       .subscribe({
         next: (res) => {
-          console.log(res, 'lista');
           this.gpsHistoryData = res.data;
           this.gpsHistoryTotal = res.total;
           this.gpsHistoryPage = res.page;
@@ -271,7 +270,6 @@ export class GpsDetails {
           this.cdr.detectChanges();
         },
         error: () => {
-          console.log('erro');
           this.gpsHistoryData = [];
           this.gpsHistoryTotal = 0;
           this.gpsHistoryTotalPages = 0;
