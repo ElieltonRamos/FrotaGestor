@@ -121,7 +121,6 @@ export function createDataLoader(
       .getGpsHistoryBySubfleet(subfleetId, 1, 5, startDateTime, endDateTime)
       .subscribe({
         next: (res) => {
-          console.log(res)
           mapPoints.splice(0, mapPoints.length, ...res.data);
           cdr.detectChanges();
         },

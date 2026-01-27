@@ -178,7 +178,6 @@ export class ReportExpense implements OnInit {
     this.expenseService.getReportExpense(this.filter).subscribe({
       next: (res) => {
         this.expenseReport = res;
-        console.log(res)
         this.updateCharts();
         this.loadingIndicators = false;
         this.cdr.detectChanges();

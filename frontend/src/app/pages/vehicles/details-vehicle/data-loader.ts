@@ -57,7 +57,6 @@ export function createDataLoader(
           )
           .subscribe({
             next: (res) => {
-              console.log(res)
               setData(res, (e) => gpsService.parse(e.rawLog, e.id))
             },
             error: handleError,
