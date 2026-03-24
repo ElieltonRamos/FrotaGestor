@@ -4,6 +4,7 @@ import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.plugins.configureRouting
 import io.ktor.server.application.*
 import com.frotagestor.plugins.*
+import com.frotagestor.protocols_devices_gps.gt06.startTcpServerGT06
 import com.frotagestor.protocols_devices_gps.suntech.startTcpServerSuntech
 import kotlinx.coroutines.launch
 
@@ -18,8 +19,7 @@ fun Application.module() {
     configureCors()
     configureValidateBody()
     configureRouting()
-    launch {
-        startTcpServerSuntech()
-    }
+    launch { startTcpServerSuntech() }
+    launch { startTcpServerGT06() }
 }
 

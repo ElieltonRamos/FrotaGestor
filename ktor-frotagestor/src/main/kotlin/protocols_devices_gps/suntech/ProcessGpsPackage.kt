@@ -1,6 +1,5 @@
 package com.frotagestor.protocols_devices_gps.suntech
 
-import com.frotagestor.accurate_gt_06.findVehicleIdByImei
 import com.frotagestor.database.DatabaseFactory
 import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
@@ -10,6 +9,16 @@ import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
+
+suspend fun findVehicleIdByImei(imei: String): Int? {
+    return DatabaseFactory.dbQuery {
+        GpsDevicesTable
+            .selectAll()
+            .where { GpsDevicesTable.imei eq imei }
+            .map { it[GpsDevicesTable.vehicleId] }
+            .singleOrNull()
+    }
+}
 
 private val autoTripService = AutoTripService()
 private val dailyTripService = DailyTripService()
