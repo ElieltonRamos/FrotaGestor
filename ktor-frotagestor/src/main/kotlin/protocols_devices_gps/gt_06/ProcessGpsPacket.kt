@@ -24,20 +24,13 @@ object GT06Protocol {
     const val GT06_EXT   = 0x60  // Kingwo extended — LT32 PRO (sem ACK, IMEI nos primeiros 8 bytes)
 }
 
-// ─── Alarm types conhecidos (mapeados empiricamente — sem manual oficial 0x60) ─
-// Adicionar conforme novos tipos forem observados nos logs
-object LT32AlarmType {
-    const val ACC_ON       = 2   // observado: device conectando com ACC ligado
-    // const val ACC_OFF   = ?   // aguardando observação
-    // const val POWER_CUT = ?   // aguardando observação (POWERALM:ON configurado)
-    // const val SPEED     = ?   // aguardando observação (SPEED:ON,10,120)
-    // const val MOVING    = ?   // aguardando observação (MOVING:ON,500)
-    // const val VIBRATION = ?   // aguardando observação (SENALM:ON)
-    // const val JAMMER    = ?   // aguardando observação (JAMMER:ON)
-
+// ─── Alarm types ─────────────────────────────────────────────────────────────
+// 0x16 e 0x60 compartilham alarmType=4 para ACC ON/OFF — sem distinção observada
+object GT06AlarmType {
+    const val ACC = 4   // observado: ACC ON e ACC OFF
     fun describe(code: Int): String = when (code) {
-        ACC_ON -> "ACC_ON"
-        else   -> "UNKNOWN($code)"
+        ACC -> "ACC"
+        else -> "UNKNOWN($code)"
     }
 }
 
@@ -66,9 +59,6 @@ data class GpsData(
     val mnc: Int?,
     val lac: Int?,
     val cellId: Int?,
-    // voltageLevel = bateria interna de backup do dispositivo (0-6 na spec GT06)
-    // NÃO é a tensão do veículo — tensão do veículo não é exposta via protocolo GT06
-    val voltageLevel: Int?,
     val gsmSignal: Int?,
     val alarmType: Int?,
     val serialNumber: Int
@@ -84,9 +74,8 @@ data class GpsData(
         append(" | ign=").append(ignition)
         append(" | sats=").append(satellites)
         append(" | gps=").append(gpsQuality)
-        append(" | volt=").append(voltageLevel)
         append(" | gsm=").append(gsmSignal)
-        append(" | alarm=").append(alarmType?.let { LT32AlarmType.describe(it) })
+        append(" | alarm=").append(alarmType?.let { GT06AlarmType.describe(it) })
         append(" | sn=").append(serialNumber)
     }
 }
@@ -95,9 +84,9 @@ data class GpsData(
 suspend fun processPacketGT06(packet: ByteArray, currentImei: String?): GT06ProcessResult {
     if (packet.size < 5) return GT06ProcessResult()
 
-    val protocolNo  = packet[3].toInt() and 0xFF
-    val contentEnd  = packet.size - 5
-    val content     = if (contentEnd > 4) packet.copyOfRange(4, contentEnd) else ByteArray(0)
+    val protocolNo   = packet[3].toInt() and 0xFF
+    val contentEnd   = packet.size - 5
+    val content      = if (contentEnd > 4) packet.copyOfRange(4, contentEnd) else ByteArray(0)
     val serialNumber = ((packet[packet.size - 5].toInt() and 0xFF) shl 8) or
             (packet[packet.size - 4].toInt() and 0xFF)
 
@@ -130,12 +119,14 @@ private fun handleLogin(packet: ByteArray, content: ByteArray, serialNumber: Int
 }
 
 // ─── HEARTBEAT (0x13) ────────────────────────────────────────────────────────
-// Content: terminalInfo(1) + voltageLevel(1) + gsmSignal(1) + alarm/lang(2)
+// Layout: terminalInfo(1) + voltageLevel(1) + gsmSignal(1) + alarm/lang(2)
+// Ignição: bit 1 do terminalInfo (0x44=desligada, 0x46=ligada)
 private suspend fun handleHeartbeat(content: ByteArray, serialNumber: Int, imei: String?): GT06ProcessResult {
-    val voltageLevel = content.getOrNull(1)?.toInt()?.and(0xFF)
+    val terminalInfo = content.getOrNull(0)?.toInt()?.and(0xFF)
     val gsmSignal    = content.getOrNull(2)?.toInt()?.and(0xFF)
+    val ignition     = terminalInfo?.let { (it shr 1) and 0x01 == 1 }
 
-    println("[${generateDate()}] ❤️ HEARTBEAT | IMEI=$imei | volt=$voltageLevel | gsm=$gsmSignal")
+    println("[${generateDate()}] ❤️ HEARTBEAT | IMEI=$imei | ign=$ignition | gsm=$gsmSignal")
 
     if (imei != null) updateDeviceLastSeen(imei)
 
@@ -143,8 +134,6 @@ private suspend fun handleHeartbeat(content: ByteArray, serialNumber: Int, imei:
 }
 
 // ─── GPS (0x10) / GPS+LBS (0x12) ─────────────────────────────────────────────
-// 0x10 = GPS only (~18 bytes, sem LBS); 0x12 = GPS + LBS (~26 bytes)
-// parseGpsContent lida com ambos via guards de tamanho
 private suspend fun handleGps(
     content: ByteArray,
     serialNumber: Int,
@@ -164,8 +153,11 @@ private suspend fun handleGps(
 }
 
 // ─── ALARM (0x16) ────────────────────────────────────────────────────────────
-// Estrutura: GPS+LBS + terminalInfo + voltageLevel + gsmSignal + alarmType
-// ignitionBit=0: bit0 do terminalInfo, lógica INVERTIDA (0=ligada, 1=desligada)
+// Layout real confirmado empiricamente:
+// [26] = byte fixo (0x0F) — ignorado
+// [27] = terminalInfo real — bit 1 = ignição (mesmo encoding do heartbeat)
+// [28] = gsmSignal
+// [29] = alarmType
 private suspend fun handleAlarm(content: ByteArray, serialNumber: Int, imei: String?): GT06ProcessResult {
     if (imei == null) {
         println("[${generateDate()}] ❌ ALARM recebido sem IMEI registrado")
@@ -173,11 +165,12 @@ private suspend fun handleAlarm(content: ByteArray, serialNumber: Int, imei: Str
     }
 
     val gps = parseGpsContent(
-        content      = content,
-        imei         = imei,
-        type         = "ALARM",
-        serialNumber = serialNumber,
-        ignitionBit  = 0
+        content             = content,
+        imei                = imei,
+        type                = "ALARM",
+        serialNumber        = serialNumber,
+        ignitionBit         = 1,
+        terminalInfoOffset  = 27
     ) ?: return GT06ProcessResult()
 
     println("[${generateDate()}] 🚨 ALARM | ${gps.toCompactLog()}")
@@ -191,7 +184,7 @@ private suspend fun handleAlarm(content: ByteArray, serialNumber: Int, imei: Str
 // ─── GT06_EXT (0x60) — Kingwo/LT32 PRO ──────────────────────────────────────
 // Estrutura: [IMEI: 8 bytes BCD] + mesmo layout do 0x16
 // Sem ACK (tcp_ack=false no perfil)
-// ignitionBit=4: confirmado empiricamente por comparação de logs reais
+// ignitionBit=4, terminalInfoOffset=27: aguardando validação com logs reais
 private suspend fun handleGT06Ext(content: ByteArray, currentImei: String?): GT06ProcessResult {
     if (content.size < 8) {
         println("[${generateDate()}] ❌ GT06_EXT packet muito curto")
@@ -210,11 +203,12 @@ private suspend fun handleGT06Ext(content: ByteArray, currentImei: String?): GT0
     val gpsContent = content.copyOfRange(8, content.size)
 
     val gps = parseGpsContent(
-        content      = gpsContent,
-        imei         = resolvedImei,
-        type         = "GT06_EXT",
-        serialNumber = 0,  // 0x60 não carrega serial no content
-        ignitionBit  = 4
+        content             = gpsContent,
+        imei                = resolvedImei,
+        type                = "GT06_EXT",
+        serialNumber        = 0,
+        ignitionBit         = 4,
+        terminalInfoOffset  = 27
     ) ?: return GT06ProcessResult(imei = imei)
 
     println("[${generateDate()}] 📍 GT06_EXT | ${gps.toCompactLog()}")
@@ -242,22 +236,25 @@ private fun handleCommandReply(content: ByteArray, imei: String?): GT06ProcessRe
  * [15]    Speed (km/h)
  * [16]    Course byte1: bit4=gpsFixed, bit3=West, bit2=South, bit1-0=heading high
  * [17]    Course byte2: heading low (0-255)
- * [18-19] MCC (presente em 0x12, 0x16, GT06_EXT)
+ * [18-19] MCC
  * [20]    MNC
  * [21-22] LAC
  * [23-25] Cell ID (3 bytes)
- * [26]    Terminal Info — ignitionBit configurável por tipo de pacote
- * [27]    Voltage Level — bateria INTERNA do dispositivo (não é tensão do veículo)
- * [28]    GSM Signal
- * [29]    Alarm type
- * [30]    Language
+ * [26]    0x0F fixo no 0x16 (ignorado) / terminalInfo no 0x10/0x12
+ * [27]    terminalInfo no 0x16/GT06_EXT — bit 1 = ignição
+ * [28]    gsmSignal
+ * [29]    alarmType
+ * [30]    language
+ *
+ * terminalInfoOffset: 26 para 0x10/0x12, 27 para 0x16/GT06_EXT
  */
 fun parseGpsContent(
     content: ByteArray,
     imei: String,
     type: String,
     serialNumber: Int,
-    ignitionBit: Int = 0
+    ignitionBit: Int = 1,
+    terminalInfoOffset: Int = 26
 ): GpsData? {
     return try {
         if (content.size < 18) {
@@ -306,17 +303,11 @@ fun parseGpsContent(
         val lac    = if (content.size > 22) readUInt16(content, 21) else null
         val cellId = if (content.size > 25) readUInt24(content, 23) else null
 
-        val terminalInfo = if (content.size > 26) content[26].toInt() and 0xFF else null
-        val voltageLevel = if (content.size > 27) content[27].toInt() and 0xFF else null
-        val gsmSignal    = if (content.size > 28) content[28].toInt() and 0xFF else null
-        val alarmByte    = if (content.size > 29) content[29].toInt() and 0xFF else null
+        val terminalInfo = if (content.size > terminalInfoOffset) content[terminalInfoOffset].toInt() and 0xFF else null
+        val gsmSignal    = if (content.size > terminalInfoOffset + 1) content[terminalInfoOffset + 1].toInt() and 0xFF else null
+        val alarmByte    = if (content.size > terminalInfoOffset + 2) content[terminalInfoOffset + 2].toInt() and 0xFF else null
 
-        // Lógica INVERTIDA no LT32 PRO: bit=0 → ignição ligada, bit=1 → desligada
-        val ignition = if (terminalInfo != null) {
-            (terminalInfo shr ignitionBit) and 0x01 == 0
-        } else {
-            false
-        }
+        val ignition = terminalInfo?.let { (it shr ignitionBit) and 0x01 == 1 } ?: false
 
         val deviceDateTime = try {
             val utc = LocalDateTime(year, month, day, hour, minute, second)
@@ -342,7 +333,6 @@ fun parseGpsContent(
             mnc            = mnc,
             lac            = lac,
             cellId         = cellId,
-            voltageLevel   = voltageLevel,
             gsmSignal      = gsmSignal,
             alarmType      = alarmByte,
             serialNumber   = serialNumber
@@ -464,8 +454,6 @@ fun crc16Itu(data: ByteArray): Int {
     return crc
 }
 
-// Decodifica IMEI BCD (8 bytes → 15 dígitos)
-// Descarta apenas o primeiro nibble conforme spec GT06
 fun decodeBcdImei(bytes: ByteArray): String {
     val full = bytes.joinToString("") { b ->
         val hi = (b.toInt() shr 4) and 0x0F
@@ -498,15 +486,14 @@ fun calculateGpsQuality(satellites: Int?, gpsFixed: Boolean): GpsQuality = when 
     else               -> GpsQuality.POOR
 }
 
-// Log de debug para mapeamento empírico de alarm types e terminalInfo
 // Manter ativo até todos os alarmType relevantes serem identificados
 private fun logAlarmDebug(content: ByteArray) {
-    val terminalInfo = content.getOrNull(26)?.toInt()?.and(0xFF)
+    val terminalInfo = content.getOrNull(27)?.toInt()?.and(0xFF)
     val alarmByte    = content.getOrNull(29)?.toInt()?.and(0xFF)
     if (terminalInfo != null || alarmByte != null) {
         println(
             "[ALARM_DEBUG] termInfo=${terminalInfo?.toString(2)?.padStart(8, '0')} " +
-                    "| alarmRaw=$alarmByte | alarmDesc=${alarmByte?.let { LT32AlarmType.describe(it) }}"
+                    "| alarmRaw=$alarmByte | alarmDesc=${alarmByte?.let { GT06AlarmType.describe(it) }}"
         )
     }
 }
