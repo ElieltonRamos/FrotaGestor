@@ -9,17 +9,13 @@ import java.nio.channels.ClosedChannelException
 import kotlin.time.Duration.Companion.minutes
 
 private val serverScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-private val dailyTripService = DailyTripService()
 private const val portTcp = 1150
 
 @OptIn(DelicateCoroutinesApi::class)
-suspend fun startTcpServerSuntech() {
+suspend fun startTcpServerSuntech(dailyTripService: DailyTripService) {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))
         .tcp()
         .bind("0.0.0.0", portTcp)
-
-    // Usa o mesmo escopo do servidor (evita GlobalScope)
-    dailyTripService.startDailyCleanup(serverScope)
 
     println("[${generateDate()}] Servidor TCP rodando na porta $portTcp – protocolo Suntech ST310/ST300")
 
@@ -32,7 +28,7 @@ suspend fun startTcpServerSuntech() {
             println("[${generateDate()}] Nova conexão: $remote")
 
             serverScope.launch {
-                handleDevice(socket, remote)
+                handleDevice(socket, remote, dailyTripService)
             }
         }
     } catch (e: Exception) {
@@ -56,7 +52,7 @@ fun logPacket(remote: String, message: String) {
     )
 }
 
-suspend fun handleDevice(socket: Socket, remote: String) {
+suspend fun handleDevice(socket: Socket, remote: String, dailyTripService: DailyTripService) {
     val input = socket.openReadChannel()
     var deviceId: String? = null
     val buffer = StringBuilder()
@@ -95,7 +91,7 @@ suspend fun handleDevice(socket: Socket, remote: String) {
                         println("[${generateDate()}] Dispositivo registrado: DeviceID=$deviceId")
                     }
 
-                    processMessage(message, deviceId) { imei, command ->
+                    processMessage(message, deviceId, dailyTripService) { imei, command ->
                         DeviceConnectionManager.sendCommand(imei, "$command\r")
                     }
                 }

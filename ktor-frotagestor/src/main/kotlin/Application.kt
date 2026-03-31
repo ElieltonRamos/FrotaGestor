@@ -6,6 +6,7 @@ import io.ktor.server.application.*
 import com.frotagestor.plugins.*
 import com.frotagestor.protocols_devices_gps.gt06.startTcpServerGT06
 import com.frotagestor.protocols_devices_gps.suntech.startTcpServerSuntech
+import com.frotagestor.services.DailyTripService
 import kotlinx.coroutines.launch
 
 fun main(args: Array<String>) {
@@ -19,7 +20,11 @@ fun Application.module() {
     configureCors()
     configureValidateBody()
     configureRouting()
-    launch { startTcpServerSuntech() }
-    launch { startTcpServerGT06() }
+
+    val dailyTripService = DailyTripService()
+    dailyTripService.startDailyCleanup(this)
+
+    launch { startTcpServerSuntech(dailyTripService) }
+    launch { startTcpServerGT06(dailyTripService) }
 }
 
