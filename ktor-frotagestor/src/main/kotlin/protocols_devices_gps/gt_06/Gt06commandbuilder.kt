@@ -90,14 +90,22 @@ sealed class BuildCommandResult {
  *   "APN,<apn>,<user>,<pass>"   — configura APN
  *   "IP,<host>,<port>"          — configura servidor
  */
+private val suntechToGT06 = mapOf(
+    "StatusReq" to "STATUS",
+    "Enable1"   to "CUTOFF",
+    "Disable1"  to "RESUME"
+)
+
 fun buildGT06CommandText(request: CommandRequest): BuildCommandResult {
+    val commandType = suntechToGT06[request.commandType] ?: request.commandType
+
     val validCommands = setOf("CUTOFF", "RESUME", "STATUS", "RESET", "PARAM", "INTERVAL", "APN", "IP")
 
-    if (request.commandType !in validCommands)
+    if (commandType !in validCommands)
         return BuildCommandResult.Error("Comando não suportado: ${request.commandType}")
 
-    val cmd = when (request.commandType) {
-        "CUTOFF", "RESUME", "STATUS", "RESET", "PARAM" -> request.commandType
+    val cmd = when (commandType) {
+        "CUTOFF", "RESUME", "STATUS", "RESET", "PARAM" -> commandType
         "INTERVAL" -> "INTERVAL,${request.parameters["seconds"] ?: "60"}"
         "APN" -> {
             val apn  = request.parameters["apn"]  ?: return BuildCommandResult.Error("APN ausente")
