@@ -1,14 +1,132 @@
 <section class="p-4">
+  <section class="p-4">
+    @if (devicesWithoutPower.length > 0) {
+      <div
+        class="mb-6 p-5 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-l-4 border-red-500 shadow-sm"
+      >
+        <div class="flex items-start gap-4">
+          <!-- Ícone de Aviso -->
+          <div class="flex-shrink-0">
+            <svg
+              class="w-8 h-8 text-red-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-red-800 mb-2">
+              ⚠️ Dispositivos Sem Conexão Detectados
+            </h3>
+            <p class="text-sm text-red-700 mb-4">
+              {{ devicesWithoutPower.length }}
+              {{
+                devicesWithoutPower.length === 1
+                  ? "dispositivo está"
+                  : "dispositivos estão"
+              }}
+              sem conexão há mais de 2 horas.
+            </p>
+
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              @for (device of devicesWithoutPower; track device.id) {
+                <div
+                  class="flex items-center justify-between p-3 bg-white rounded-lg border border-red-200 hover:border-red-300 transition-colors"
+                >
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="text-sm font-semibold text-gray-900">
+                        IMEI: {{ device.imei }}
+                      </span>
+                      @if (device.title) {
+                        <span
+                          class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded"
+                        >
+                          {{ device.title }}
+                        </span>
+                      }
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                      <svg
+                        class="w-4 h-4"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <span>
+                        Última conexão:
+                        {{
+                          device.lastCommunication
+                            ? (device.lastCommunication
+                              | date: "dd/MM/yyyy HH:mm")
+                            : "Nunca conectado"
+                        }}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="onNavDetails(device.id!)"
+                    class="ml-4 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition-colors shadow-sm"
+                  >
+                    Ver Detalhes
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    <h2 class="text-xl font-semibold m-4 text-gray-700">Módulos</h2>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      @for (item of menus; track $index) {
+        <a
+          [routerLink]="item.route"
+          class="flex items-center space-x-2 p-2 rounded hover:bg-gray-300 transition text-gray-800 no-underline"
+        >
+          <ng-icon [name]="item.icon" class="text-3xl text-gray-600"></ng-icon>
+          <span>{{ item.name }}</span>
+        </a>
+      }
+    </div>
+    <div class="mt-8">
+      <h3
+        class="text-lg font-extrabold text-gray-700 mb-2 flex items-center gap-2 justify-center"
+      >
+        <ng-icon name="heroMapSolid" class="text-blue-500 text-xl"></ng-icon>
+        Localização dos Veiculos Cadastrados
+      </h3>
+      <app-map
+        [markers]="markers"
+        [mapMode]="'vehicles'"
+        [showUserMarker]="true"
+      >
+      </app-map>
+    </div>
+  </section>
+
   <h2 class="text-xl font-semibold m-4 text-gray-700">Módulos</h2>
   <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
     @for (item of menus; track $index) {
-    <a
-      [routerLink]="item.route"
-      class="flex items-center space-x-2 p-2 rounded hover:bg-gray-300 transition text-gray-800 no-underline"
-    >
-      <ng-icon [name]="item.icon" class="text-3xl text-gray-600"></ng-icon>
-      <span>{{ item.name }}</span>
-    </a>
+      <a
+        [routerLink]="item.route"
+        class="flex items-center space-x-2 p-2 rounded hover:bg-gray-300 transition text-gray-800 no-underline"
+      >
+        <ng-icon [name]="item.icon" class="text-3xl text-gray-600"></ng-icon>
+        <span>{{ item.name }}</span>
+      </a>
     }
   </div>
   <div class="mt-8">
@@ -18,11 +136,7 @@
       <ng-icon name="heroMapSolid" class="text-blue-500 text-xl"></ng-icon>
       Localização dos Veiculos Cadastrados
     </h3>
-    <app-map
-      [markers]="markers"
-      [mapMode]="'vehicles'"
-      [showUserMarker]="true"
-    >
+    <app-map [markers]="markers" [mapMode]="'vehicles'" [showUserMarker]="true">
     </app-map>
   </div>
 </section>

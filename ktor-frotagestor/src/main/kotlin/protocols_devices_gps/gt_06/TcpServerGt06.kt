@@ -9,7 +9,7 @@ import java.nio.channels.ClosedChannelException
 import kotlin.time.Duration.Companion.minutes
 
 private val serverScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-private const val PORT_TCP = 3002
+private const val PORT_TCP = 2350
 
 suspend fun startTcpServerGT06(dailyTripService: DailyTripService) {
     val serverSocket = aSocket(ActorSelectorManager(Dispatchers.IO))

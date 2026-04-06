@@ -151,16 +151,16 @@ class GpsDeviceService {
 
         DatabaseFactory.dbQuery {
             GpsDevicesTable.update({ GpsDevicesTable.id eq id }) { row ->
-                if (updatedDevice.vehicleId != null) row[vehicleId] = updatedDevice.vehicleId
-                updatedDevice.imei?.let        { row[imei]      = it }
-                updatedDevice.latitude?.let    { row[latitude]  = it.toBigDecimal() }
-                updatedDevice.longitude?.let   { row[longitude] = it.toBigDecimal() }
-                updatedDevice.speed?.let       { row[speed]     = it.toBigDecimal() }
-                updatedDevice.heading?.let     { row[heading]   = it.toBigDecimal() }
-                updatedDevice.dateTime?.let    { row[dateTime]  = it }
-                updatedDevice.iconMapUrl?.let  { row[iconMapUrl] = it }
-                updatedDevice.title?.let       { row[title]     = it }
-                updatedDevice.ignition?.let    { row[ignition]  = it }
+                row[vehicleId] = updatedDevice.vehicleId  // null = desvincula
+                updatedDevice.imei?.let       { row[imei]      = it }
+                updatedDevice.latitude?.let   { row[latitude]  = it.toBigDecimal() }
+                updatedDevice.longitude?.let  { row[longitude] = it.toBigDecimal() }
+                updatedDevice.speed?.let      { row[speed]     = it.toBigDecimal() }
+                updatedDevice.heading?.let    { row[heading]   = it.toBigDecimal() }
+                updatedDevice.dateTime?.let   { row[dateTime]  = it }
+                updatedDevice.iconMapUrl?.let { row[iconMapUrl] = it }
+                updatedDevice.title?.let      { row[title]     = it }
+                updatedDevice.ignition?.let   { row[ignition]  = it }
             }
         }
 
