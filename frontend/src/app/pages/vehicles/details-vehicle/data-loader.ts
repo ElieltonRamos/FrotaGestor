@@ -21,13 +21,13 @@ export function createDataLoader(
   vehicleService: VehicleService,
   gpsService: GpsDeviceService,
   cdr: ChangeDetectorRef,
-  dataSets: Record<DataSetKey, DataSet<any>>
+  dataSets: Record<DataSetKey, DataSet<any>>,
 ) {
   return function loadData(
     type: DataSetKey,
     vehicleId: number,
     page?: number,
-    dateFilters?: DateFilters
+    dateFilters?: DateFilters,
   ) {
     const currentPage = page ?? dataSets[type].page;
     const limit = dataSets[type].limit;
@@ -53,12 +53,10 @@ export function createDataLoader(
             currentPage,
             limit,
             dateFilters?.startDate,
-            dateFilters?.endDate
+            dateFilters?.endDate,
           )
           .subscribe({
-            next: (res) => {
-              setData(res, (e) => gpsService.parse(e.rawLog, e.id))
-            },
+            next: (res) => setData(res),
             error: handleError,
           }),
       trips: () =>

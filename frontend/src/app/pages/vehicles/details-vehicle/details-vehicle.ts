@@ -72,14 +72,16 @@ export class DetailsVehicle {
   }
 
   getBatteryDisplay(): string {
-    const device = this.gpsDevice();
-    const voltage = device?.batteryVoltage;
+    const imei = this.gpsDevice()?.imei;
+    const voltage = this.gpsDevice()?.batteryVoltage;
 
-    if (voltage == null || voltage < 1) {
-      return '📴 Desconectada';
+    if (!imei) return '-';
+
+    if (imei.length === 15) {
+      return 'LT32 Pro - Bateria não disponível';
     }
 
-    return `🔋 ${voltage}V`;
+    return voltage != null ? `${voltage}V` : '-';
   }
 
   private initializeDates() {

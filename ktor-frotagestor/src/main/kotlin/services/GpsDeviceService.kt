@@ -5,7 +5,10 @@ import com.frotagestor.database.models.GpsDevicesTable
 import com.frotagestor.database.models.GpsHistoryTable
 import com.frotagestor.database.models.VehiclesTable
 import com.frotagestor.interfaces.*
-import com.frotagestor.protocols_devices_gps.suntech.BuildCommandResult
+import com.frotagestor.protocols_devices_gps.gt06.GT06ConnectionManager
+import com.frotagestor.protocols_devices_gps.gt06.buildGT06CommandText
+import com.frotagestor.protocols_devices_gps.gt06.BuildCommandResult as GT06CommandResult
+import com.frotagestor.protocols_devices_gps.suntech.BuildCommandResult as SuntechCommandResult
 import com.frotagestor.protocols_devices_gps.suntech.DeviceConnectionManager
 import com.frotagestor.protocols_devices_gps.suntech.buildSuntechCommand
 import com.frotagestor.validations.getOrReturn
@@ -13,49 +16,78 @@ import com.frotagestor.validations.validateCommandRequest
 import com.frotagestor.validations.validateGpsDevice
 import com.frotagestor.validations.validatePartialGpsDevice
 import io.ktor.http.HttpStatusCode
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.todayIn
+import kotlinx.datetime.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import kotlin.time.Duration.Companion.hours
 
 class GpsDeviceService {
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private fun rowToGpsDevice(row: ResultRow) = GpsDevice(
+        id                = row[GpsDevicesTable.id],
+        vehicleId         = row[GpsDevicesTable.vehicleId],
+        imei              = row[GpsDevicesTable.imei],
+        latitude          = row[GpsDevicesTable.latitude].toDouble(),
+        longitude         = row[GpsDevicesTable.longitude].toDouble(),
+        dateTime          = row[GpsDevicesTable.dateTime],
+        speed             = row[GpsDevicesTable.speed].toDouble(),
+        heading           = row[GpsDevicesTable.heading].toDouble(),
+        iconMapUrl        = row[GpsDevicesTable.iconMapUrl],
+        title             = row[GpsDevicesTable.title],
+        ignition          = row[GpsDevicesTable.ignition],
+        lastCommunication = row[GpsDevicesTable.lastCommunication],
+        batteryVoltage    = row[GpsDevicesTable.batteryVoltage]?.toDouble()
+    )
+
+    private fun rowToGpsHistory(row: ResultRow) = GpsHistory(
+        id            = row[GpsHistoryTable.id],
+        gpsDeviceId   = row[GpsHistoryTable.gpsDeviceId],
+        vehicleId     = row[GpsHistoryTable.vehicleId],
+        dateTime      = row[GpsHistoryTable.dateTime],
+        latitude      = row[GpsHistoryTable.latitude].toDouble(),
+        longitude     = row[GpsHistoryTable.longitude].toDouble(),
+        speed         = row[GpsHistoryTable.speed].toDouble(),
+        heading       = row[GpsHistoryTable.heading].toDouble(),
+        ignition      = row[GpsHistoryTable.ignition],
+        satellites    = row[GpsHistoryTable.satellites],
+        gpsFixed      = row[GpsHistoryTable.gpsFixed],
+        gpsQuality    = row[GpsHistoryTable.gpsQuality],
+        odometer      = row[GpsHistoryTable.odometer],
+        batteryVoltage = row[GpsHistoryTable.batteryVoltage]?.toDouble(),
+        messageType   = row[GpsHistoryTable.messageType],
+        eventCode     = row[GpsHistoryTable.eventCode],
+        rawLog        = row[GpsHistoryTable.rawLog]
+    )
+
+    private fun safePagination(page: Int, limit: Int, maxLimit: Int = 100): Triple<Int, Int, Long> {
+        val safePage  = if (page < 1) 1 else page
+        val safeLimit = limit.coerceIn(1, maxLimit)
+        val offset    = ((safePage - 1) * safeLimit).toLong()
+        return Triple(safePage, safeLimit, offset)
+    }
+
+    private fun defaultDateRange(tz: TimeZone): Pair<LocalDateTime, LocalDateTime> {
+        val today = Clock.System.todayIn(tz)
+        return today.atStartOfDayIn(tz).toLocalDateTime(tz) to today.atTime(23, 59, 59, 999_999_999)
+    }
+
+    // ─── Devices ──────────────────────────────────────────────────────────────
+
     suspend fun getDevicesWithoutPower(): ServiceResponse<List<GpsDevice>> {
         return DatabaseFactory.dbQuery {
+            val twoHoursAgo = Clock.System.now()
+                .minus(2.hours)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+
             val results = GpsDevicesTable
                 .selectAll()
-                .where {
-                    (GpsDevicesTable.batteryVoltage.isNull()) or
-                            (GpsDevicesTable.batteryVoltage less 1.toBigDecimal())
-                }
+                .where { GpsDevicesTable.lastCommunication less twoHoursAgo }
                 .orderBy(GpsDevicesTable.lastCommunication to SortOrder.DESC)
-                .map { row ->
-                    GpsDevice(
-                        id = row[GpsDevicesTable.id],
-                        vehicleId = row[GpsDevicesTable.vehicleId],
-                        imei = row[GpsDevicesTable.imei],
-                        latitude = row[GpsDevicesTable.latitude].toDouble(),
-                        longitude = row[GpsDevicesTable.longitude].toDouble(),
-                        dateTime = row[GpsDevicesTable.dateTime],
-                        speed = row[GpsDevicesTable.speed].toDouble(),
-                        heading = row[GpsDevicesTable.heading].toDouble(),
-                        iconMapUrl = row[GpsDevicesTable.iconMapUrl],
-                        title = row[GpsDevicesTable.title],
-                        ignition = row[GpsDevicesTable.ignition],
-                        lastCommunication = row[GpsDevicesTable.lastCommunication],
-                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
-                    )
-                }
+                .map { rowToGpsDevice(it) }
 
-            ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = results
-            )
+            ServiceResponse(HttpStatusCode.OK, results)
         }
     }
 
@@ -64,45 +96,33 @@ class GpsDeviceService {
             return ServiceResponse(HttpStatusCode.BadRequest, Message(msg))
         }
 
-        if (newDevice.imei.isNullOrBlank()) {
+        if (newDevice.imei.isNullOrBlank())
             return ServiceResponse(HttpStatusCode.BadRequest, Message("O campo IMEI é obrigatório"))
-        }
 
-        // Verifica se já existe dispositivo com este IMEI
-        val existingDevice = DatabaseFactory.dbQuery {
+        DatabaseFactory.dbQuery {
             GpsDevicesTable.selectAll().where { GpsDevicesTable.imei eq newDevice.imei!! }.singleOrNull()
-        }
-        if (existingDevice != null) {
-            return ServiceResponse(HttpStatusCode.Conflict, Message("Dispositivo já cadastrado!"))
-        }
+        }?.let { return ServiceResponse(HttpStatusCode.Conflict, Message("Dispositivo já cadastrado!")) }
 
-        // Verifica se o veículo já possui um dispositivo (apenas se vehicleId for fornecido)
         if (newDevice.vehicleId != null) {
-            val existingDeviceForVehicle = DatabaseFactory.dbQuery {
-                GpsDevicesTable.selectAll()
-                    .where { GpsDevicesTable.vehicleId eq newDevice.vehicleId }
-                    .singleOrNull()
-            }
-            if (existingDeviceForVehicle != null) {
-                return ServiceResponse(HttpStatusCode.Conflict, Message("Já existe um dispositivo vinculado a este veículo!"))
-            }
+            DatabaseFactory.dbQuery {
+                GpsDevicesTable.selectAll().where { GpsDevicesTable.vehicleId eq newDevice.vehicleId }.singleOrNull()
+            }?.let { return ServiceResponse(HttpStatusCode.Conflict, Message("Já existe um dispositivo vinculado a este veículo!")) }
         }
 
         DatabaseFactory.dbQuery {
             GpsDevicesTable.insert { row ->
-                row[imei] = newDevice.imei!!
-                row[vehicleId] = newDevice.vehicleId // CORRIGIDO: aceita null
-                row[latitude] = (newDevice.latitude ?: 0.0).toBigDecimal()
-                row[longitude] = (newDevice.longitude ?: 0.0).toBigDecimal()
-                row[speed] = (newDevice.speed ?: 0.0).toBigDecimal()
-                row[heading] = (newDevice.heading ?: 0.0).toBigDecimal()
-                row[dateTime] = newDevice.dateTime
-                row[iconMapUrl] = newDevice.iconMapUrl
-                row[title] = newDevice.title
-                row[ignition] = newDevice.ignition ?: false
-                row[lastCommunication] =
-                    Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                row[batteryVoltage] = 0.toBigDecimal()
+                row[imei]              = newDevice.imei!!
+                row[vehicleId]         = newDevice.vehicleId
+                row[latitude]          = (newDevice.latitude ?: 0.0).toBigDecimal()
+                row[longitude]         = (newDevice.longitude ?: 0.0).toBigDecimal()
+                row[speed]             = (newDevice.speed ?: 0.0).toBigDecimal()
+                row[heading]           = (newDevice.heading ?: 0.0).toBigDecimal()
+                row[dateTime]          = newDevice.dateTime
+                row[iconMapUrl]        = newDevice.iconMapUrl
+                row[title]             = newDevice.title
+                row[ignition]          = newDevice.ignition ?: false
+                row[lastCommunication] = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                row[batteryVoltage]    = 0.toBigDecimal()
             }
         }
 
@@ -114,44 +134,33 @@ class GpsDeviceService {
             return ServiceResponse(HttpStatusCode.BadRequest, Message(msg))
         }
 
-        val existingDevice = DatabaseFactory.dbQuery {
+        DatabaseFactory.dbQuery {
             GpsDevicesTable.selectAll().where { GpsDevicesTable.id eq id }.singleOrNull()
-        }
+        } ?: return ServiceResponse(HttpStatusCode.NotFound, Message("Dispositivo GPS não encontrado!"))
 
-        if (existingDevice == null) {
-            return ServiceResponse(HttpStatusCode.NotFound, Message("Dispositivo GPS não encontrado!"))
-        }
-
-        // Se está tentando vincular a um veículo, verifica se já existe outro dispositivo nesse veículo
         if (updatedDevice.vehicleId != null) {
-            val existingDeviceForVehicle = DatabaseFactory.dbQuery {
+            DatabaseFactory.dbQuery {
                 GpsDevicesTable.selectAll()
                     .where {
                         (GpsDevicesTable.vehicleId eq updatedDevice.vehicleId) and
                                 (GpsDevicesTable.id neq id)
                     }
                     .singleOrNull()
-            }
-            if (existingDeviceForVehicle != null) {
-                return ServiceResponse(HttpStatusCode.Conflict, Message("Já existe um dispositivo vinculado a este veículo!"))
-            }
+            }?.let { return ServiceResponse(HttpStatusCode.Conflict, Message("Já existe um dispositivo vinculado a este veículo!")) }
         }
 
         DatabaseFactory.dbQuery {
             GpsDevicesTable.update({ GpsDevicesTable.id eq id }) { row ->
-                // Permite atualizar para null (desvincular)
-                if (updatedDevice.vehicleId !== null) {
-                    row[vehicleId] = updatedDevice.vehicleId
-                }
-                updatedDevice.imei?.let { row[imei] = it }
-                updatedDevice.latitude?.let { row[latitude] = it.toBigDecimal() }
-                updatedDevice.longitude?.let { row[longitude] = it.toBigDecimal() }
-                updatedDevice.speed?.let { row[speed] = it.toBigDecimal() }
-                updatedDevice.heading?.let { row[heading] = it.toBigDecimal() }
-                updatedDevice.dateTime?.let { row[dateTime] = it }
+                row[vehicleId] = updatedDevice.vehicleId  // null = desvincula
+                updatedDevice.imei?.let       { row[imei]      = it }
+                updatedDevice.latitude?.let   { row[latitude]  = it.toBigDecimal() }
+                updatedDevice.longitude?.let  { row[longitude] = it.toBigDecimal() }
+                updatedDevice.speed?.let      { row[speed]     = it.toBigDecimal() }
+                updatedDevice.heading?.let    { row[heading]   = it.toBigDecimal() }
+                updatedDevice.dateTime?.let   { row[dateTime]  = it }
                 updatedDevice.iconMapUrl?.let { row[iconMapUrl] = it }
-                updatedDevice.title?.let { row[title] = it }
-                updatedDevice.ignition?.let { row[ignition] = it }
+                updatedDevice.title?.let      { row[title]     = it }
+                updatedDevice.ignition?.let   { row[ignition]  = it }
             }
         }
 
@@ -159,26 +168,17 @@ class GpsDeviceService {
     }
 
     suspend fun deleteGpsDevice(id: Int): ServiceResponse<Message> {
-        val existingDevice = DatabaseFactory.dbQuery {
+        val existing = DatabaseFactory.dbQuery {
             GpsDevicesTable.selectAll().where { GpsDevicesTable.id eq id }.singleOrNull()
-        }
+        } ?: return ServiceResponse(HttpStatusCode.NotFound, Message("Dispositivo GPS não encontrado!"))
 
-        if (existingDevice == null) {
-            return ServiceResponse(HttpStatusCode.NotFound, Message("Dispositivo GPS não encontrado!"))
-        }
-
-        // Verifica se o dispositivo está vinculado a um veículo
-        val vehicleId = existingDevice[GpsDevicesTable.vehicleId]
-        if (vehicleId != null) {
+        if (existing[GpsDevicesTable.vehicleId] != null)
             return ServiceResponse(
                 HttpStatusCode.BadRequest,
                 Message("Não é possível deletar um dispositivo vinculado a um veículo. Desvincule-o primeiro.")
             )
-        }
 
-        DatabaseFactory.dbQuery {
-            GpsDevicesTable.deleteWhere { GpsDevicesTable.id eq id }
-        }
+        DatabaseFactory.dbQuery { GpsDevicesTable.deleteWhere { GpsDevicesTable.id eq id } }
 
         return ServiceResponse(HttpStatusCode.OK, Message("Dispositivo GPS deletado com sucesso"))
     }
@@ -190,43 +190,28 @@ class GpsDeviceService {
         imeiFilter: String? = null
     ): ServiceResponse<PaginatedResponse<GpsDevice>> {
         return DatabaseFactory.dbQuery {
+            val (safePage, safeLimit, offset) = safePagination(page, limit)
+
             val query = GpsDevicesTable.selectAll().apply {
                 vehicleIdFilter?.let { andWhere { GpsDevicesTable.vehicleId eq it } }
-                imeiFilter?.let { andWhere { GpsDevicesTable.imei eq it } }
+                imeiFilter?.let      { andWhere { GpsDevicesTable.imei eq it } }
             }
 
-            val total = query.count()
-
+            val total   = query.count()
             val results = query
                 .orderBy(GpsDevicesTable.id to SortOrder.DESC)
-                .limit(limit)
-                .offset(start = ((page - 1) * limit).toLong())
-                .map { row ->
-                    GpsDevice(
-                        id = row[GpsDevicesTable.id],
-                        vehicleId = row[GpsDevicesTable.vehicleId], // CORRIGIDO: pode ser null
-                        imei = row[GpsDevicesTable.imei],
-                        latitude = row[GpsDevicesTable.latitude].toDouble(),
-                        longitude = row[GpsDevicesTable.longitude].toDouble(),
-                        dateTime = row[GpsDevicesTable.dateTime],
-                        speed = row[GpsDevicesTable.speed].toDouble(),
-                        heading = row[GpsDevicesTable.heading].toDouble(),
-                        iconMapUrl = row[GpsDevicesTable.iconMapUrl],
-                        title = row[GpsDevicesTable.title],
-                        ignition = row[GpsDevicesTable.ignition],
-                        lastCommunication = row[GpsDevicesTable.lastCommunication],
-                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
-                    )
-                }
+                .limit(safeLimit)
+                .offset(offset)
+                .map { rowToGpsDevice(it) }
 
             ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = PaginatedResponse(
-                    data = results,
-                    total = total.toInt(),
-                    page = page,
-                    limit = limit,
-                    totalPages = if (total == 0L) 0 else ((total + limit - 1) / limit).toInt()
+                HttpStatusCode.OK,
+                PaginatedResponse(
+                    data       = results,
+                    total      = total.toInt(),
+                    page       = safePage,
+                    limit      = safeLimit,
+                    totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
                 )
             )
         }
@@ -234,59 +219,25 @@ class GpsDeviceService {
 
     suspend fun findGpsDeviceById(id: Int): ServiceResponse<Any> {
         val device = DatabaseFactory.dbQuery {
-            GpsDevicesTable.selectAll().where { GpsDevicesTable.id eq id }.singleOrNull()?.let { row ->
-                GpsDevice(
-                    id = row[GpsDevicesTable.id],
-                    vehicleId = row[GpsDevicesTable.vehicleId], // CORRIGIDO: pode ser null
-                    imei = row[GpsDevicesTable.imei],
-                    latitude = row[GpsDevicesTable.latitude].toDouble(),
-                    longitude = row[GpsDevicesTable.longitude].toDouble(),
-                    dateTime = row[GpsDevicesTable.dateTime],
-                    speed = row[GpsDevicesTable.speed].toDouble(),
-                    heading = row[GpsDevicesTable.heading].toDouble(),
-                    iconMapUrl = row[GpsDevicesTable.iconMapUrl],
-                    title = row[GpsDevicesTable.title],
-                    ignition = row[GpsDevicesTable.ignition],
-                    lastCommunication = row[GpsDevicesTable.lastCommunication],
-                    batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
-                )
-            }
+            GpsDevicesTable.selectAll().where { GpsDevicesTable.id eq id }.singleOrNull()?.let { rowToGpsDevice(it) }
         }
-
-        return if (device == null) {
+        return if (device == null)
             ServiceResponse(HttpStatusCode.NotFound, mapOf("message" to "Dispositivo GPS não encontrado"))
-        } else {
+        else
             ServiceResponse(HttpStatusCode.OK, device)
-        }
     }
 
     suspend fun findGpsDeviceByVehicleId(vehicleId: Int): ServiceResponse<Any> {
         val device = DatabaseFactory.dbQuery {
-            GpsDevicesTable.selectAll().where { GpsDevicesTable.vehicleId eq vehicleId }.singleOrNull()?.let { row ->
-                GpsDevice(
-                    id = row[GpsDevicesTable.id],
-                    vehicleId = row[GpsDevicesTable.vehicleId],
-                    imei = row[GpsDevicesTable.imei],
-                    latitude = row[GpsDevicesTable.latitude].toDouble(),
-                    longitude = row[GpsDevicesTable.longitude].toDouble(),
-                    dateTime = row[GpsDevicesTable.dateTime],
-                    speed = row[GpsDevicesTable.speed].toDouble(),
-                    heading = row[GpsDevicesTable.heading].toDouble(),
-                    iconMapUrl = row[GpsDevicesTable.iconMapUrl],
-                    title = row[GpsDevicesTable.title],
-                    ignition = row[GpsDevicesTable.ignition],
-                    lastCommunication = row[GpsDevicesTable.lastCommunication],
-                    batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
-                )
-            }
+            GpsDevicesTable.selectAll().where { GpsDevicesTable.vehicleId eq vehicleId }.singleOrNull()?.let { rowToGpsDevice(it) }
         }
-
-        return if (device == null) {
+        return if (device == null)
             ServiceResponse(HttpStatusCode.NotFound, mapOf("message" to "Dispositivo GPS não encontrado para o veículo informado"))
-        } else {
+        else
             ServiceResponse(HttpStatusCode.OK, device)
-        }
     }
+
+    // ─── History ──────────────────────────────────────────────────────────────
 
     suspend fun getHistoryByVehicle(
         vehicleId: Int,
@@ -295,145 +246,52 @@ class GpsDeviceService {
         page: Int = 1,
         limit: Int = 20
     ): ServiceResponse<PaginatedResponse<GpsHistory>> {
-
         return DatabaseFactory.dbQuery {
             val tz = TimeZone.currentSystemDefault()
-            val today = kotlinx.datetime.Clock.System.todayIn(tz)
-            val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
-            val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
-
-            val safePage = if (page < 1) 1 else page
-            val safeLimit = if (limit < 1) 20 else if (limit > 100) 100 else limit
-            val offset = ((safePage - 1) * safeLimit).toLong()
+            val (defaultStart, defaultEnd) = defaultDateRange(tz)
+            val from = startDate ?: defaultStart
+            val to   = endDate   ?: defaultEnd
+            val (safePage, safeLimit, offset) = safePagination(page, limit)
 
             val baseQuery = GpsHistoryTable
                 .selectAll()
                 .where {
                     (GpsHistoryTable.vehicleId eq vehicleId) and
-                            (GpsHistoryTable.dateTime greaterEq todayStart) and
-                            (GpsHistoryTable.dateTime lessEq todayEnd)
+                            (GpsHistoryTable.dateTime greaterEq from) and
+                            (GpsHistoryTable.dateTime lessEq to)
                 }
 
-            val total = baseQuery.count()
-
+            val total   = baseQuery.count()
             val results = baseQuery
                 .orderBy(GpsHistoryTable.dateTime to SortOrder.ASC)
                 .limit(safeLimit)
                 .offset(offset)
-                .map { row ->
-                    GpsHistory(
-                        id = row[GpsHistoryTable.id],
-                        gpsDeviceId = row[GpsHistoryTable.gpsDeviceId],
-                        vehicleId = row[GpsHistoryTable.vehicleId],
-                        dateTime = row[GpsHistoryTable.dateTime],
-                        latitude = row[GpsHistoryTable.latitude].toDouble(),
-                        longitude = row[GpsHistoryTable.longitude].toDouble(),
-                        speed = row[GpsHistoryTable.speed].toDouble(),
-                        heading = row[GpsHistoryTable.heading].toDouble(),
-                        ignition = row[GpsHistoryTable.ignition],
-                        satellites = row[GpsHistoryTable.satellites],
-                        gpsFixed = row[GpsHistoryTable.gpsFixed],
-                        gpsQuality = row[GpsHistoryTable.gpsQuality],
-                        odometer = row[GpsHistoryTable.odometer],
-                        batteryVoltage = row[GpsHistoryTable.batteryVoltage]?.toDouble(),
-                        messageType = row[GpsHistoryTable.messageType],
-                        eventCode = row[GpsHistoryTable.eventCode],
-                        rawLog = row[GpsHistoryTable.rawLog]
-                    )
-                }
-
-            val totalPages =
-                if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
+                .map { rowToGpsHistory(it) }
 
             ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = PaginatedResponse(
-                    data = results,
-                    total = total.toInt(),
-                    page = safePage,
-                    limit = safeLimit,
-                    totalPages = totalPages
+                HttpStatusCode.OK,
+                PaginatedResponse(
+                    data       = results,
+                    total      = total.toInt(),
+                    page       = safePage,
+                    limit      = safeLimit,
+                    totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
                 )
             )
         }
     }
 
-    suspend fun sendCommandDevice(rawBody: String): ServiceResponse<CommandResponse> {
-        val request = validateCommandRequest(rawBody).getOrReturn { msg ->
-            return ServiceResponse(HttpStatusCode.BadRequest, CommandResponse(false, msg))
-        }
-        val deviceId = request.deviceId
-        val device = DatabaseFactory.dbQuery {
-            GpsDevicesTable.selectAll()
-                .where { GpsDevicesTable.imei eq deviceId }
-                .singleOrNull()
-        } ?: return ServiceResponse(
-            status = HttpStatusCode.NotFound,
-            data = CommandResponse(false, "Dispositivo GPS não encontrado com DeviceId: $deviceId")
-        )
-        if (!DeviceConnectionManager.isDeviceConnected(deviceId)) {
-            return ServiceResponse(
-                status = HttpStatusCode.ServiceUnavailable,
-                data = CommandResponse(false, "Dispositivo não está conectado ao servidor TCP")
-            )
-        }
-        val command = when (val buildResult = buildSuntechCommand(deviceId, request)) {
-            is BuildCommandResult.Success -> buildResult.command
-            is BuildCommandResult.Error -> {
-                return ServiceResponse(
-                    status = HttpStatusCode.BadRequest,
-                    data = CommandResponse(false, buildResult.message)
-                )
-            }
-        }
-        val success = DeviceConnectionManager.sendCommand(deviceId, command)
-        return if (success) {
-            ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = CommandResponse(true, "Comando enviado com sucesso", command)
-            )
-        } else {
-            ServiceResponse(
-                status = HttpStatusCode.ServiceUnavailable,
-                data = CommandResponse(false, "Falha ao enviar comando")
-            )
-        }
-    }
+    // ─── Subfleet ─────────────────────────────────────────────────────────────
 
-    suspend fun getGpsDevicesBySubfleet(
-        subfleetId: Int
-    ): ServiceResponse<List<GpsDevice>> {
+    suspend fun getGpsDevicesBySubfleet(subfleetId: Int): ServiceResponse<List<GpsDevice>> {
         return DatabaseFactory.dbQuery {
             val results = GpsDevicesTable
-                .join(
-                    VehiclesTable,
-                    JoinType.INNER,
-                    additionalConstraint = { GpsDevicesTable.vehicleId eq VehiclesTable.id }
-                )
+                .join(VehiclesTable, JoinType.INNER, additionalConstraint = { GpsDevicesTable.vehicleId eq VehiclesTable.id })
                 .selectAll()
                 .where { VehiclesTable.subfleetId eq subfleetId }
-                .map { row ->
-                    GpsDevice(
-                        id = row[GpsDevicesTable.id],
-                        vehicleId = row[GpsDevicesTable.vehicleId],
-                        imei = row[GpsDevicesTable.imei],
-                        latitude = row[GpsDevicesTable.latitude].toDouble(),
-                        longitude = row[GpsDevicesTable.longitude].toDouble(),
-                        dateTime = row[GpsDevicesTable.dateTime],
-                        speed = row[GpsDevicesTable.speed].toDouble(),
-                        heading = row[GpsDevicesTable.heading].toDouble(),
-                        iconMapUrl = row[GpsDevicesTable.iconMapUrl],
-                        title = row[GpsDevicesTable.title],
-                        ignition = row[GpsDevicesTable.ignition],
-                        lastCommunication = row[GpsDevicesTable.lastCommunication],
-                        batteryVoltage = row[GpsDevicesTable.batteryVoltage]?.toDouble()
-                    )
-                }
+                .map { rowToGpsDevice(it) }
 
-            ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = results
-            )
+            ServiceResponse(HttpStatusCode.OK, results)
         }
     }
 
@@ -446,69 +304,87 @@ class GpsDeviceService {
     ): ServiceResponse<PaginatedResponse<GpsHistory>> {
         return DatabaseFactory.dbQuery {
             val tz = TimeZone.currentSystemDefault()
-            val today = kotlinx.datetime.Clock.System.todayIn(tz)
-            val todayStart = startDate ?: today.atStartOfDayIn(tz).toLocalDateTime(tz)
-            val todayEnd = endDate ?: today.atTime(23, 59, 59, 999_999_999)
+            val (defaultStart, defaultEnd) = defaultDateRange(tz)
+            val from = startDate ?: defaultStart
+            val to   = endDate   ?: defaultEnd
+            val (safePage, safeLimit, offset) = safePagination(page, limit)
 
-            // Validação de página e limite
-            val safePage = if (page < 1) 1 else page
-            val safeLimit = if (limit < 1) 20 else if (limit > 100) 100 else limit
-            val offset = ((safePage - 1) * safeLimit).toLong()
-
-            // Query com JOIN para filtrar por subfleetId
             val baseQuery = GpsHistoryTable
-                .join(
-                    VehiclesTable,
-                    JoinType.INNER,
-                    additionalConstraint = { GpsHistoryTable.vehicleId eq VehiclesTable.id }
-                )
+                .join(VehiclesTable, JoinType.INNER, additionalConstraint = { GpsHistoryTable.vehicleId eq VehiclesTable.id })
                 .selectAll()
                 .where {
                     (VehiclesTable.subfleetId eq subfleetId) and
-                            (GpsHistoryTable.dateTime greaterEq todayStart) and
-                            (GpsHistoryTable.dateTime lessEq todayEnd)
+                            (GpsHistoryTable.dateTime greaterEq from) and
+                            (GpsHistoryTable.dateTime lessEq to)
                 }
 
-            val total = baseQuery.count()
-
+            val total   = baseQuery.count()
             val results = baseQuery
                 .orderBy(GpsHistoryTable.dateTime to SortOrder.DESC)
                 .limit(safeLimit)
                 .offset(offset)
-                .map { row ->
-                    GpsHistory(
-                        id = row[GpsHistoryTable.id],
-                        gpsDeviceId = row[GpsHistoryTable.gpsDeviceId],
-                        vehicleId = row[GpsHistoryTable.vehicleId],
-                        dateTime = row[GpsHistoryTable.dateTime],
-                        latitude = row[GpsHistoryTable.latitude].toDouble(),
-                        longitude = row[GpsHistoryTable.longitude].toDouble(),
-                        speed = row[GpsHistoryTable.speed].toDouble(),
-                        heading = row[GpsHistoryTable.heading].toDouble(),
-                        ignition = row[GpsHistoryTable.ignition],
-                        satellites = row[GpsHistoryTable.satellites],
-                        gpsFixed = row[GpsHistoryTable.gpsFixed],
-                        gpsQuality = row[GpsHistoryTable.gpsQuality],
-                        odometer = row[GpsHistoryTable.odometer],
-                        batteryVoltage = row[GpsHistoryTable.batteryVoltage]?.toDouble(),
-                        messageType = row[GpsHistoryTable.messageType],
-                        eventCode = row[GpsHistoryTable.eventCode],
-                        rawLog = row[GpsHistoryTable.rawLog]
-                    )
-                }
-
-            val totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
+                .map { rowToGpsHistory(it) }
 
             ServiceResponse(
-                status = HttpStatusCode.OK,
-                data = PaginatedResponse(
-                    data = results,
-                    total = total.toInt(),
-                    page = safePage,
-                    limit = safeLimit,
-                    totalPages = totalPages
+                HttpStatusCode.OK,
+                PaginatedResponse(
+                    data       = results,
+                    total      = total.toInt(),
+                    page       = safePage,
+                    limit      = safeLimit,
+                    totalPages = if (total == 0L) 0 else ((total + safeLimit - 1) / safeLimit).toInt()
                 )
             )
+        }
+    }
+
+    // ─── Commands ─────────────────────────────────────────────────────────────
+
+    suspend fun sendCommandDevice(rawBody: String): ServiceResponse<CommandResponse> {
+        val request = validateCommandRequest(rawBody).getOrReturn { msg ->
+            return ServiceResponse(HttpStatusCode.BadRequest, CommandResponse(false, msg))
+        }
+        val deviceId = request.deviceId
+
+        DatabaseFactory.dbQuery {
+            GpsDevicesTable.selectAll().where { GpsDevicesTable.imei eq deviceId }.singleOrNull()
+        } ?: return ServiceResponse(HttpStatusCode.NotFound, CommandResponse(false, "Dispositivo não encontrado: $deviceId"))
+
+        return if (deviceId.length == 15) sendGT06Command(deviceId, request)
+        else sendSuntechCommand(deviceId, request)
+    }
+
+    private suspend fun sendGT06Command(deviceId: String, request: CommandRequest): ServiceResponse<CommandResponse> {
+        if (!GT06ConnectionManager.isDeviceConnected(deviceId))
+            return ServiceResponse(HttpStatusCode.ServiceUnavailable, CommandResponse(false, "Dispositivo GT06 não está conectado ao servidor TCP"))
+
+        return when (val result = buildGT06CommandText(request)) {
+            is GT06CommandResult.Success -> {
+                val sent = GT06ConnectionManager.sendCommand(deviceId, result.command)
+                if (sent)
+                    ServiceResponse(HttpStatusCode.OK, CommandResponse(true, "Comando enviado", result.command))
+                else
+                    ServiceResponse(HttpStatusCode.ServiceUnavailable, CommandResponse(false, "Falha ao enviar comando GT06"))
+            }
+            is GT06CommandResult.Error ->
+                ServiceResponse(HttpStatusCode.BadRequest, CommandResponse(false, result.message))
+        }
+    }
+
+    private suspend fun sendSuntechCommand(deviceId: String, request: CommandRequest): ServiceResponse<CommandResponse> {
+        if (!DeviceConnectionManager.isDeviceConnected(deviceId))
+            return ServiceResponse(HttpStatusCode.ServiceUnavailable, CommandResponse(false, "Dispositivo Suntech não está conectado ao servidor TCP"))
+
+        return when (val result = buildSuntechCommand(deviceId, request)) {
+            is SuntechCommandResult.Success -> {
+                val sent = DeviceConnectionManager.sendCommand(deviceId, result.command)
+                if (sent)
+                    ServiceResponse(HttpStatusCode.OK, CommandResponse(true, "Comando enviado", result.command))
+                else
+                    ServiceResponse(HttpStatusCode.ServiceUnavailable, CommandResponse(false, "Falha ao enviar comando Suntech"))
+            }
+            is SuntechCommandResult.Error ->
+                ServiceResponse(HttpStatusCode.BadRequest, CommandResponse(false, result.message))
         }
     }
 }

@@ -5,69 +5,57 @@ import com.frotagestor.interfaces.PartialGpsDevice
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
-    if (rawBody.isBlank()) {
-        return ValidationResult.Error("Body da requisição está vazio")
-    }
+private val json = Json { ignoreUnknownKeys = true }
 
-    val gpsDevice: PartialGpsDevice = try {
-        Json.decodeFromString<PartialGpsDevice>(rawBody)
+fun validateGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
+    if (rawBody.isBlank())
+        return ValidationResult.Error("Body da requisição está vazio")
+
+    val gpsDevice = try {
+        json.decodeFromString<PartialGpsDevice>(rawBody)
     } catch (e: SerializationException) {
         return ValidationResult.Error("JSON inválido: ${e.message}")
     }
 
-    // Validação do IMEI (obrigatório)
-    if (gpsDevice.imei.isNullOrBlank()) {
+    if (gpsDevice.imei.isNullOrBlank())
         return ValidationResult.Error("O campo IMEI é obrigatório")
-    }
 
-    // Validação do iconMapUrl (obrigatório)
-    if (gpsDevice.iconMapUrl.isNullOrBlank()) {
+    if (gpsDevice.iconMapUrl.isNullOrBlank())
         return ValidationResult.Error("O campo iconMapUrl é obrigatório")
-    }
 
-    // Validação de coordenadas (se fornecidas)
-    gpsDevice.latitude?.let { lat ->
-        if (lat < -90.0 || lat > 90.0) {
+    gpsDevice.latitude?.let {
+        if (it < -90.0 || it > 90.0)
             return ValidationResult.Error("Latitude inválida. Deve estar entre -90 e 90")
-        }
     }
 
-    gpsDevice.longitude?.let { lon ->
-        if (lon < -180.0 || lon > 180.0) {
+    gpsDevice.longitude?.let {
+        if (it < -180.0 || it > 180.0)
             return ValidationResult.Error("Longitude inválida. Deve estar entre -180 e 180")
-        }
     }
 
-    // Validação de velocidade (se fornecida)
-    gpsDevice.speed?.let { speed ->
-        if (speed < 0.0) {
+    gpsDevice.speed?.let {
+        if (it < 0.0)
             return ValidationResult.Error("Velocidade não pode ser negativa")
-        }
     }
 
-    // Validação de heading/direção (se fornecida)
-    gpsDevice.heading?.let { heading ->
-        if (heading < 0.0 || heading > 360.0) {
+    gpsDevice.heading?.let {
+        if (it < 0.0 || it > 360.0)
             return ValidationResult.Error("Direção inválida. Deve estar entre 0 e 360")
-        }
     }
 
     return ValidationResult.Success(gpsDevice)
 }
 
 fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice> {
-    if (rawBody.isBlank()) {
+    if (rawBody.isBlank())
         return ValidationResult.Error("Body da requisição está vazio")
-    }
 
     val gpsDevice = try {
-        Json.decodeFromString<PartialGpsDevice>(rawBody)
+        json.decodeFromString<PartialGpsDevice>(rawBody)
     } catch (e: SerializationException) {
         return ValidationResult.Error("JSON inválido: ${e.message}")
     }
 
-    // Verifica se pelo menos um campo foi fornecido para atualização
     if (
         gpsDevice.imei.isNullOrBlank() &&
         gpsDevice.vehicleId == null &&
@@ -79,67 +67,53 @@ fun validatePartialGpsDevice(rawBody: String): ValidationResult<PartialGpsDevice
         gpsDevice.iconMapUrl.isNullOrBlank() &&
         gpsDevice.title.isNullOrBlank() &&
         gpsDevice.ignition == null
-    ) {
-        return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
-    }
+    ) return ValidationResult.Error("Nenhum campo para atualizar foi fornecido")
 
-    // Coordenadas (se fornecidas)
-    gpsDevice.latitude?.let { lat ->
-        if (lat < -90.0 || lat > 90.0) {
+    gpsDevice.latitude?.let {
+        if (it < -90.0 || it > 90.0)
             return ValidationResult.Error("Latitude inválida. Deve estar entre -90 e 90")
-        }
     }
 
-    gpsDevice.longitude?.let { lon ->
-        if (lon < -180.0 || lon > 180.0) {
+    gpsDevice.longitude?.let {
+        if (it < -180.0 || it > 180.0)
             return ValidationResult.Error("Longitude inválida. Deve estar entre -180 e 180")
-        }
     }
 
-    // Velocidade (se fornecida)
-    gpsDevice.speed?.let { speed ->
-        if (speed < 0.0) {
+    gpsDevice.speed?.let {
+        if (it < 0.0)
             return ValidationResult.Error("Velocidade não pode ser negativa")
-        }
     }
 
-    // Heading/direção (se fornecida)
-    gpsDevice.heading?.let { heading ->
-        if (heading < 0.0 || heading > 360.0) {
+    gpsDevice.heading?.let {
+        if (it < 0.0 || it > 360.0)
             return ValidationResult.Error("Direção inválida. Deve estar entre 0 e 360")
-        }
     }
 
     return ValidationResult.Success(gpsDevice)
 }
 
 fun validateCommandRequest(rawBody: String): ValidationResult<CommandRequest> {
-    if (rawBody.isBlank()) {
+    if (rawBody.isBlank())
         return ValidationResult.Error("Body da requisição está vazio")
-    }
 
-    val commandRequest: CommandRequest = try {
-        Json.decodeFromString<CommandRequest>(rawBody)
+    val request = try {
+        json.decodeFromString<CommandRequest>(rawBody)
     } catch (e: SerializationException) {
         return ValidationResult.Error("JSON inválido: ${e.message}")
     }
 
-    if (commandRequest.commandType.isBlank()) {
+    if (request.commandType.isBlank())
         return ValidationResult.Error("O campo commandType é obrigatório e não pode estar vazio")
-    }
 
-    if (commandRequest.deviceId.isBlank()) {
+    if (request.deviceId.isBlank())
         return ValidationResult.Error("O campo deviceId é obrigatório e não pode estar vazio")
-    }
 
-    commandRequest.parameters.forEach { (key, value) ->
-        if (key.isBlank()) {
+    request.parameters.forEach { (key, value) ->
+        if (key.isBlank())
             return ValidationResult.Error("Parâmetro com chave vazia não é permitido")
-        }
-        if (value.isBlank()) {
+        if (value.isBlank())
             return ValidationResult.Error("Parâmetro com valor vazio para a chave '$key' não é permitido")
-        }
     }
 
-    return ValidationResult.Success(commandRequest)
+    return ValidationResult.Success(request)
 }

@@ -31,7 +31,8 @@ data class PartialGpsDevice(
     val heading: Double? = null,
     val iconMapUrl: String? = null,
     val title: String? = null,
-    val ignition: Boolean? = null
+    val ignition: Boolean? = null,
+    val lastCommunication: LocalDateTime? = null
 )
 
 @Serializable

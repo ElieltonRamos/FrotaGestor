@@ -33,10 +33,10 @@ export const SECTIONS: SectionConfig[] = [
     key: 'gpsEvents',
     title: 'Últimos Eventos GPS',
     columns: [
-      { key: 'type', label: 'Evento', sortable: true },
+      { key: 'messageType', label: 'Evento', sortable: true },
       { key: 'dateTime', label: 'Data/Hora', sortable: true },
       { key: 'speed', label: 'Velocidade (km/h)', sortable: true },
-      { key: 'description', label: 'Detalhes' },
+      { key: 'ignition', label: 'Ignição', sortable: true },
     ],
   },
 ];
