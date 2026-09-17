@@ -134,19 +134,43 @@ export class DetailsVehicle {
   }
 
   private loadMapHistory(vehicleId: number) {
-    const startDateTime = this.startDate
-      ? `${this.startDate}T00:00:00`
-      : undefined;
-    const endDateTime = this.endDate ? `${this.endDate}T23:59:59` : undefined;
+    const startDateTime = '2026-09-17T00:00:00';
+    const endDateTime = '2026-09-17T23:59:59';
+    const limit = 100;
 
     this.serviceGpsDevice
-      .getHistoryDevice(vehicleId, 1, 200, startDateTime, endDateTime)
+      .getHistoryDevice(vehicleId, 1, limit, startDateTime, endDateTime)
       .subscribe({
-        next: (res) => {
-          this.mapPoints = res.data.filter(
-            (p: GpsHistory) => p.latitude !== 0 && p.longitude !== 0,
+        next: (firstRes) => {
+          const totalPages = firstRes.totalPages;
+          const pageRequests = [];
+
+          for (let page = 2; page <= totalPages; page++) {
+            pageRequests.push(
+              this.serviceGpsDevice.getHistoryDevice(
+                vehicleId,
+                page,
+                limit,
+                startDateTime,
+                endDateTime,
+              ),
+            );
+          }
+
+          Promise.all(pageRequests.map((obs) => obs.toPromise())).then(
+            (otherPages) => {
+              const all = [
+                ...firstRes.data,
+                ...otherPages.flatMap((r) => r?.data ?? []),
+              ];
+
+              console.log(all, `dia completo 17/09 - ${all.length} registros`);
+              this.mapPoints = all.filter(
+                (p: GpsHistory) => p.latitude !== 0 && p.longitude !== 0,
+              );
+              this.cdr.detectChanges();
+            },
           );
-          this.cdr.detectChanges();
         },
       });
   }
